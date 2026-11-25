@@ -2360,8 +2360,9 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  const profile=window.profile||(()=>{try{return JSON.parse(localStorage.getItem('halftime-profile')||'{}')}catch(e){return {}}})();
  const $=id=>page.querySelector('#'+id);
  function hasCC(){
+  const isOwner=String(profile.playerId||'').toUpperCase()==='HT-001';
   const vals=[...(profile.demoBadges||[]),...(profile.badges||[]),...(profile.earnedBadges||[])].map(x=>typeof x==='string'?x:(x?.name||x?.title||''));
-  return vals.some(x=>/\bCC\b|Content Creator|Official CC|Founding CC|Creator Partner/i.test(x));
+  return isOwner||vals.some(x=>/\bCC\b|Content Creator|Official CC|Founding CC|Creator Partner/i.test(x));
  }
  const signature=$('ccbaSignature'),preview=$('ccbaSignaturePreview'),sigCtx=signature.getContext('2d'),previewCtx=preview.getContext('2d');
  let drawing=false,hasInk=false,lastPoint=null;
@@ -2375,7 +2376,8 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  function restoreSignature(data){if(!data)return;const img=new Image();img.onload=()=>{sigCtx.clearRect(0,0,signature.width,signature.height);sigCtx.drawImage(img,0,0,signature.width,signature.height);previewCtx.clearRect(0,0,preview.width,preview.height);previewCtx.drawImage(img,0,0,preview.width,preview.height);hasInk=true;};img.src=data;}
  function render(){
   const ok=hasCC(),gate=$('ccbaGate'),form=$('ccbaForm');
-  gate.innerHTML=ok?'<b>CC status detected ✓</b><p class="muted">Your creator badge gives you access to the custom boot application and signature pen.</p>':'<b>CC badge required</b><p class="muted">You need a HALFTIME Content Creator (CC) badge before you can apply. Once it is awarded to your profile, return here.</p>';
+  const isOwner=String(profile.playerId||'').toUpperCase()==='HT-001';
+  gate.innerHTML=ok?(isOwner?'<b>HT-001 OWNER ACCESS ✓</b><p class="muted">The owner can use the custom boot application and signature pen without a CC badge.</p>':'<b>CC status detected ✓</b><p class="muted">Your creator badge gives you access to the custom boot application and signature pen.</p>'):'<b>CC badge required</b><p class="muted">You need a HALFTIME Content Creator (CC) badge before you can apply. Once it is awarded to your profile, return here.</p>';
   form.hidden=!ok;
   const a=profile.ccBootApplication;
   $('ccbaStatus').textContent=a?'Status: '+a.status+' · '+a.bootName+' · Submitted '+a.submittedAt:'No application submitted yet.';
