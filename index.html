@@ -828,6 +828,62 @@ window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,contr
 })();
 </script>
 <script>
+/* HALFTIME SNAP TURN SYSTEM */
+(function(){
+  const rig=document.getElementById('rig');
+  const right=document.getElementById('right');
+  const scene=document.querySelector('a-scene');
+  if(!rig||!right||!scene)return;
+
+  let ready=true;
+  let snapAngle=30;
+
+  function turn(dir){
+    if(!scene.is('vr-mode'))return;
+    if(document.getElementById('vrMenu')?.getAttribute('visible'))return;
+    rig.object3D.rotation.y += THREE.MathUtils.degToRad(snapAngle*dir);
+  }
+
+  right.addEventListener('thumbstickmoved',e=>{
+    const x=e.detail?.x||0;
+    if(ready&&Math.abs(x)>.75){
+      turn(x>0?-1:1);
+      ready=false;
+    }
+    if(Math.abs(x)<.25)ready=true;
+  });
+
+  window.halftimeSnapTurn=turn;
+  window.setHalftimeSnapAngle=a=>{
+    snapAngle=[15,30,45,60].includes(Number(a))?Number(a):30;
+  };
+
+  const nav=document.getElementById('halfNav');
+  const pages=document.getElementById('halfPages');
+  function addUI(){
+    if(!nav||!pages||document.getElementById('snapTurnAngle'))return;
+    const settings=[...nav.children].find(b=>b.textContent==='Settings');
+    if(!settings)return;
+    const idx=[...nav.children].indexOf(settings);
+    const page=pages.children[idx];
+    if(!page)return;
+    const wrap=document.createElement('div');
+    wrap.innerHTML='<h3>Snap Turn</h3><label>Turn angle <select id="snapTurnAngle"><option>15</option><option selected>30</option><option>45</option><option>60</option></select>°</label><p>Push the right stick left or right to snap turn.</p>';
+    page.append(wrap);
+    const sel=wrap.querySelector('#snapTurnAngle');
+    sel.value=String(profile.snapTurnAngle||30);
+    snapAngle=Number(sel.value)||30;
+    sel.onchange=()=>{
+      snapAngle=Number(sel.value)||30;
+      profile.snapTurnAngle=snapAngle;
+      try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}
+    };
+  }
+  addUI();
+  setTimeout(addUI,250);
+})();
+</script>
+<script>
 /* HALFTIME GLOVE PULL-OUT SYSTEM */
 (function(){
   const left=document.getElementById('left'), right=document.getElementById('right');
