@@ -11,10 +11,58 @@ for(const id of ['left','right']){
 const e=document.getElementById(id);if(this.mode==='career'&&this.el.sceneEl.is('vr-mode')&&this.p.y>.65&&t>(this.lastHandball||0)+3000&&e.object3D.getWorldPosition(new THREE.Vector3()).distanceTo(this.p)<.19){this.lastHandball=t;const penalty=this.p.z>36&&Math.abs(this.p.x)<20.16;this.restart(penalty?'Penalty — handball':'Free kick — handball',penalty?0:this.p.x,penalty?41.5:this.p.z,-1,t);return;}if(!this.el.sceneEl.is('vr-mode')||!e.object3D.visible){delete this.prev[id];continue;}
 const state=window.halfFeet?.[id];if(!state)continue;
 const q=e.object3D.getWorldQuaternion(new THREE.Quaternion());
-const p=e.object3D.getWorldPosition(new THREE.Vector3());p.y=Math.max(.11,p.y-1.05);
-const offset=new THREE.Vector3(0,state.bent ? .12 : 0,state.bent ? .16 : -.08).applyQuaternion(q);p.add(offset);p.y=Math.max(.11,p.y);
-state.mesh.position.copy(p);state.mesh.quaternion.copy(q);if(state.bent)state.mesh.rotateX(-.85);
-const old=this.prev[id];if(old){const delta=p.clone().sub(old);if(delta.length()<.65){const foot=delta.clone().divideScalar(d).clampLength(0,20);const closest=old.clone().addScaledVector(delta,THREE.MathUtils.clamp(this.p.clone().sub(old).dot(delta)/Math.max(delta.lengthSq(),.000001),0,1));const n=this.p.clone().sub(closest);if(n.length()<.23&&n.lengthSq()>.000001){n.normalize();const relative=foot.clone().sub(this.v);const approach=relative.dot(n);if(approach>.12){this.lastTouch=1;const tangent=relative.clone().addScaledVector(n,-approach);const strike=foot.clone().multiplyScalar(.78).addScaledVector(n,approach*.48);this.v.addScaledVector(n,Math.min(approach*1.45,25)).addScaledVector(tangent,.24);this.v.clampLength(0,32);this.spin=(this.spin||new THREE.Vector3()).add(n.clone().cross(tangent).multiplyScalar(-1.4)).clampLength(0,25);if(t>(this.lastKickSound||0)+110){window.halfSound?.('kick');this.lastKickSound=t;}}}}}this.prev[id]=p;
+const raw=e.object3D.getWorldPosition(new THREE.Vector3());
+raw.y=Math.max(.11,raw.y-1.05);
+const offset=new THREE.Vector3(0,state.bent?.08:0,state.bent?.14:-.11).applyQuaternion(q);
+raw.add(offset);raw.y=Math.max(.11,raw.y);
+
+// VRFS-style smoothing: feet track quickly but do not jitter.
+state.smooth=state.smooth||raw.clone();
+state.smooth.lerp(raw,THREE.MathUtils.clamp(d*18,0,1));
+const p=state.smooth.clone();
+
+state.mesh.position.copy(p);
+state.mesh.quaternion.slerp(q,THREE.MathUtils.clamp(d*20,0,1));
+if(state.bent)state.mesh.rotateX(-.72);
+
+const old=this.prev[id];
+if(old){
+  const delta=p.clone().sub(old);
+  if(delta.length()<.55){
+    const footVel=delta.clone().divideScalar(Math.max(d,.001)).clampLength(0,17);
+    const closest=old.clone().addScaledVector(delta,THREE.MathUtils.clamp(this.p.clone().sub(old).dot(delta)/Math.max(delta.lengthSq(),.000001),0,1));
+    const n=this.p.clone().sub(closest);
+    const dist=n.length();
+
+    // Larger, softer contact zone for easier dribbling and cleaner touches.
+    if(dist<.255&&dist>.0001){
+      n.normalize();
+      const relative=footVel.clone().sub(this.v);
+      const approach=relative.dot(n);
+
+      // Gentle touches move the ball with the foot instead of launching it.
+      if(footVel.length()<3.2 && dist<.23){
+        const control=footVel.clone().multiplyScalar(.48);
+        this.v.lerp(control,.32);
+        this.v.y=Math.max(this.v.y,0);
+        this.lastTouch=1;
+      }
+
+      // Faster swings become proper shots/passes with controlled power.
+      if(approach>.10){
+        this.lastTouch=1;
+        const tangent=relative.clone().addScaledVector(n,-approach);
+        const power=THREE.MathUtils.clamp(approach*1.18,0,20);
+        this.v.addScaledVector(n,power).addScaledVector(tangent,.18);
+        if(state.bent)this.v.y+=Math.min(2.8,footVel.length()*.10);
+        this.v.clampLength(0,29);
+        this.spin=(this.spin||new THREE.Vector3()).add(n.clone().cross(tangent).multiplyScalar(-1.0)).clampLength(0,20);
+        if(t>(this.lastKickSound||0)+120){window.halfSound?.('kick');this.lastKickSound=t;}
+      }
+    }
+  }
+}
+this.prev[id]=p;
 }
 if(this.spin){if(this.p.y>.13)this.v.addScaledVector(this.spin.clone().cross(this.v),.009*d);this.spin.multiplyScalar(Math.exp(-1.5*d));}
 let bot=document.getElementById('bot');if(this.mode==='career'){if(bot)bot.setAttribute('visible',false);window.careerTick?.(this,t,d);}else if(bot){window.hideCareer?.();bot.setAttribute('visible',this.mode!=='training');if(this.mode!=='training'){let q=bot.object3D.position;let target=this.mode==='penalty'?new THREE.Vector3(this.p.x,0,-10.7):new THREE.Vector3(this.p.x,0,this.p.z);target.x=THREE.MathUtils.clamp(target.x,-6.8,6.8);target.z=THREE.MathUtils.clamp(target.z,-10.7,10.7);let delta=target.sub(q);delta.y=0;q.add(delta.clampLength(0,d*2.1));if(Math.hypot(q.x-this.p.x,q.z-this.p.z)<.65&&this.p.y<1.1&&t>(this.lastBot||0)+800){this.v.set(-this.p.x*.2,.5,5);this.lastBot=t;}}}
@@ -478,5 +526,9 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   }
   requestAnimationFrame(bounds);
 })();
+</script>
+<script>
+/* HALFTIME VRFS FOOT TUNING */
+window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,controlTouch:true};
 </script>
 </body></html>
