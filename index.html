@@ -1,6 +1,8 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
-AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());p.y=Math.max(.10,p.y-1.05);this.el.object3D.position.copy(p);}});
+AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());p.y=p.y-1.05;this.el.object3D.position.copy(p);}});
 window.halftimeBallPhysics={airDrag:.045,groundFriction:.48,bounce:.46,gravity:9.81,touchAssist:.46,kickPower:1.22,maxSpeed:32};
+window.halftimeLegFreedom={enabled:true,verticalOffset:1.05,maxReach:2.8,smoothing:26,velocityCap:20};
+window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 AFRAME.registerComponent('football',{
 init(){this.v=new THREE.Vector3();this.p=new THREE.Vector3(0,.11,0);this.prev={};this.start('training');},
 start(mode){this.mode=mode;this.score=0;this.ai=0;this.time=180;this.ended=false;this.reset();this.hud();},
@@ -13,13 +15,22 @@ const e=document.getElementById(id);if(this.mode==='career'&&this.el.sceneEl.is(
 const state=window.halfFeet?.[id];if(!state)continue;
 const q=e.object3D.getWorldQuaternion(new THREE.Quaternion());
 const raw=e.object3D.getWorldPosition(new THREE.Vector3());
-raw.y=Math.max(.11,raw.y-1.05);
+const lf=window.halftimeLegFreedom||{};
+raw.y=raw.y-(lf.verticalOffset??1.05);
 const offset=new THREE.Vector3(0,state.bent?.08:0,state.bent?.14:-.11).applyQuaternion(q);
-raw.add(offset);raw.y=Math.max(.11,raw.y);
+raw.add(offset);
+
+// Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
+// Keep only a generous reach cap from the player's body to prevent tracking glitches.
+const bodyPos=document.getElementById('cam').object3D.getWorldPosition(new THREE.Vector3());
+bodyPos.y-=1.0;
+const fromBody=raw.clone().sub(bodyPos);
+const maxReach=lf.maxReach??2.8;
+if(fromBody.length()>maxReach)raw.copy(bodyPos).add(fromBody.setLength(maxReach));
 
 // VRFS-style smoothing: feet track quickly but do not jitter.
 state.smooth=state.smooth||raw.clone();
-state.smooth.lerp(raw,THREE.MathUtils.clamp(d*22,0,1));
+state.smooth.lerp(raw,THREE.MathUtils.clamp(d*(window.halftimeLegFreedom?.smoothing||26),0,1));
 const p=state.smooth.clone();
 
 state.mesh.position.copy(p);
@@ -29,8 +40,8 @@ if(state.bent)state.mesh.rotateX(-.72);
 const old=this.prev[id];
 if(old){
   const delta=p.clone().sub(old);
-  if(delta.length()<.55){
-    const footVel=delta.clone().divideScalar(Math.max(d,.001)).clampLength(0,17);
+  if(delta.length()<1.15){
+    const footVel=delta.clone().divideScalar(Math.max(d,.001)).clampLength(0,(window.halftimeLegFreedom?.velocityCap||20));
     const closest=old.clone().addScaledVector(delta,THREE.MathUtils.clamp(this.p.clone().sub(old).dot(delta)/Math.max(delta.lengthSq(),.000001),0,1));
     const n=this.p.clone().sub(closest);
     const dist=n.length();
