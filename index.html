@@ -2398,6 +2398,46 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
 </script>
 
 <script>
+/* PERSONAL BOOT SIGNATURE STUDIO */
+(function(){
+ const panel=document.getElementById('wardrobePanel');
+ if(!panel||document.getElementById('personalBootSignature'))return;
+ const wrap=document.createElement('section');wrap.id='personalBootSignature';
+ wrap.style.cssText='margin:14px 0;padding:14px;background:#10243a;border:1px solid #42617e;border-radius:12px;color:#eef6ff';
+ wrap.innerHTML='<h3>✍️ Sign your own boots</h3><p>Draw your signature below. Save it and it will appear on both of your boots in the game.</p><canvas id="personalBootSignCanvas" width="900" height="300" style="display:block;width:100%;height:135px;background:#fff;border-radius:8px;touch-action:none"></canvas><p><label>Ink colour <input id="personalBootSignColour" type="color" value="#172b43"></label> <label>Pen size <select id="personalBootSignSize"><option value="3">Fine</option><option value="6" selected>Medium</option><option value="10">Bold</option></select></label></p><button type="button" id="personalBootSignClear">CLEAR</button> <button type="button" id="personalBootSignSave">SAVE SIGNATURE TO BOOTS</button><p id="personalBootSignStatus">Your boots have no personal signature yet.</p>';
+ panel.append(wrap);
+ const canvas=wrap.querySelector('#personalBootSignCanvas'),ctx=canvas.getContext('2d'),status=wrap.querySelector('#personalBootSignStatus');
+ let down=false,ink=false,last=null;
+ const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};};
+ canvas.addEventListener('pointerdown',e=>{down=true;last=point(e);canvas.setPointerCapture(e.pointerId);ctx.fillStyle=wrap.querySelector('#personalBootSignColour').value;ctx.beginPath();ctx.arc(last.x,last.y,Number(wrap.querySelector('#personalBootSignSize').value)/2,0,Math.PI*2);ctx.fill();ink=true;});
+ canvas.addEventListener('pointermove',e=>{if(!down)return;const p=point(e);ctx.strokeStyle=wrap.querySelector('#personalBootSignColour').value;ctx.lineWidth=Number(wrap.querySelector('#personalBootSignSize').value);ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;ink=true;});
+ const stop=()=>{down=false;last=null;};canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);canvas.addEventListener('lostpointercapture',stop);
+ wrap.querySelector('#personalBootSignClear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ink=false;status.textContent='Signature cleared. Draw a new one before saving.';};
+ function apply(){
+  for(const state of Object.values(window.halfFeet||{})){
+   const mesh=state.mesh;if(!mesh)continue;
+   for(const old of mesh.children.filter(x=>x.userData.personalBootSignature))mesh.remove(old);
+   if(!profile.bootSignature)continue;
+   const img=new Image();img.onload=()=>{
+    const c=document.createElement('canvas');c.width=900;c.height=300;const x=c.getContext('2d');x.drawImage(img,0,0,900,300);
+    const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+    const mat=new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,depthWrite:false});
+    for(const side of [-1,1]){const decal=new THREE.Mesh(new THREE.PlaneGeometry(.135,.045),mat);decal.position.set(side*.080,.035,.045);decal.rotation.y=side*Math.PI/2;decal.rotation.z=-.08;decal.userData.personalBootSignature=true;mesh.add(decal);}
+   };img.src=profile.bootSignature;
+  }
+ }
+ window.refreshPersonalBootSignature=apply;
+ wrap.querySelector('#personalBootSignSave').onclick=()=>{
+  if(!ink){status.textContent='Draw your signature first.';return;}
+  profile.bootSignature=canvas.toDataURL('image/png');
+  try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}
+  apply();status.textContent='Saved! Your signature is now displayed on your boots.';
+ };
+ if(profile.bootSignature){const img=new Image();img.onload=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);ink=true;status.textContent='Your saved boot signature is ready. Draw again to change it.';};img.src=profile.bootSignature;apply();}
+})();
+</script>
+
+<script>
 /* HALFTIME STADIUM CREATOR */
 (function(){
  const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
