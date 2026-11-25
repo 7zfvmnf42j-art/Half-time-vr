@@ -659,7 +659,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     window.currentCityRoom=type;
     interior.setAttribute('visible',true);
     title.setAttribute('value',room[0]);
-    info.setAttribute('value',room[1]+(type==='pub'?' • Fans are inside':' • Walk around and browse'));
+    info.setAttribute('value',room[1]+(type==='pub'?' • Fans are inside • Trigger grabs objects':' • Walk around • Trigger grabs objects'));
     renderStock(type);
     const floor=interior.querySelector('a-plane');
     if(floor)floor.setAttribute('material','color:'+(type==='pub'?'#4b3a31':'#555f6c')+'; roughness:.82');
@@ -1006,6 +1006,194 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
       b.el.object3D.position.copy(p);
       if(Math.abs(p.x)>62||Math.abs(p.z)>62||p.y<-5){
         b.el.remove(); spawned.splice(i,1);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+<script>
+/* HALFTIME INTERIOR PROP PHYSICS */
+(function(){
+  const scene=document.querySelector('a-scene');
+  const interior=document.getElementById('cityInterior');
+  const left=document.getElementById('left');
+  const right=document.getElementById('right');
+  if(!scene||!interior||!left||!right)return;
+
+  const props=[];
+  const held={left:null,right:null};
+  const handPrev={left:new THREE.Vector3(),right:new THREE.Vector3()};
+  const handVel={left:new THREE.Vector3(),right:new THREE.Vector3()};
+  let last=performance.now();
+
+  function addProp(kind,x,y,z,color){
+    const e=document.createElement('a-entity');
+    e.classList.add('physicsProp');
+    e.dataset.kind=kind;
+    e.setAttribute('position',x+' '+y+' '+z);
+    if(kind==='ball'){
+      e.innerHTML='<a-sphere radius=".22" material="color:'+color+'; roughness:.65" shadow="cast:true; receive:true"></a-sphere>';
+      e.dataset.radius='.22';
+    }else if(kind==='cup'){
+      e.innerHTML='<a-cylinder radius=".11" height=".34" color="'+color+'" shadow="cast:true"></a-cylinder>';
+      e.dataset.radius='.16';
+    }else{
+      e.innerHTML='<a-box width=".42" height=".42" depth=".42" color="'+color+'" shadow="cast:true; receive:true"></a-box>';
+      e.dataset.radius='.3';
+    }
+    interior.append(e);
+    props.push({el:e,v:new THREE.Vector3(),heldBy:null,rest:false});
+    return e;
+  }
+
+  function clearProps(){
+    for(const p of props.splice(0))p.el.remove();
+    held.left=held.right=null;
+  }
+
+  function spawnRoomProps(type){
+    clearProps();
+    if(!type)return;
+    if(type==='pub'){
+      addProp('cup',-2.2,1.2,-2,'#ef4444');
+      addProp('cup',-1.7,1.2,-2,'#38bdf8');
+      addProp('cup',2.0,1.2,-2,'#f59e0b');
+      addProp('box',-3.7,.35,2.4,'#7c5735');
+      addProp('ball',3.2,.35,2.5,'#f8fafc');
+    }else if(type==='boots'){
+      addProp('box',-2.5,.35,1.7,'#1f2937');
+      addProp('box',0,.35,1.7,'#ef4444');
+      addProp('box',2.5,.35,1.7,'#38bdf8');
+    }else if(type==='kit'){
+      addProp('box',-2.5,.35,1.7,'#168bff');
+      addProp('box',0,.35,1.7,'#ffffff');
+      addProp('box',2.5,.35,1.7,'#a855f7');
+    }else if(type==='music'){
+      addProp('ball',-2.2,.35,1.8,'#ffffff');
+      addProp('ball',0,.35,1.8,'#facc15');
+      addProp('ball',2.2,.35,1.8,'#ff7733');
+    }else{
+      addProp('box',-2,.35,1.8,'#334155');
+      addProp('box',0,.35,1.8,'#22c55e');
+      addProp('box',2,.35,1.8,'#3b82f6');
+    }
+  }
+  window.spawnCityPhysicsProps=spawnRoomProps;
+
+  const oldEnter=window.enterCityRoom;
+  if(oldEnter){
+    window.enterCityRoom=function(type){
+      oldEnter(type);
+      setTimeout(()=>spawnRoomProps(type),0);
+    };
+  }
+  const oldExit=window.exitCityRoom;
+  if(oldExit){
+    window.exitCityRoom=function(){
+      clearProps();
+      oldExit();
+    };
+  }
+
+  // The hub calls local enterRoom directly, so watch the room marker too.
+  let lastRoom='';
+  function roomWatch(){
+    const room=window.inCityRoom?(window.currentCityRoom||''):'';
+    if(room!==lastRoom){
+      lastRoom=room;
+      if(room)spawnRoomProps(room); else clearProps();
+    }
+    requestAnimationFrame(roomWatch);
+  }
+  requestAnimationFrame(roomWatch);
+
+  function nearest(hand){
+    const hp=hand.object3D.getWorldPosition(new THREE.Vector3());
+    let best=null,bestD=.65;
+    for(const p of props){
+      if(p.heldBy)continue;
+      const wp=p.el.object3D.getWorldPosition(new THREE.Vector3());
+      const d=hp.distanceTo(wp);
+      if(d<bestD){bestD=d;best=p;}
+    }
+    return best;
+  }
+
+  function grab(side,hand){
+    if(!scene.is('vr-mode')||!window.inCityRoom)return;
+    const p=nearest(hand);
+    if(!p)return;
+    const worldPos=p.el.object3D.getWorldPosition(new THREE.Vector3());
+    const worldQuat=p.el.object3D.getWorldQuaternion(new THREE.Quaternion());
+    hand.object3D.attach(p.el.object3D);
+    p.el.object3D.position.set(0,-.04,-.18);
+    p.el.object3D.quaternion.identity();
+    p.heldBy=side;
+    p.v.set(0,0,0);
+    held[side]=p;
+    window.halfSound?.('menu');
+  }
+
+  function release(side,hand){
+    const p=held[side];
+    if(!p)return;
+    const wp=p.el.object3D.getWorldPosition(new THREE.Vector3());
+    const wq=p.el.object3D.getWorldQuaternion(new THREE.Quaternion());
+    interior.object3D.attach(p.el.object3D);
+    p.el.object3D.position.copy(interior.object3D.worldToLocal(wp.clone()));
+    p.el.object3D.quaternion.copy(wq);
+    p.v.copy(handVel[side]).multiplyScalar(.9).clampLength(0,9);
+    p.heldBy=null;
+    held[side]=null;
+  }
+
+  left.addEventListener('triggerdown',()=>grab('left',left));
+  right.addEventListener('triggerdown',()=>grab('right',right));
+  left.addEventListener('triggerup',()=>release('left',left));
+  right.addEventListener('triggerup',()=>release('right',right));
+
+  function tick(t){
+    const dt=Math.min(.035,(t-last)/1000||.016); last=t;
+    for(const [side,hand] of [['left',left],['right',right]]){
+      const hp=hand.object3D.getWorldPosition(new THREE.Vector3());
+      handVel[side].copy(hp).sub(handPrev[side]).divideScalar(Math.max(dt,.001)).clampLength(0,12);
+      handPrev[side].copy(hp);
+    }
+
+    if(window.inCityRoom){
+      for(const p of props){
+        if(p.heldBy)continue;
+        const o=p.el.object3D;
+        p.v.y-=9.81*dt;
+        o.position.addScaledVector(p.v,dt);
+
+        const r=Number(p.el.dataset.radius)||.2;
+        if(o.position.y<r){
+          o.position.y=r;
+          if(p.v.y<-.5)p.v.y=-p.v.y*.38; else p.v.y=0;
+          p.v.x*=.92;p.v.z*=.92;
+          if(Math.hypot(p.v.x,p.v.z)<.04){p.v.x=0;p.v.z=0;}
+        }
+        if(o.position.x<-5.45){o.position.x=-5.45;p.v.x=Math.abs(p.v.x)*.45;}
+        if(o.position.x>5.45){o.position.x=5.45;p.v.x=-Math.abs(p.v.x)*.45;}
+        if(o.position.z<-5.35){o.position.z=-5.35;p.v.z=Math.abs(p.v.z)*.45;}
+        if(o.position.z>5.35){o.position.z=5.35;p.v.z=-Math.abs(p.v.z)*.45;}
+
+        // Hands can knock loose props around without grabbing them.
+        for(const [side,hand] of [['left',left],['right',right]]){
+          const hp=hand.object3D.getWorldPosition(new THREE.Vector3());
+          const pp=p.el.object3D.getWorldPosition(new THREE.Vector3());
+          const d=hp.distanceTo(pp);
+          if(d<r+.16 && handVel[side].length()>.45){
+            const push=handVel[side].clone().multiplyScalar(.72).clampLength(0,7);
+            p.v.lerp(push,.72);
+            p.v.y=Math.max(p.v.y,.35);
+          }
+        }
+        o.rotation.x+=p.v.z*dt*1.5;
+        o.rotation.z-=p.v.x*dt*1.5;
       }
     }
     requestAnimationFrame(tick);
