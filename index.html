@@ -345,9 +345,10 @@ for(const id of ['left','right']){
   mesh.add(toe);
 
   // Full visible leg: upper leg + lower leg stretch between hip, knee and foot.
-  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.078,.095,1,14),mat(sockColor));
-  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.058,.078,1,14),mat(sockColor));
-  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.078,14,12),mat(sockColor));
+  // Slim stick-style legs. Keep the boot and foot meshes above completely unchanged.
+  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.026,.031,1,10),mat(sockColor));
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.021,.026,1,10),mat(sockColor));
+  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.026,10,8),mat(sockColor));
   legGroup.add(thigh,lower,kneeCap);
 
   for(const root of [mesh,legGroup])root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
