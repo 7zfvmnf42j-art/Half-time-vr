@@ -239,23 +239,40 @@ function save(){try{localStorage.setItem('halftime-profile',JSON.stringify(profi
 function syncWorldMode(){
  const mode=document.getElementById('mode')?.value||'training';
  const career=mode==='career';
+ const scene=document.querySelector('a-scene');
  const challenge=document.getElementById('trainingChallenge');
- if(challenge)challenge.setAttribute('visible',mode==='training');
+ if(challenge)challenge.setAttribute('visible',!career && mode==='training');
+ // The city is its own world and must never remain visible during a career match.
  const city=document.getElementById('cityHub');
  if(city)city.setAttribute('visible',!career);
  const careerGround=document.getElementById('careerStadiumEnvironment');
  if(careerGround)careerGround.setAttribute('visible',career);
- for(const id of ['trainingPitch','trainingGoalLeftPost','trainingGoalRightPost','trainingGoalCrossbar','trainingGoalNetFar','trainingGoalNearLeftPost','trainingGoalNearRightPost','trainingGoalNearCrossbar','trainingGoalNearNet','bot']){
-  const el=document.getElementById(id);if(el)el.setAttribute('visible',!career && id!=='bot' ? true : id==='bot' && mode!=='training');
- }
- // Hide the training pitch's unlabelled painted lines as well.
- const scene=document.querySelector('a-scene');
+ // All top-level primitive geometry belongs to the original training ground
+ // (pitch, goals, painted lines, perimeter and background buildings).
+ // Career stadium geometry is inside its own entity, so it is not affected.
  if(scene){
-  const trainingLines=[...scene.querySelectorAll('a-box')].filter(el=>{
-   const p=el.getAttribute('position');
-   return p && Number(p.y)<=.02 && Number(el.getAttribute('height')||0)<=.03 && (Number(el.getAttribute('width')||0)>=7 || Number(el.getAttribute('depth')||0)>=11);
+  for(const el of [...scene.children]){
+   const tag=el.tagName?.toLowerCase();
+   if(['a-plane','a-box','a-ring'].includes(tag)){
+    el.setAttribute('visible',!career);
+   }
+  }
+ }
+ // Keep player/ball and career teams visible; hide the training goalkeeper in Career.
+ const bot=document.getElementById('bot');
+ if(bot)bot.setAttribute('visible',!career && mode!=='training');
+ if(window.requestAnimationFrame){
+  requestAnimationFrame(()=>{
+   if(document.getElementById('mode')?.value!==mode)return;
+   const c=document.getElementById('cityHub');
+   if(c)c.setAttribute('visible',!career);
+   const g=document.getElementById('careerStadiumEnvironment');
+   if(g)g.setAttribute('visible',career);
+   if(scene)for(const el of [...scene.children]){
+    const tag=el.tagName?.toLowerCase();
+    if(['a-plane','a-box','a-ring'].includes(tag))el.setAttribute('visible',!career);
+   }
   });
-  trainingLines.forEach(el=>el.setAttribute('visible',!career));
  }
 }
 document.getElementById('mode')?.addEventListener('change',syncWorldMode);
