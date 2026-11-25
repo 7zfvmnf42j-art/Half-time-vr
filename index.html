@@ -433,4 +433,124 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   requestAnimationFrame(ambience);
 })();
 </script>
+
+<script>
+/* HALFTIME PUB FAN UPDATE V2 */
+(function(){
+  const pub=document.getElementById('halftimePub');
+  if(!pub)return;
+
+  const fans=[...pub.querySelectorAll('.aiFan')];
+  if(!fans.length)return;
+
+  const routes=[
+    [[-6,-5],[-5,-2],[-4,1],[-5,4]],
+    [[-3,-5],[-2,-2],[-1,1],[-2,5]],
+    [[3,-5],[2,-2],[1,1],[2,5]],
+    [[6,-5],[5,-2],[4,1],[5,4]]
+  ];
+
+  const walkers=fans.slice(0,8).map((e,i)=>({
+    e,
+    route:routes[i%routes.length],
+    step:i%4,
+    speed:.18+(i%3)*.03,
+    phase:i*.8
+  }));
+
+  let crowdOn=true;
+  window.halftimeCrowdOn=()=>crowdOn;
+
+  const pages=document.getElementById('halfPages');
+  const pubPage=[...pages?.children||[]].find(p=>p.querySelector('h2')?.textContent==='HALFTIME Pub');
+  if(pubPage){
+    const row=document.createElement('p');
+    const toggle=document.createElement('button');
+    toggle.textContent='Crowd ambience: ON';
+    const density=document.createElement('button');
+    density.textContent='Fans: Normal';
+    row.append(toggle,density);
+    pubPage.append(row);
+
+    toggle.onclick=()=>{
+      crowdOn=!crowdOn;
+      toggle.textContent='Crowd ambience: '+(crowdOn?'ON':'OFF');
+      if(!crowdOn) window.speechSynthesis?.cancel();
+    };
+
+    let dense=false;
+    density.onclick=()=>{
+      dense=!dense;
+      density.textContent='Fans: '+(dense?'Busy':'Normal');
+      fans.forEach((fan,i)=>{
+        fan.setAttribute('visible',dense||i<12);
+      });
+    };
+  }
+
+  let last=performance.now();
+  function move(t){
+    const dt=Math.min(.05,(t-last)/1000); last=t;
+    if(window.inPub){
+      walkers.forEach((w,i)=>{
+        const pos=w.e.object3D.position;
+        const target=w.route[w.step];
+        const dx=target[0]-pos.x, dz=target[1]-pos.z;
+        const dist=Math.hypot(dx,dz);
+        if(dist<.18){w.step=(w.step+1)%w.route.length;}
+        else{
+          pos.x+=dx/dist*w.speed*dt;
+          pos.z+=dz/dist*w.speed*dt;
+          w.e.object3D.rotation.y=Math.atan2(dx,dz);
+        }
+      });
+    }
+    requestAnimationFrame(move);
+  }
+  requestAnimationFrame(move);
+
+  let nextChant=performance.now()+6000;
+  const chants=['Come on!','Halftime!','What a finish!','Go on!','Great pass!','Unlucky!'];
+  function crowdLoop(t){
+    if(window.inPub&&crowdOn&&t>nextChant){
+      nextChant=t+7000+Math.random()*7000;
+      if(window.speechSynthesis&&window.SpeechSynthesisUtterance&&!window.speechSynthesis.speaking){
+        const u=new SpeechSynthesisUtterance(chants[Math.floor(Math.random()*chants.length)]);
+        u.lang='en-GB';
+        u.rate=.9+Math.random()*.2;
+        u.pitch=.8+Math.random()*.35;
+        u.volume=.1;
+        window.speechSynthesis.speak(u);
+      }
+    }
+    requestAnimationFrame(crowdLoop);
+  }
+  requestAnimationFrame(crowdLoop);
+
+  // Make a few fans gather near the TV when a goal is scored.
+  let oldScore='0-0', gatherUntil=0;
+  function reactions(t){
+    const f=document.getElementById('ball')?.components?.football;
+    if(f){
+      const score=f.score+'-'+f.ai;
+      if(score!==oldScore){
+        oldScore=score;
+        gatherUntil=t+3500;
+      }
+    }
+    if(gatherUntil>t){
+      fans.slice(0,6).forEach((fan,i)=>{
+        const targetX=-2.5+i;
+        const targetZ=-6.3-(i%2)*.35;
+        const p=fan.object3D.position;
+        p.x+=(targetX-p.x)*.035;
+        p.z+=(targetZ-p.z)*.035;
+        p.y=.08*Math.abs(Math.sin(t*.015+i));
+      });
+    }
+    requestAnimationFrame(reactions);
+  }
+  requestAnimationFrame(reactions);
+})();
+</script>
 </body></html>
