@@ -235,27 +235,34 @@ AFRAME.registerComponent('move',{init(){this.axis={x:0,y:0};this.el.addEventList
 const $=id=>document.getElementById(id);const scene=document.querySelector('a-scene');let profile={nick:'Player',kit:'#168bff',goals:0,careerGoals:0,playstyle:'Power Shot',xp:0,level:1};try{Object.assign(profile,JSON.parse(localStorage.getItem('halftime-profile')||'{}'))}catch(e){};if(profile.playerId==='HT-60E1ADDBE5421A47'){profile.playerId='HT-001';try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}}if(profile.playerId==='HT-F9F995AAF721939F'){profile.playerId='HT-002';profile.demoBadges=Array.from(new Set([...(profile.demoBadges||[]),'Volt Verified']));try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}}if(!/^HT-(?:[A-F0-9]{16}|00[12])$/.test(profile.playerId||'')){profile.playerId='HT-'+Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();}if(profile.playerId==='HT-002'&&!(profile.demoBadges||[]).includes('Volt Verified')){profile.demoBadges=Array.from(new Set([...(profile.demoBadges||[]),'Volt Verified']));try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}}function progressionLevel(){return Math.max(1,Math.floor(Math.sqrt(Math.max(0,profile.xp||0)/100))+1)}
 function updateProgression(){profile.level=progressionLevel();const base=(profile.level-1)*(profile.level-1)*100;const next=profile.level*profile.level*100;const bar=$('progressBar');if(bar)bar.style.width=Math.min(100,Math.max(0,((profile.xp-base)/(next-base))*100))+'%';const label=$('progressLabel');if(label)label.textContent='LEVEL '+profile.level+' • '+(profile.xp||0)+' XP • '+Math.max(0,next-(profile.xp||0))+' XP to next level';}
 window.awardXP=(amount,reason)=>{const before=progressionLevel();profile.xp=Math.max(0,profile.xp||0)+Math.max(0,Math.floor(amount||0));updateProgression();save();const msg=$('xpNotice');if(msg)msg.textContent='+'+Math.floor(amount||0)+' XP • '+reason+(progressionLevel()>before?' • LEVEL UP!':'');};
-function save(){try{localStorage.setItem('halftime-profile',JSON.stringify(profile))}catch(e){};$('stats').textContent='Training goals: '+profile.goals+' | Career goals: '+(profile.careerGoals||0)+(profile.goals>=100?' • FINISHER':'');updateProgression();} $('nick').value=profile.nick;$('kit').value=profile.kit;$('nick').onchange=()=>{profile.nick=$('nick').value;save()};$('kit').onchange=()=>{profile.kit=$('kit').value;document.querySelectorAll('.boot').forEach(e=>e.setAttribute('color',profile.kit));save()};window.recordGoal=()=>{profile.goals++;profile.xp=(profile.xp||0)+20;save();};window.recordCareerGoal=()=>{profile.careerGoals=(profile.careerGoals||0)+1;profile.xp=(profile.xp||0)+35;save();};save();$('open').onclick=()=>{$('menu').hidden=!$('menu').hidden};$('play').onclick=()=>{if($('mode').value==='career')window.prepareCareerVenue?.();else{document.getElementById('careerStadiumEnvironment')?.setAttribute('visible',false);window.hideCareer?.();}let f=$('ball').components.football;if(f)f.start($('mode').value);if($('mode').value==='career')window.spawnCareerPlayers?.();syncWorldMode();$('rig').object3D.position.set(0,0,3);$('rig').object3D.rotation.set(0,0,0);$('bot').object3D.position.set(0,0,-8);window.applyHalftimeBallLayout?.();$('menu').hidden=true};$('playNow').onclick=()=>{$('mode').value='training';$('play').click();};scene.addEventListener('enter-vr',()=>{$('menu').hidden=true});$('reset').onclick=()=>{let f=$('ball').components.football;if(f){f.p.set(0,.11,0);f.v.set(0,0,0)}};
+function save(){try{localStorage.setItem('halftime-profile',JSON.stringify(profile))}catch(e){};$('stats').textContent='Training goals: '+profile.goals+' | Career goals: '+(profile.careerGoals||0)+(profile.goals>=100?' • FINISHER':'');updateProgression();} $('nick').value=profile.nick;$('kit').value=profile.kit;$('nick').onchange=()=>{profile.nick=$('nick').value;save()};$('kit').onchange=()=>{profile.kit=$('kit').value;document.querySelectorAll('.boot').forEach(e=>e.setAttribute('color',profile.kit));save()};window.recordGoal=()=>{profile.goals++;profile.xp=(profile.xp||0)+20;save();};window.recordCareerGoal=()=>{profile.careerGoals=(profile.careerGoals||0)+1;profile.xp=(profile.xp||0)+35;save();};save();$('open').onclick=()=>{$('menu').hidden=!$('menu').hidden};$('play').onclick=()=>{const career=$('mode').value==='career';if(career)window.prepareCareerVenue?.();else{document.getElementById('careerStadiumEnvironment')?.setAttribute('visible',false);window.hideCareer?.();}let f=$('ball').components.football;if(f)f.start($('mode').value);$('rig').object3D.position.set(0,0,3);$('rig').object3D.rotation.set(0,0,0);$('bot').object3D.position.set(0,0,-8);syncWorldMode();if(career){const spawn=()=>{if($('mode').value==='career')window.spawnCareerPlayers?.();};requestAnimationFrame(()=>requestAnimationFrame(spawn));}window.applyHalftimeBallLayout?.();$('menu').hidden=true};$('playNow').onclick=()=>{$('mode').value='training';$('play').click();};scene.addEventListener('enter-vr',()=>{$('menu').hidden=true});$('reset').onclick=()=>{let f=$('ball').components.football;if(f){f.p.set(0,.11,0);f.v.set(0,0,0)}};
 // Keep every training/city prop out of Career Mode and show the career ground only.
+// Keep the complete training pitch away from the Career stadium, even if A-Frame
+// reapplies primitive visibility during its component update.
+const trainingWorldObjects=[];
 function syncWorldMode(){
  const mode=document.getElementById('mode')?.value||'training';
  const career=mode==='career';
  const scene=document.querySelector('a-scene');
  const setVisible=(el,on)=>{if(!el)return;el.setAttribute('visible',on);if(el.object3D)el.object3D.visible=on;};
  setVisible(document.getElementById('trainingChallenge'),!career && mode==='training');
- // Career matches use their own generated stadium. Explicitly switch off every
- // training-ground surface so the old pitch cannot show through at spawn.
  setVisible(document.getElementById('cityHub'),!career);
  setVisible(document.getElementById('cityInterior'),!career);
  setVisible(document.getElementById('careerStadiumEnvironment'),career);
  if(scene){
   for(const el of [...scene.children]){
    const tag=el.tagName?.toLowerCase();
-   if(['a-plane','a-box','a-ring'].includes(tag))setVisible(el,!career);
+   if(!['a-plane','a-box','a-ring'].includes(tag))continue;
+   if(!el.__trainingOriginalPosition)el.__trainingOriginalPosition=el.object3D.position.clone();
+   if(career){
+    el.object3D.position.set(20000,0,0);
+    setVisible(el,false);
+   }else{
+    el.object3D.position.copy(el.__trainingOriginalPosition);
+    setVisible(el,true);
+   }
   }
  }
- setVisible(document.getElementById('worldGround'),!career);
- setVisible(document.getElementById('trainingPitch'),!career);
  const bot=document.getElementById('bot');
  setVisible(bot,!career && mode!=='training');
  if(window.requestAnimationFrame){
@@ -264,12 +271,14 @@ function syncWorldMode(){
    setVisible(document.getElementById('cityHub'),!career);
    setVisible(document.getElementById('cityInterior'),!career);
    setVisible(document.getElementById('careerStadiumEnvironment'),career);
-   setVisible(document.getElementById('worldGround'),!career);
-   setVisible(document.getElementById('trainingPitch'),!career);
    if(scene)for(const el of [...scene.children]){
     const tag=el.tagName?.toLowerCase();
-    if(['a-plane','a-box','a-ring'].includes(tag))setVisible(el,!career);
+    if(!['a-plane','a-box','a-ring'].includes(tag))continue;
+    if(career){el.object3D.position.set(20000,0,0);setVisible(el,false);}
+    else{el.object3D.position.copy(el.__trainingOriginalPosition);setVisible(el,true);}
    }
+   setVisible(document.getElementById('careerPlayersContainer'),career);
+   if(!career)window.hideCareer?.();
   });
  }
 }
