@@ -6,7 +6,7 @@ start(mode){this.mode=mode;this.score=0;this.ai=0;this.time=180;this.ended=false
 reset(){this.p.set(0,.11,0);this.v.set(0,0,0);this.prev={};this.goalAt=0;this.restartAt=0;this.lastTouch=0;this.spin?.set(0,0,0);},
 restart(label,x,z,team,t){this.p.set(x,.11,z);this.v.set(0,0,0);this.spin?.set(0,0,0);this.restartAt=t+1600;this.restartTeam=team;this.lastTouch=team;this.notice=label+' — '+(team===1?'Your team':'Opposition');this.noticeUntil=t+3500;},hud(){document.getElementById('score')?.setAttribute('value',`HALFTIME | ${this.score} - ${this.ai} | ${this.mode==='training'?'TRAINING':this.ended?'FULL TIME':Math.floor(this.time/60)+':'+String(Math.floor(this.time%60)).padStart(2,'0')}`);},
 tick(t,ms){let d=Math.min(ms/1000,.04);if(this.goalAt){if(t>=this.goalAt){if(this.mode==='career'){this.goalAt=0;this.restart('Kick-off',0,0,this.kickoffTeam,t);}else this.reset();}else{this.el.object3D.position.copy(this.p);return;}}if(this.restartAt){if(t<this.restartAt){this.el.object3D.position.copy(this.p);return;}this.restartAt=0;if(this.restartTeam===-1){const targetZ=this.notice?.startsWith('Penalty')?52.5:Math.min(50,this.p.z+12);const dir=new THREE.Vector3(-this.p.x*.3,0,targetZ-this.p.z).normalize();this.v.copy(dir.multiplyScalar(this.notice?.startsWith('Penalty')?15:8));this.v.y=this.notice?.startsWith('Throw-in')?2.8:.6;this.lastTouch=-1;}}if(!d||this.ended||window.matchPaused?.()||document.getElementById('vrMenu')?.getAttribute('visible'))return;if(window.ownerFrozen?.()){this.v.set(0,0,0);this.el.object3D.position.copy(this.p);return;}
-if(this.mode!=='training'){this.time=Math.max(0,this.time-d);if(!this.time){this.ended=true;if(this.mode==='career'&&!window.onlineCareerGuest)window.finishCareer?.(this.score,this.ai);this.hud();return;}}
+if(this.mode!=='training'&&!window.onlineCareerGuest){this.time=Math.max(0,this.time-d);if(!this.time){this.ended=true;if(this.mode==='career'&&!window.onlineCareerGuest&&!window.onlineCareerActive)window.finishCareer?.(this.score,this.ai);this.hud();return;}}
 for(const id of ['left','right']){
 const e=document.getElementById(id);if(this.mode==='career'&&this.el.sceneEl.is('vr-mode')&&this.p.y>.65&&t>(this.lastHandball||0)+3000&&e.object3D.getWorldPosition(new THREE.Vector3()).distanceTo(this.p)<.19){this.lastHandball=t;const penalty=this.p.z>36&&Math.abs(this.p.x)<20.16;this.restart(penalty?'Penalty — handball':'Free kick — handball',penalty?0:this.p.x,penalty?41.5:this.p.z,-1,t);return;}if(!this.el.sceneEl.is('vr-mode')||!e.object3D.visible){delete this.prev[id];continue;}
 const state=window.halfFeet?.[id];if(!state)continue;
@@ -64,6 +64,11 @@ if(old){
   }
 }
 this.prev[id]=p;
+}
+if(window.onlineCareerGuest){
+  this.el.object3D.position.copy(this.p);
+  this.hud();
+  return;
 }
 if(this.spin){if(this.p.y>.13)this.v.addScaledVector(this.spin.clone().cross(this.v),.009*d);this.spin.multiplyScalar(Math.exp(-1.5*d));}
 let bot=document.getElementById('bot');if(this.mode==='career'){if(bot)bot.setAttribute('visible',false);if(!window.onlineCareerGuest)window.careerTick?.(this,t,d);}else if(bot){window.hideCareer?.();bot.setAttribute('visible',this.mode!=='training');if(this.mode!=='training'){let q=bot.object3D.position;let target=this.mode==='penalty'?new THREE.Vector3(this.p.x,0,-10.7):new THREE.Vector3(this.p.x,0,this.p.z);target.x=THREE.MathUtils.clamp(target.x,-6.8,6.8);target.z=THREE.MathUtils.clamp(target.z,-10.7,10.7);let delta=target.sub(q);delta.y=0;q.add(delta.clampLength(0,d*2.1));if(Math.hypot(q.x-this.p.x,q.z-this.p.z)<.65&&this.p.y<1.1&&t>(this.lastBot||0)+800){this.v.set(-this.p.x*.2,.5,5);this.lastBot=t;}}}
@@ -455,7 +460,8 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   function recalibrate(){
     // In headset mode the camera's local Y comes from the tracked headset.
     // Aim for a comfortable standing eye height while preserving X/Z location.
-    const headY=cam.object3D.position.y;
+    const headWorld=cam.object3D.getWorldPosition(new THREE.Vector3());
+    const headY=headWorld.y-rig.object3D.position.y;
     const targetEye=1.6;
     floorOffset=THREE.MathUtils.clamp(targetEye-headY,-1.2,1.2);
     rig.object3D.position.y=floorOffset;
