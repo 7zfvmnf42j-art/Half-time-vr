@@ -176,4 +176,95 @@ function stop(){window.speechSynthesis?.cancel();playing=false;clearInterval(tim
 button.onclick=async()=>{if(playing){stop();return;}try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();master=ctx.createGain();master.gain.value=Number(volume.value)/100*.45;master.connect(ctx.destination);next=ctx.currentTime+.05;step=0;playing=true;timer=setInterval(schedule,40);schedule();button.textContent='Pause music';status.textContent='Playing '+select.options[select.selectedIndex].text;}catch(e){status.textContent='Audio unavailable on this device';}};
 volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/100*.45,ctx.currentTime,.03);};select.onchange=()=>{if(playing){step=0;status.textContent='Playing '+select.options[select.selectedIndex].text;}};tab.onclick=()=>{for(const p of pages.children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));};for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});window.addEventListener('pagehide',stop);
 })();
-</script></body></html>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
+<script>
+/* HALFTIME ONLINE BETA */
+(function(){
+  const SUPA_URL='https://tumddybiqdokmvlmvdbx.supabase.co';
+  const SUPA_KEY='sb_publishable_12NvhZECaloq4_pOvnDFtQ_r9EeyfJk';
+  const sb=window.supabase?.createClient?.(SUPA_URL,SUPA_KEY);
+  if(!sb) return;
+
+  const nav=document.getElementById('halfNav'), pages=document.getElementById('halfPages');
+  if(!nav||!pages) return;
+  const tab=document.createElement('button'); tab.textContent='Online BETA'; nav.append(tab);
+  const page=document.createElement('section'); page.className='halfPage'; page.hidden=true; pages.append(page);
+  page.innerHTML='<h2>HALFTIME ONLINE BETA</h2><p>Create a room or join your mate with a 6-character code.</p><p><button id="onlineCreate">Create room</button> <input id="onlineCode" maxlength="6" placeholder="ROOM CODE" style="text-transform:uppercase"> <button id="onlineJoin">Join room</button></p><p id="onlineStatus">Not connected</p><p id="onlinePlayers"></p><button id="onlineLeave" disabled>Leave room</button><p><small>Beta: live room presence, player movement and ball syncing. Best with 2 players while we test it.</small></p>';
+  const status=page.querySelector('#onlineStatus'), players=page.querySelector('#onlinePlayers'), input=page.querySelector('#onlineCode'), leaveBtn=page.querySelector('#onlineLeave');
+  let ch=null, room='', host=false, subscribed=false, lastSend=0, lastBall=0;
+  const remotes=new Map();
+  const myKey=(profile?.playerId||('GUEST-'+Math.random().toString(36).slice(2,8))).toUpperCase();
+
+  function remoteEntity(id,nick,color){
+    let e=remotes.get(id);
+    if(e) return e;
+    e=document.createElement('a-entity');
+    e.setAttribute('data-online-player',id);
+    e.innerHTML='<a-cylinder radius=".26" height=".9" position="0 .95 0" color="'+(color||'#f43f5e')+'"></a-cylinder><a-sphere radius=".22" position="0 1.62 0" color="#c89570"></a-sphere><a-text value="'+String(nick||'Player').replace(/[<>&"]/g,'')+'" align="center" position="0 2 0" width="3" color="white"></a-text>';
+    scene.append(e); remotes.set(id,e); return e;
+  }
+  function clearRemotes(){for(const e of remotes.values())e.remove();remotes.clear();}
+  function roomCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
+  function presenceList(){
+    if(!ch) return;
+    const state=ch.presenceState(); let n=0;
+    for(const list of Object.values(state)) for(const p of list){ n++; if(p.playerId!==myKey) remoteEntity(p.playerId,p.nick,p.kit); }
+    players.textContent='Players online: '+n+(host?' • You are host':'');
+  }
+  async function connect(code,isHost){
+    code=(code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    if(code.length!==6){status.textContent='Enter a 6-character room code.';return;}
+    await disconnect();
+    room=code; host=isHost; input.value=room; status.textContent='Connecting to '+room+'…';
+    ch=sb.channel('halftime-room-'+room,{config:{presence:{key:myKey},broadcast:{self:false}}});
+    ch.on('presence',{event:'sync'},presenceList);
+    ch.on('presence',{event:'leave'},presenceList);
+    ch.on('broadcast',{event:'player'},({payload})=>{
+      if(!payload||payload.id===myKey) return;
+      const e=remoteEntity(payload.id,payload.nick,payload.kit);
+      if(payload.p)e.object3D.position.set(payload.p[0],payload.p[1],payload.p[2]);
+      if(payload.y!=null)e.object3D.rotation.y=payload.y;
+    });
+    ch.on('broadcast',{event:'ball'},({payload})=>{
+      if(host||!payload?.p) return;
+      const f=document.getElementById('ball')?.components?.football;
+      if(f){f.p.set(payload.p[0],payload.p[1],payload.p[2]);if(payload.v)f.v.set(payload.v[0],payload.v[1],payload.v[2]);}
+    });
+    ch.on('broadcast',{event:'goal'},({payload})=>{
+      const f=document.getElementById('ball')?.components?.football;if(!f||host)return;
+      if(payload){f.score=payload.score||0;f.ai=payload.ai||0;f.hud?.();}
+    });
+    ch.subscribe(async s=>{
+      if(s==='SUBSCRIBED'){
+        subscribed=true; leaveBtn.disabled=false; status.textContent='ONLINE • Room '+room;
+        await ch.track({playerId:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',joined_at:new Date().toISOString()});
+        const f=document.getElementById('ball')?.components?.football; if(f) f.start('training');
+        document.getElementById('menu').hidden=true;
+      } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'){status.textContent='Could not connect. Try again.';}
+    });
+  }
+  async function disconnect(){
+    subscribed=false; leaveBtn.disabled=true; clearRemotes();
+    if(ch){try{await ch.untrack();}catch(e){} try{await sb.removeChannel(ch);}catch(e){} ch=null;}
+    if(room) status.textContent='Left room '+room; room=''; host=false; players.textContent='';
+  }
+  page.querySelector('#onlineCreate').onclick=()=>connect(roomCode(),true);
+  page.querySelector('#onlineJoin').onclick=()=>connect(input.value,false);
+  leaveBtn.onclick=disconnect;
+  tab.onclick=()=>{for(const p of pages.children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));};
+  for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
+
+  function loop(t){
+    if(subscribed&&ch){
+      const rig=document.getElementById('rig')?.object3D;
+      if(rig&&t-lastSend>90){lastSend=t;ch.send({type:'broadcast',event:'player',payload:{id:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',p:[rig.position.x,rig.position.y,rig.position.z],y:rig.rotation.y}});}
+      if(host&&t-lastBall>66){lastBall=t;const f=document.getElementById('ball')?.components?.football;if(f)ch.send({type:'broadcast',event:'ball',payload:{p:[f.p.x,f.p.y,f.p.z],v:[f.v.x,f.v.y,f.v.z]}});}
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  window.addEventListener('pagehide',disconnect);
+})();
+</script>
+</body></html>
