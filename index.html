@@ -110,7 +110,7 @@ AFRAME.registerComponent('move',{init(){this.axis={x:0,y:0};this.el.addEventList
     <a-box position="0 2 0" width="7" height="4" depth="6" material="color:#5b3a29; roughness:.88" shadow="cast:true; receive:true"></a-box>
     <a-box position="0 1.1 3.02" width="1.7" height="2.2" depth=".12" color="#2b211b"></a-box>
     <a-text value="HALFTIME PUB" position="0 3.3 3.08" align="center" width="5" color="#ffd166"></a-text>
-    <a-plane class="cityDoor" data-room="pub" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".18"></a-plane>
+    <a-plane class="cityDoor" data-room="pub" position="0 1.1 3.13" width="2.05" height="2.35" color="#111827" opacity=".03" material="transparent:true"></a-plane><a-text value="WALK IN" position="0 2.55 3.16" align="center" width="2.6" color="#ffd166"></a-text>
   <a-box position="0 4.22 0" width="7.35" height=".38" depth="6.35" color="#3b241a" shadow="cast:true"></a-box><a-box position="-2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box><a-box position="2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box></a-entity>
 
   <a-entity id="cityShop1" position="0 0 -5">
@@ -692,7 +692,23 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   document.getElementById('cityExitDoor')?.addEventListener('click',exitRoom);
 
   /* AUTO CITY DOOR ENTRY */
+  /* DEDICATED PUB WALK-IN TRIGGER */
   let doorCooldown=0;
+  function pubWalkIn(){
+    if(window.inCityRoom||performance.now()<doorCooldown)return false;
+    const pub=document.querySelector('.cityDoor[data-room="pub"]');
+    if(!pub)return false;
+    const wp=new THREE.Vector3();
+    pub.object3D.getWorldPosition(wp);
+    const rp=rig.object3D.position;
+    const dx=Math.abs(wp.x-rp.x), dz=Math.abs(wp.z-rp.z);
+    if(dx<1.35&&dz<1.75){
+      doorCooldown=performance.now()+1400;
+      enterRoom('pub');
+      return true;
+    }
+    return false;
+  }
   function autoDoorTick(){
     const now=performance.now();
     if(now>doorCooldown){
@@ -708,6 +724,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
           }
         }
       }else{
+        if(pubWalkIn()){requestAnimationFrame(autoDoorTick);return;}
         for(const d of document.querySelectorAll('.cityDoor')){
           const wp=new THREE.Vector3();
           d.object3D.getWorldPosition(wp);
@@ -739,7 +756,10 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   document.getElementById('right')?.addEventListener('abuttondown',()=>{
     if(!scene.is('vr-mode'))return;
     if(document.getElementById('vrMenu')?.getAttribute('visible'))return;
-    if(window.inCityRoom){exitRoom();return;}
+    if(window.inCityRoom){
+      if(window.currentCityRoom!=='pub'){exitRoom();return;}
+      return;
+    }
     const d=nearestDoor();
     if(d)enterRoom(d.dataset.room);
   });
