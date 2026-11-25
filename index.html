@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
-AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());p.y=p.y-1.05;this.el.object3D.position.copy(p);}});
+AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
 window.halftimeBallPhysics={airDrag:.045,groundFriction:.48,bounce:.46,gravity:9.81,touchAssist:.46,kickPower:1.22,maxSpeed:32};
-window.halftimeLegFreedom={enabled:true,verticalOffset:1.05,maxReach:2.8,smoothing:26,velocityCap:20};
+window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:999,smoothing:28,velocityCap:24};
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 AFRAME.registerComponent('football',{
 init(){this.v=new THREE.Vector3();this.p=new THREE.Vector3(0,.11,0);this.prev={};this.start('training');},
@@ -16,17 +16,13 @@ const state=window.halfFeet?.[id];if(!state)continue;
 const q=e.object3D.getWorldQuaternion(new THREE.Quaternion());
 const raw=e.object3D.getWorldPosition(new THREE.Vector3());
 const lf=window.halftimeLegFreedom||{};
-raw.y=raw.y-(lf.verticalOffset??1.05);
-const offset=new THREE.Vector3(0,state.bent?.08:0,state.bent?.14:-.11).applyQuaternion(q);
+raw.y=raw.y-(lf.verticalOffset??0);
+const offset=new THREE.Vector3(0,state.bent?.04:0,state.bent?.16:-.14).applyQuaternion(q);
 raw.add(offset);
 
 // Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
 // Keep only a generous reach cap from the player's body to prevent tracking glitches.
-const bodyPos=document.getElementById('cam').object3D.getWorldPosition(new THREE.Vector3());
-bodyPos.y-=1.0;
-const fromBody=raw.clone().sub(bodyPos);
-const maxReach=lf.maxReach??2.8;
-if(fromBody.length()>maxReach)raw.copy(bodyPos).add(fromBody.setLength(maxReach));
+// True free tracking: no body reach clamp. The virtual foot follows the tracked controller freely.
 
 // VRFS-style smoothing: feet track quickly but do not jitter.
 state.smooth=state.smooth||raw.clone();
@@ -196,7 +192,41 @@ const el=document.createElement('div');el.style.cssText='padding:8px;color:white
 fetch('https://tumddybiqdokmvlmvdbx.supabase.co/rest/v1/',{headers:{apikey:'sb_publishable_12NvhZECaloq4_pOvnDFtQ_r9EeyfJk'}}).then(r=>{el.textContent=r.ok?'Online server: connected (multiplayer pending)':'Online server: response '+r.status;}).catch(()=>{el.textContent='Online server: connection failed';});
 })();
 
-(function(){window.halfFeet={};for(const id of ['left','right']){const e=$(id),mesh=new THREE.Group();scene.object3D.add(mesh);mesh.visible=false;const state=window.halfFeet[id]={mesh,bent:false};e.addEventListener('triggerdown',()=>state.bent=true);e.addEventListener('triggerup',()=>state.bent=false);scene.addEventListener('enter-vr',()=>mesh.visible=true);scene.addEventListener('exit-vr',()=>{mesh.visible=false;state.bent=false;});}})();
+(function(){
+window.halfFeet={};
+for(const id of ['left','right']){
+  const e=$(id),mesh=new THREE.Group();
+  const bootColor=profile?.boots||'#111827';
+  const sockColor=profile?.kit||'#168bff';
+
+  const mat=(color)=>new THREE.MeshStandardMaterial({color,roughness:.78,metalness:0});
+  const shin=new THREE.Mesh(new THREE.BoxGeometry(.16,.48,.16),mat(sockColor));
+  shin.position.set(0,.27,0);
+  mesh.add(shin);
+
+  const ankle=new THREE.Mesh(new THREE.BoxGeometry(.14,.17,.14),mat('#d2a07a'));
+  ankle.position.set(0,-.05,0);
+  mesh.add(ankle);
+
+  const boot=new THREE.Mesh(new THREE.BoxGeometry(.19,.13,.38),mat(bootColor));
+  boot.position.set(0,-.15,-.08);
+  mesh.add(boot);
+
+  const toe=new THREE.Mesh(new THREE.BoxGeometry(.18,.08,.18),mat(bootColor));
+  toe.position.set(0,-.16,-.30);
+  mesh.add(toe);
+
+  mesh.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  scene.object3D.add(mesh);
+  mesh.visible=false;
+
+  const state=window.halfFeet[id]={mesh,bent:false};
+  e.addEventListener('triggerdown',()=>state.bent=true);
+  e.addEventListener('triggerup',()=>state.bent=false);
+  scene.addEventListener('enter-vr',()=>mesh.visible=true);
+  scene.addEventListener('exit-vr',()=>{mesh.visible=false;state.bent=false;});
+}
+})();
 
 (function(){
 const menu=$('menu'), children=[...menu.children];const style=document.createElement('style');style.textContent='#menu{width:min(850px,94vw)!important;max-height:86vh!important;overflow:auto!important;background:#101b2d!important;color:#fff!important;border:1px solid #34465d;border-radius:16px;padding:18px!important;box-sizing:border-box}#halfNav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}#halfNav button{flex:1;background:#23334b;color:white;border:0;border-radius:8px;padding:12px}#halfNav button[aria-selected=true]{background:#b8f34b;color:#14210a;font-weight:bold}#halfPages .halfPage{padding:12px;background:#17263a;border-radius:12px}#halfPages label{display:block;margin:10px 0}#halfPages select,#halfPages input:not([type=color]){max-width:100%;box-sizing:border-box}#halfPages button{margin:5px}#play{background:#b8f34b!important;color:#14210a!important;font-weight:bold;width:90%;padding:15px!important}#halfPages [hidden]{display:none!important}';document.head.append(style);
