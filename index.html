@@ -713,6 +713,38 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
 
 
 <script>
+/* HALFTIME CLUBS + FRIEND TOURNAMENTS */
+(function(){
+  const URL='https://tumddybiqdokmvlmvdbx.supabase.co';
+  const KEY='sb_publishable_12NvhZECaloq4_pOvnDFtQ9r9EeyfJk';
+  const sb=window.supabase?.createClient?.(URL,KEY);
+  const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+  if(!sb||!nav||!pages)return;
+  let tab=[...nav.children].find(b=>b.textContent==='Clubs');
+  let page=tab?pages.children[[...nav.children].indexOf(tab)]:null;
+  if(!tab){tab=document.createElement('button');tab.textContent='Clubs';nav.append(tab);page=document.createElement('section');page.className='halfPage';page.hidden=true;pages.append(page);}
+  if(!page)return;
+  page.innerHTML='<h2>CLUBS & TOURNAMENTS</h2><h3>Your club</h3><label>Club name <input id="teamClubName" maxlength="24" placeholder="Enter club name"></label><button id="teamClubSave">CREATE / SAVE CLUB</button><p id="teamClubCode">No club invite code yet.</p><button id="teamClubHost">OPEN CLUB INVITES</button><label>Join a friend’s club <input id="teamClubJoinCode" maxlength="6" placeholder="6-CHARACTER CODE"></label><button id="teamClubJoin">JOIN CLUB</button><p id="teamClubMembers">Club members appear when connected.</p><hr><h3>Friend tournaments</h3><p>Create a tournament and share its code with friends. Everyone must stay connected while the tournament is open.</p><button id="teamCupCreate">CREATE TOURNAMENT</button><label>Join tournament <input id="teamCupCode" maxlength="6" placeholder="TOURNAMENT CODE"></label><button id="teamCupJoin">JOIN TOURNAMENT</button><p id="teamCupStatus">No tournament connected.</p><p id="teamCupPlayers"></p><button id="teamCupStart" disabled>START KNOCKOUT TOURNAMENT</button><div id="teamCupBracket"></div><button id="teamCupLeave" disabled>LEAVE TOURNAMENT</button><p><small>Online club/tournament rooms use HALFTIME Realtime. Club details are saved on this device. Tournament brackets are shared live with connected players.</small></p>';
+  const $=id=>page.querySelector('#'+id), clean=s=>String(s||'').replace(/[<>&"]/g,'').slice(0,24), randomCode=()=>Math.random().toString(36).slice(2,8).toUpperCase();
+  let clubCh=null,cupCh=null,clubMembers=[],cupPlayers=[],bracket=null,cupHost=false;
+  const saved=()=>{try{return JSON.parse(localStorage.getItem('halftime-profile')||'{}')}catch(e){return {}}};
+  const p0=saved();$('teamClubName').value=p0.club?.name||p0.club?.clubName||'';
+  function saveClub(){const name=$('teamClubName').value.trim();if(!/^[a-zA-Z0-9 ]{3,24}$/.test(name)){$('teamClubCode').textContent='Use 3–24 letters or numbers for your club name.';return;}const p=saved();p.club={...(p.club||{}),name,clubName:name};localStorage.setItem('halftime-profile',JSON.stringify(p));$('teamClubCode').textContent='Club saved: '+name+' • Open club invites to get a share code.';}
+  async function closeClub(){if(clubCh){try{await clubCh.untrack()}catch(e){}try{await sb.removeChannel(clubCh)}catch(e){}clubCh=null;}clubMembers=[];}
+  function renderClub(){$('teamClubMembers').textContent=clubMembers.length?'Connected club: '+clubMembers.map(x=>clean(x.nick)).join(', '):'No club members connected yet.';}
+  async function openClub(code,host){const p=saved(),name=p.club?.name||p.club?.clubName;if(host&&!name){$('teamClubCode').textContent='Create and save your club name first.';return;}await closeClub();clubCh=sb.channel('ht-club-'+code,{config:{presence:{key:(p.playerId||'guest')+'-'+Math.random().toString(36).slice(2,5)}}});clubCh.on('presence',{event:'sync'},()=>{clubMembers=Object.values(clubCh.presenceState()).flat().map(x=>({nick:x.nick||'Player'}));renderClub();});clubCh.subscribe(async state=>{if(state==='SUBSCRIBED'){await clubCh.track({nick:p.nick||'Player',club:name||'Friend'});$('teamClubCode').textContent=(host?'Club invite code: ':'Joined club with code: ')+code+' • Share this code with friends.';}});}
+  async function leaveCup(){if(cupCh){try{await cupCh.untrack()}catch(e){}try{await sb.removeChannel(cupCh)}catch(e){}cupCh=null;}cupPlayers=[];bracket=null;$('teamCupLeave').disabled=true;$('teamCupStart').disabled=true;$('teamCupBracket').replaceChildren();}
+  function renderBracket(){const root=$('teamCupBracket');root.replaceChildren();if(!bracket)return;const h=document.createElement('h3');h.textContent='TOURNAMENT BRACKET';root.append(h);bracket.rounds.forEach((round,i)=>{const title=document.createElement('p');title.textContent='ROUND '+(i+1);root.append(title);round.forEach(m=>{const row=document.createElement('p');row.textContent=(m.a||'TBC')+' vs '+(m.b||'BYE')+(m.winner?' • Winner: '+m.winner:'');root.append(row);});});const note=document.createElement('small');note.textContent='Play each fixture in Online using a room code. Bracket is a shared fixture list.';root.append(note);}
+  function renderCup(){$('teamCupPlayers').textContent='Players connected: '+cupPlayers.map(x=>clean(x.nick)).join(', ');$('teamCupStart').disabled=!cupHost||cupPlayers.length<2||!!bracket;renderBracket();}
+  async function joinCup(code,host){await leaveCup();code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);if(code.length!==6){$('teamCupStatus').textContent='Enter a valid 6-character tournament code.';return;}cupHost=host;const p=saved(),id=p.playerId||'GUEST';cupCh=sb.channel('ht-cup-'+code,{config:{presence:{key:id+'-'+Math.random().toString(36).slice(2,5)}}});cupCh.on('presence',{event:'sync'},()=>{cupPlayers=Object.values(cupCh.presenceState()).flat().map(x=>({nick:x.nick||'Player'}));renderCup();});cupCh.on('broadcast',{event:'bracket'},({payload})=>{if(payload?.rounds){bracket=payload;renderBracket();$('teamCupStatus').textContent='Tournament live • Code '+code;}});cupCh.subscribe(async state=>{if(state==='SUBSCRIBED'){await cupCh.track({nick:p.nick||'Player',club:p.club?.name||'',playerId:id});$('teamCupStatus').textContent=(host?'Tournament created • Share code: ':'Joined tournament • Code: ')+code;$('teamCupLeave').disabled=false;}});}
+  function makeBracket(){const names=cupPlayers.map(p=>clean(p.nick)||'Player');for(let i=names.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[names[i],names[j]]=[names[j],names[i]];}const rounds=[];let current=names;while(current.length>1){const matches=[];for(let i=0;i<current.length;i+=2)matches.push({a:current[i],b:current[i+1]||'BYE',winner:current[i+1]?'':current[i]});rounds.push(matches);current=Array.from({length:Math.ceil(current.length/2)},(_,i)=>'Winner '+(i+1));}return {rounds,players:names,createdAt:Date.now()};}
+  $('teamClubSave').onclick=saveClub;$('teamClubHost').onclick=()=>openClub(randomCode(),true);$('teamClubJoin').onclick=()=>openClub($('teamClubJoinCode').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6),false);$('teamCupCreate').onclick=()=>joinCup(randomCode(),true);$('teamCupJoin').onclick=()=>joinCup($('teamCupCode').value,false);$('teamCupStart').onclick=()=>{if(!cupHost||cupPlayers.length<2||!cupCh)return;bracket=makeBracket();cupCh.send({type:'broadcast',event:'bracket',payload:bracket});renderBracket();$('teamCupStatus').textContent='Tournament started • Share the code with friends.';};$('teamCupLeave').onclick=leaveCup;
+  tab.onclick=()=>{for(const p of pages.children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));};for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
+  window.addEventListener('pagehide',()=>{closeClub();leaveCup();});
+})();
+</script>
+
+<script>
 /* HALFTIME VR RECALIBRATION SYSTEM */
 (function(){
   const scene=document.querySelector('a-scene');
