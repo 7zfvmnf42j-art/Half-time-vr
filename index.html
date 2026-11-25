@@ -244,7 +244,7 @@ const balance=document.createElement('p');page.append(balance);
 const filter=document.createElement('select');for(const t of types){const o=document.createElement('option');o.textContent=t;filter.append(o);}page.append(filter);const collection=document.createElement('select');for(const name of ['All cosmetics','Vintage Store','Starter pack','Special edition boots'])collection.add(new Option(name,name));page.append(collection);collection.onchange=()=>render();
 const ownedOnly=document.createElement('input');ownedOnly.type='checkbox';const label=document.createElement('label');label.append(ownedOnly,document.createTextNode(' Owned items only'));page.append(label);
 const list=document.createElement('div');list.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px';page.append(list);
-function equip(item){const id={Boots:'boots',Gloves:'lockerGloves',Kits:'lockerKit',Footballs:'lockerBall'}[item.type];const e=$(id);if(!e)return;if(![...e.options].some(o=>o.value===item.color)){const o=document.createElement('option');o.value=item.color;o.textContent=item.name;e.append(o);}e.value=item.color;e.dispatchEvent(new Event('change'));shop.equipped=shop.equipped||{};shop.equipped[item.type]=item.id;if(item.type==='Boots'){profile.specialBoot=item.accent?{accent:item.accent,mark:item.mark}:null;window.refreshSpecialBoot?.();}save();}
+function equip(item){const id={Boots:'boots',Gloves:'lockerGloves',Kits:'lockerKit',Footballs:'lockerBall'}[item.type];const e=$(id);if(!e)return;if(![...e.options].some(o=>o.value===item.color)){const o=document.createElement('option');o.value=item.color;o.textContent=item.name;e.append(o);}e.value=item.color;e.dispatchEvent(new Event('change'));shop.equipped=shop.equipped||{};shop.equipped[item.type]=item.id;if(item.type==='Boots'){profile.specialBoot=item.accent?{accent:item.accent,mark:item.mark}:null;window.refreshSpecialBoot?.();}save();if(item.type==='Gloves')window.refreshHalftimeGloves?.();}
 function render(){balance.textContent='Free item tokens: '+shop.credits+' | Owned: '+shop.owned.length+' / '+items.length+' + Founder badge';list.replaceChildren();if(collection.value==='Starter pack'){const note=document.createElement('p');note.textContent='Founder badge — free, equip in Profile / Badges';list.append(note);}for(const item of (collection.value==='Special edition boots'?items.filter(x=>x.id>=500):collection.value==='Vintage Store'?vintage:collection.value==='Starter pack'?items.filter(x=>starter.includes(x.id)):items).filter(x=>(collection.value==='Starter pack'||collection.value==='Special edition boots'||x.type===filter.value)&&(!ownedOnly.checked||shop.owned.includes(x.id)))){const b=document.createElement('button');b.style.cssText='background:#23334b;color:white;min-height:85px;white-space:normal';const sw=document.createElement('span');sw.style.cssText='display:block;height:22px;border-radius:5px;background:'+item.color;const owned=shop.owned.includes(item.id);const equipped=shop.equipped?.[item.type]===item.id;sw.style.height='36px';if(item.accent)sw.style.background='linear-gradient(120deg,'+item.color+' 65%,'+item.accent+' 65%)';b.append(sw,document.createTextNode(item.name+' • '+(equipped?'Equipped':owned?'Equip':'1 token')));b.disabled=equipped||(!owned&&shop.credits<1);b.onclick=()=>{if(!shop.owned.includes(item.id)){if(shop.credits<1)return;shop.credits--;shop.owned.push(item.id);}equip(item);render();};list.append(b);}}
 filter.onchange=render;ownedOnly.onchange=render;tab.onclick=()=>{for(const p of $('halfPages').children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));render();};for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
 const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);if(x>y){shop.credits++;save();}render();};window.shopItems=[...items.filter(x=>x.id>=500),...items.filter(x=>x.id<500)];window.shopOwned=id=>shop.owned.includes(id);window.shopBuy=id=>{const item=items.find(x=>x.id===id);if(!item)return false;if(!shop.owned.includes(id)){if(shop.credits<1)return false;shop.credits--;shop.owned.push(id);}equip(item);save();render();return true;};window.shopSummary=()=>shop.credits+' free item tokens | '+shop.owned.length+' owned';for(const id of Object.values(shop.equipped||{})){const item=items.find(x=>x.id===id);if(item)equip(item);}render();
@@ -726,49 +726,83 @@ window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,contr
   const select=document.getElementById('lockerGloves');
   if(!left||!right||!select)return;
 
-  let out=false;
+  let out=!!profile.glovesOut;
   const meshes={};
 
-  function makeGlove(hand){
+  function makeGlove(hand,side){
     const g=document.createElement('a-entity');
+    g.classList.add('halftimeWearGlove');
     g.setAttribute('visible','false');
+    g.setAttribute('position',side==='left'?'-0.015 -0.02 -0.06':'0.015 -0.02 -0.06');
+    g.setAttribute('rotation','-8 0 0');
     g.innerHTML=
-      '<a-box position="0 0 -.035" width=".16" height=".18" depth=".12" color="#182334"></a-box>'+
-      '<a-box position="0 -.12 .005" width=".13" height=".10" depth=".10" color="#182334"></a-box>'+
-      '<a-box position="0 .105 -.055" width=".12" height=".05" depth=".04" color="#ffffff"></a-box>';
+      '<a-box class="gloveMain" position="0 0 0" width=".18" height=".16" depth=".12" color="#182334"></a-box>'+
+      '<a-box class="gloveMain" position="0 -.115 .015" width=".14" height=".10" depth=".10" color="#182334"></a-box>'+
+      '<a-box position="0 .09 -.062" width=".13" height=".045" depth=".025" color="#ffffff"></a-box>';
     hand.append(g);
     return g;
   }
 
-  meshes.left=makeGlove(left);
-  meshes.right=makeGlove(right);
+  meshes.left=makeGlove(left,'left');
+  meshes.right=makeGlove(right,'right');
+
+  function equippedShopGlove(){
+    const id=profile.shop?.equipped?.Gloves;
+    return (window.shopItems||[]).find(x=>x.id===id&&x.type==='Gloves')||null;
+  }
 
   function currentColor(){
+    const shopItem=equippedShopGlove();
+    if(shopItem)return shopItem.color;
     const v=select.value;
     return (!v||v==='none')?null:v;
   }
 
+  function syncSelect(){
+    const shopItem=equippedShopGlove();
+    if(shopItem){
+      if(![...select.options].some(o=>o.value===shopItem.color)){
+        const o=document.createElement('option');
+        o.value=shopItem.color;
+        o.textContent=shopItem.name;
+        select.append(o);
+      }
+      select.value=shopItem.color;
+    }else if(profile.gloveColor&&profile.gloveColor!=='none'){
+      if(![...select.options].some(o=>o.value===profile.gloveColor)){
+        const o=document.createElement('option');
+        o.value=profile.gloveColor;
+        o.textContent='Equipped Gloves';
+        select.append(o);
+      }
+      select.value=profile.gloveColor;
+    }
+  }
+
   function apply(){
+    syncSelect();
     const color=currentColor();
     const show=!!color&&out;
     for(const g of Object.values(meshes)){
       g.setAttribute('visible',show);
-      for(const b of g.querySelectorAll('a-box')){
-        if(b.getAttribute('color')!=='#ffffff')b.setAttribute('color',color||'#182334');
-      }
+      for(const b of g.querySelectorAll('.gloveMain'))b.setAttribute('color',color||'#182334');
     }
     profile.glovesOut=show;
     profile.gloveColor=color||'none';
     try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}
+    const btn=document.getElementById('toggleGloves');
+    if(btn)btn.textContent=show?'Put Away Gloves':'Pull Out Gloves';
   }
 
   function toggle(){
+    syncSelect();
     if(!currentColor()){out=false;apply();return;}
     out=!out;
     apply();
   }
 
   window.toggleHalftimeGloves=toggle;
+  window.refreshHalftimeGloves=apply;
   window.halftimeGlovesOut=()=>out;
 
   select.addEventListener('change',()=>{
@@ -777,23 +811,21 @@ window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,contr
     apply();
   });
 
-  // Right A button pulls gloves out / puts them away.
-  right.addEventListener('abuttondown',toggle);
+  // Left grip toggles gloves, avoiding A/B menu conflicts.
+  left.addEventListener('gripdown',toggle);
 
-  // Also add a normal menu button.
   const btn=document.createElement('button');
   btn.id='toggleGloves';
-  btn.textContent='Pull Out / Put Away Gloves';
+  btn.textContent='Pull Out Gloves';
   btn.onclick=toggle;
   select.parentElement?.after(btn);
 
-  if(profile.gloveColor&&profile.gloveColor!=='none'){
-    if(![...select.options].some(o=>o.value===profile.gloveColor)){
-      const o=document.createElement('option');o.value=profile.gloveColor;o.textContent='Equipped Gloves';select.append(o);
-    }
-    select.value=profile.gloveColor;
-  }
-  out=!!profile.glovesOut;
+  // Re-sync after Shop purchases/equips.
+  document.addEventListener('change',e=>{
+    if(e.target===select)apply();
+  });
+
+  scene.addEventListener('enter-vr',()=>setTimeout(apply,100));
   apply();
 })();
 </script>
