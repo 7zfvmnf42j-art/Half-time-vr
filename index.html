@@ -2082,4 +2082,34 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   apply();
 })();
 </script>
+
+<script>
+/* HALFTIME DAILY CHALLENGES + TROPHY CABINET */
+(function(){
+ const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+ if(!nav||!pages||document.getElementById('dailyChallengeTab'))return;
+ const profile=window.profile||(()=>{try{return JSON.parse(localStorage.getItem('halftime-profile')||'{}')}catch(e){return {}}})();
+ const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ function data(){let p={};try{p=JSON.parse(localStorage.getItem('halftime-profile')||'{}')}catch(e){};p.challengeStats=p.challengeStats||{trainingGoals:0,careerGoals:0,matches:0,wins:0,completed:[]};p.dailyChallenge=p.dailyChallenge||{date:today(),trainingGoals:0,careerGoals:0,matches:0,claimed:[]};if(p.dailyChallenge.date!==today())p.dailyChallenge={date:today(),trainingGoals:0,careerGoals:0,matches:0,claimed:[]};return p}
+ function store(p){try{localStorage.setItem('halftime-profile',JSON.stringify(p))}catch(e){}}
+ const tab=document.createElement('button');tab.id='dailyChallengeTab';tab.textContent='Challenges';nav.append(tab);
+ const page=document.createElement('section');page.className='halfPage';page.hidden=true;page.innerHTML='<h2>DAILY CHALLENGES</h2><p>Complete objectives to earn bonus XP. Progress resets each day; lifetime records stay in your profile.</p><div id="dailyChallengeList"></div><hr><h2>TROPHY CABINET</h2><div id="challengeTrophies"></div><p id="challengeRecord"></p>';
+ pages.append(page);
+ const objectives=[{id:'trainingGoals',title:'Training Finisher',desc:'Score 3 goals in Training',target:3,xp:75},{id:'careerGoals',title:'Career Goalscorer',desc:'Score 1 goal in Career',target:1,xp:100},{id:'matches',title:'Matchday Player',desc:'Complete 1 Career match',target:1,xp:60}];
+ function draw(){
+  const p=data(),d=p.dailyChallenge,st=p.challengeStats,root=page.querySelector('#dailyChallengeList');root.replaceChildren();
+  objectives.forEach(o=>{const n=Math.min(o.target,d[o.id]||0),done=(d.claimed||[]).includes(o.id);const card=document.createElement('article');card.style.cssText='background:#20364f;border:1px solid #3b5875;border-radius:12px;padding:12px;margin:9px 0';const h=document.createElement('b');h.textContent=o.title;const desc=document.createElement('p');desc.textContent=o.desc+' • '+n+'/'+o.target;const bar=document.createElement('div');bar.style.cssText='height:9px;background:#102137;border-radius:9px;overflow:hidden';const fill=document.createElement('div');fill.style.cssText='height:100%;width:'+(n/o.target*100)+'%;background:#b8f34b;border-radius:9px';bar.append(fill);const reward=document.createElement('small');reward.textContent=done?'✓ COMPLETED • +'+o.xp+' XP': 'Reward: '+o.xp+' XP';card.append(h,desc,bar,reward);root.append(card);});
+  const trophies=page.querySelector('#challengeTrophies');trophies.replaceChildren();const awards=[['First Steps',st.matches>=1,'Complete your first career match'],['Hat-trick Hero',st.careerGoals>=3,'Score 3 career goals'],['Ten Goal Club',st.careerGoals>=10,'Score 10 career goals'],['Club Regular',st.matches>=10,'Complete 10 career matches'],['Winning Habit',st.wins>=5,'Win 5 career matches'],['Training Pro',st.trainingGoals>=25,'Score 25 training goals']];
+  awards.forEach(a=>{const line=document.createElement('p');line.textContent=(a[1]?'🏆 ':'🔒 ')+a[0]+' — '+a[2];line.style.opacity=a[1]?'1':'.55';trophies.append(line)});
+  page.querySelector('#challengeRecord').textContent='Lifetime record: '+st.matches+' career matches • '+st.wins+' wins • '+st.careerGoals+' career goals • '+st.trainingGoals+' training goals';
+ }
+ function progress(id,amount=1){const p=data();p.dailyChallenge[id]=(p.dailyChallenge[id]||0)+amount;p.challengeStats[id]=(p.challengeStats[id]||0)+amount;objectives.forEach(o=>{if(p.dailyChallenge[o.id]>=o.target&&!p.dailyChallenge.claimed.includes(o.id)){p.dailyChallenge.claimed.push(o.id);p.xp=(p.xp||0)+o.xp;}});store(p);draw();if(typeof window.awardXP==='function'){const claimed=p.dailyChallenge.claimed;const total=objectives.filter(o=>claimed.includes(o.id)).reduce((n,o)=>n+o.xp,0);const prev=window.__htDailyPaid||0;if(total>prev){window.__htDailyPaid=total;window.awardXP(total-prev,'Daily challenge reward');}}}
+ const oldGoal=window.recordGoal;window.recordGoal=function(){if(oldGoal)oldGoal();progress('trainingGoals',1)};
+ const oldCareerGoal=window.recordCareerGoal;window.recordCareerGoal=function(){if(oldCareerGoal)oldCareerGoal();progress('careerGoals',1)};
+ const oldFinish=window.finishCareer;window.finishCareer=function(x,y){if(oldFinish)oldFinish(x,y);const p=data();p.dailyChallenge.matches++;p.challengeStats.matches++;if(x>y)p.challengeStats.wins++;objectives.forEach(o=>{if(p.dailyChallenge[o.id]>=o.target&&!p.dailyChallenge.claimed.includes(o.id)){p.dailyChallenge.claimed.push(o.id);p.xp=(p.xp||0)+o.xp;}});store(p);draw();const total=objectives.filter(o=>p.dailyChallenge.claimed.includes(o.id)).reduce((n,o)=>n+o.xp,0);const prev=window.__htDailyPaid||0;if(total>prev){window.__htDailyPaid=total;window.awardXP?.(total-prev,'Daily challenge reward');}};
+ tab.addEventListener('click',()=>{for(const p of pages.children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));});
+ for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false')});
+ draw();
+})();
+</script>
 </body></html>
