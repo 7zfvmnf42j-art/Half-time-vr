@@ -2342,4 +2342,98 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  draw();renderSaved();
 })();
 </script>
+
+<script>
+/* HALFTIME ULTIMATE MATCHDAY UPDATE */
+(function(){
+ const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+ if(!nav||!pages||document.getElementById('ultimateMatchdayTab'))return;
+ const tab=document.createElement('button');tab.id='ultimateMatchdayTab';tab.type='button';tab.textContent='Ultimate Matchday';
+ const page=document.createElement('section');page.className='halfPage';page.hidden=true;
+ page.innerHTML=`
+ <style>
+ #ultimateMatchday{color:#edf6ff}#ultimateMatchday .um-card{background:#14263c;border:1px solid #35516f;border-radius:13px;padding:13px;margin:10px 0}
+ #ultimateMatchday .um-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+ #ultimateMatchday .um-stat{background:#0b192b;border-radius:10px;padding:10px}
+ #ultimateMatchday label{display:block;margin:8px 0}#ultimateMatchday input,#ultimateMatchday select{max-width:100%;padding:9px;border-radius:8px}
+ #ultimateMatchday button{background:#b8f34b;color:#14210d;border:0;border-radius:9px;padding:10px 13px;font-weight:900;margin:4px}
+ #ultimateMatchday button:disabled{opacity:.45}
+ #ultimateMatchday table{width:100%;border-collapse:collapse;font-size:13px}#ultimateMatchday th,#ultimateMatchday td{padding:6px 4px;border-bottom:1px solid #31445b;text-align:left}
+ #ultimateMatchday .um-muted{color:#a9bed4;font-size:12px}
+ #ultimateMatchday .um-scroll{overflow-x:auto}
+ </style>
+ <div id="ultimateMatchday">
+  <h2>🏆 ULTIMATE MATCHDAY</h2>
+  <p class="um-muted">Build your club, play through a full fictional league season, chase the cup and collect honours. Career progress saves on this device.</p>
+  <div class="um-card">
+   <h3>YOUR CLUB</h3>
+   <label>Club name <input id="umClub" maxlength="24" placeholder="Cockney FC"></label>
+   <label>Home kit <input id="umHome" type="color" value="#7b1738"></label>
+   <label>Away kit <input id="umAway" type="color" value="#ffffff"></label>
+   <label>Home ground <input id="umGround" maxlength="28" placeholder="Your stadium name"></label>
+   <button id="umSaveClub">SAVE CLUB</button> <button id="umNewSeason">START NEW SEASON</button>
+   <p id="umClubStatus" class="um-muted"></p>
+  </div>
+  <div class="um-grid">
+   <div class="um-stat"><small>SEASON</small><h3 id="umSeason">1</h3></div>
+   <div class="um-stat"><small>LEAGUE POSITION</small><h3 id="umPosition">—</h3></div>
+   <div class="um-stat"><small>POINTS</small><h3 id="umPoints">0</h3></div>
+   <div class="um-stat"><small>TOP SCORER</small><h3 id="umTopScorer">—</h3></div>
+  </div>
+  <div class="um-card"><h3>📅 MATCHWEEK</h3><p id="umWeek">Week 1 of 9</p><div id="umFixtures"></div><button id="umPlayWeek">SIMULATE MATCHWEEK</button><p id="umRoundStatus" class="um-muted"></p></div>
+  <div class="um-card"><h3>📊 LEAGUE TABLE</h3><div class="um-scroll" id="umTable"></div></div>
+  <div class="um-card"><h3>🏆 CUP CHALLENGE</h3><p id="umCupStatus">The eight-team knockout cup is ready.</p><button id="umCupPlay">PLAY NEXT CUP ROUND</button><div id="umCupDraw"></div></div>
+  <div class="um-card"><h3>⭐ CLUB HONOURS</h3><div id="umHonours">No honours yet. Make history!</div></div>
+  <div class="um-card"><h3>📈 SEASON RECORD</h3><div id="umRecords" class="um-muted"></div></div>
+ </div>`;
+ pages.append(page);nav.append(tab);
+ const $=id=>page.querySelector('#'+id),key='halftime-ultimate-matchday-v1';
+ const clubs=['Northbridge Athletic','Riverside Town','Kingsport FC','Redwood United','Metro City','Valley Rovers','Harbour FC','Eastfield Town','Summit Albion'];
+ let state;
+ function fresh(season=1){
+  const name=$('umClub').value.trim()||'Your Club';
+  const names=[name,...clubs];const teams=names.map((n,i)=>({name:n,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0,form:[],scorers:0}));
+  const rounds=[];for(let r=0;r<9;r++){const games=[];for(let i=0;i<5;i++){const a=(r+i)%9,b=(9-i+r)%9;games.push([a,b]);}rounds.push(games);}
+  return {season,week:0,teams,rounds,results:[],cup:null,honours:[],club:{name,home:$('umHome').value,away:$('umAway').value,ground:$('umGround').value}};
+ }
+ function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch(e){$('umRoundStatus').textContent='Could not save on this device.';}}
+ function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function sorted(){return [...state.teams].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);}
+ function render(){
+  const club=state.club;$('umClub').value=club.name;$('umHome').value=club.home;$('umAway').value=club.away;$('umGround').value=club.ground||'';
+  $('umSeason').textContent=state.season;$('umWeek').textContent=state.week>=9?'Season complete':'Week '+(state.week+1)+' of 9';
+  const table=sorted(),pos=table.findIndex(t=>t.name===club.name)+1,me=state.teams.find(t=>t.name===club.name);
+  $('umPosition').textContent=pos?pos+(pos===1?'st':pos===2?'nd':pos===3?'rd':'th'):'—';$('umPoints').textContent=me?.pts||0;
+  const scorer=state.teams.reduce((a,t)=>t.scorers>a.scorers?t:a,{name:'—',scorers:0});$('umTopScorer').textContent=scorer.scorers?scorer.name+' ('+scorer.scorers+')':'—';
+  $('umFixtures').innerHTML=state.week>=9?'All league fixtures completed.':state.rounds[state.week].map(([a,b])=>'<p>'+esc(state.teams[a].name)+' <b>vs</b> '+esc(state.teams[b].name)+'</p>').join('');
+  $('umPlayWeek').disabled=state.week>=9;
+  $('umTable').innerHTML='<table><thead><tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>'+table.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(t.name)+'</td><td>'+t.p+'</td><td>'+t.w+'</td><td>'+t.d+'</td><td>'+t.l+'</td><td>'+(t.gf-t.ga)+'</td><td><b>'+t.pts+'</b></td></tr>').join('')+'</tbody></table>';
+  $('umCupStatus').textContent=state.cup?.done?'Cup winner: '+state.cup.winner:state.cup?'Round '+state.cup.round+' of 3':'Eight-team knockout cup is ready.';
+  $('umCupPlay').disabled=!!state.cup?.done;
+  $('umCupDraw').innerHTML=state.cup?(state.cup.rounds||[]).map((r,i)=>'<p><b>'+['Quarter-finals','Semi-finals','Final'][i]+'</b><br>'+r.map(esc).join('<br>')+'</p>').join(''):'';
+  $('umHonours').innerHTML=state.honours.length?state.honours.map(esc).join('<br>'):'No honours yet. Make history!';
+  $('umRecords').textContent='Matches played: '+state.results.length+' • Goals scored by your club: '+(me?.gf||0)+' • Goals conceded: '+(me?.ga||0)+' • Home ground: '+(club.ground||'Not named');
+ }
+ function applyResult(a,b,ga,gb){
+  a.p++;b.p++;a.gf+=ga;a.ga+=gb;b.gf+=gb;b.ga+=ga;
+  if(ga>gb){a.w++;a.pts+=3;b.l++;a.form.push('W');b.form.push('L');}
+  else if(gb>ga){b.w++;b.pts+=3;a.l++;b.form.push('W');a.form.push('L');}
+  else{a.d++;b.d++;a.pts++;b.pts++;a.form.push('D');b.form.push('D');}
+  a.scorers+=ga;b.scorers+=gb;
+ }
+ $('umSaveClub').onclick=()=>{const n=$('umClub').value.trim();if(n.length<2){$('umClubStatus').textContent='Enter a club name with at least 2 characters.';return;}if(state.week>0&&n!==state.club.name){$('umClubStatus').textContent='Start a new season to change your club name.';return;}state.club={name:n,home:$('umHome').value,away:$('umAway').value,ground:$('umGround').value.trim()};state.teams[0].name=n;save();render();$('umClubStatus').textContent='Club saved.';};
+ $('umNewSeason').onclick=()=>{if(!confirm('Start a new season? Your previous season honours will be kept.'))return;const honours=state.honours.slice();state=fresh(state.season+1);state.honours=honours;save();render();$('umClubStatus').textContent='New season started!';};
+ $('umPlayWeek').onclick=()=>{if(state.week>=9)return;const lines=[];for(const [ai,bi] of state.rounds[state.week]){const a=state.teams[ai],b=state.teams[bi],ga=Math.floor(Math.random()*5),gb=Math.floor(Math.random()*5);applyResult(a,b,ga,gb);lines.push(a.name+' '+ga+'–'+gb+' '+b.name);}state.results.push(...lines);state.week++;$('umRoundStatus').textContent=lines.join(' • ');if(state.week===9){const champ=sorted()[0];state.honours.unshift('Season '+state.season+' League Champions: '+champ.name);if(champ===state.teams[0])state.honours.unshift('🏆 You won the league!');}save();render();};
+ $('umCupPlay').onclick=()=>{if(!state.cup){const entrants=[state.club.name,...state.teams.slice(1,8).map(t=>t.name)],round=[];const winners=[];for(let i=0;i<entrants.length;i+=2){const a=entrants[i],b=entrants[i+1],ga=Math.floor(Math.random()*4),gb=Math.floor(Math.random()*4),win=ga===gb?(Math.random()<.5?a:b):(ga>gb?a:b);round.push(a+' '+ga+'–'+gb+' '+b+' • '+win+' advance');winners.push(win);}state.cup={round:2,rounds:[round],winners,done:false};}
+  else if(!state.cup.done){const prev=state.cup.winners,round=[],next=[];for(let i=0;i<prev.length;i+=2){const a=prev[i],b=prev[i+1];if(!b){next.push(a);continue;}const ga=Math.floor(Math.random()*4),gb=Math.floor(Math.random()*4),win=ga===gb?(Math.random()<.5?a:b):(ga>gb?a:b);round.push(a+' '+ga+'–'+gb+' '+b+' • '+win+' advance');next.push(win);}state.cup.rounds.push(round);state.cup.winners=next;state.cup.round++;if(next.length===1){state.cup.done=true;state.cup.winner=next[0];state.honours.unshift('Cup Winners: '+next[0]);}}
+  save();render();
+ };
+ $('umNewSeason').disabled=false;
+ try{state=JSON.parse(localStorage.getItem(key)||'null');if(!state||!Array.isArray(state.teams)||!Array.isArray(state.rounds))state=fresh();}catch(e){state=fresh();}
+ render();
+ const hide=()=>{[...pages.children].forEach(p=>p.hidden=true);[...nav.children].forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});};
+ tab.addEventListener('click',()=>{hide();page.hidden=false;tab.classList.add('active');tab.setAttribute('aria-selected','true');render();});
+ [...nav.children].filter(b=>b!==tab).forEach(b=>b.addEventListener('click',()=>{page.hidden=true;tab.classList.remove('active');tab.setAttribute('aria-selected','false');}));
+})();
+</script>
 </body></html>
