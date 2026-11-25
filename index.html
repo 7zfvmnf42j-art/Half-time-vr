@@ -68,9 +68,9 @@ if(state.thigh&&state.lower){
   // Hips rotate with the player's body instead of staying locked to world X.
   const measuredHeight=THREE.MathUtils.clamp(window.halftimePlayerHeight||1.72,1.25,2.15);
   hip.y-=measuredHeight*.43;
-  hip.addScaledVector(right,id==='left'?-.15:.15);
+  hip.addScaledVector(right,id==='left'?-.135:.135);
 
-  const foot=p.clone().add(new THREE.Vector3(0,.135,0));
+  const foot=p.clone().add(new THREE.Vector3(0,.115,0));
   const horizontalReach=new THREE.Vector3(foot.x-hip.x,0,foot.z-hip.z);
   const maxReach=lf.maxReach||.95;
   if(horizontalReach.length()>maxReach){
@@ -90,7 +90,7 @@ if(state.thigh&&state.lower){
 
   window.halftimePlaceLegSegment(state.thigh,hip,knee);
   window.halftimePlaceLegSegment(state.lower,knee,foot);
-  if(state.kneeCap){state.kneeCap.position.copy(knee);state.kneeCap.scale.set(1,.9,1);}
+  if(state.kneeCap){state.kneeCap.position.copy(knee);state.kneeCap.scale.set(.9,.9,.9);}
 }
 
 const old=this.prev[id];
@@ -316,9 +316,9 @@ for(const id of ['left','right']){
   mesh.add(toe);
 
   // Full visible leg: upper leg + lower leg stretch between hip, knee and foot.
-  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.105,.135,1,12),mat(sockColor));
-  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.072,.105,1,12),mat(sockColor));
-  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.105,12,10),mat(sockColor));
+  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.078,.095,1,14),mat(sockColor));
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.058,.078,1,14),mat(sockColor));
+  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.078,14,12),mat(sockColor));
   legGroup.add(thigh,lower,kneeCap);
 
   for(const root of [mesh,legGroup])root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
