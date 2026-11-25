@@ -6,7 +6,7 @@ start(mode){this.mode=mode;this.score=0;this.ai=0;this.time=180;this.ended=false
 reset(){this.p.set(0,.11,0);this.v.set(0,0,0);this.prev={};this.goalAt=0;this.restartAt=0;this.lastTouch=0;this.spin?.set(0,0,0);},
 restart(label,x,z,team,t){this.p.set(x,.11,z);this.v.set(0,0,0);this.spin?.set(0,0,0);this.restartAt=t+1600;this.restartTeam=team;this.lastTouch=team;this.notice=label+' — '+(team===1?'Your team':'Opposition');this.noticeUntil=t+3500;},hud(){document.getElementById('score')?.setAttribute('value',`HALFTIME | ${this.score} - ${this.ai} | ${this.mode==='training'?'TRAINING':this.ended?'FULL TIME':Math.floor(this.time/60)+':'+String(Math.floor(this.time%60)).padStart(2,'0')}`);},
 tick(t,ms){let d=Math.min(ms/1000,.04);if(this.goalAt){if(t>=this.goalAt){if(this.mode==='career'){this.goalAt=0;this.restart('Kick-off',0,0,this.kickoffTeam,t);}else this.reset();}else{this.el.object3D.position.copy(this.p);return;}}if(this.restartAt){if(t<this.restartAt){this.el.object3D.position.copy(this.p);return;}this.restartAt=0;if(this.restartTeam===-1){const targetZ=this.notice?.startsWith('Penalty')?52.5:Math.min(50,this.p.z+12);const dir=new THREE.Vector3(-this.p.x*.3,0,targetZ-this.p.z).normalize();this.v.copy(dir.multiplyScalar(this.notice?.startsWith('Penalty')?15:8));this.v.y=this.notice?.startsWith('Throw-in')?2.8:.6;this.lastTouch=-1;}}if(!d||this.ended||window.matchPaused?.()||document.getElementById('vrMenu')?.getAttribute('visible'))return;if(window.ownerFrozen?.()){this.v.set(0,0,0);this.el.object3D.position.copy(this.p);return;}
-if(this.mode!=='training'){this.time=Math.max(0,this.time-d);if(!this.time){this.ended=true;if(this.mode==='career')window.finishCareer?.(this.score,this.ai);this.hud();return;}}
+if(this.mode!=='training'){this.time=Math.max(0,this.time-d);if(!this.time){this.ended=true;if(this.mode==='career'&&!window.onlineCareerGuest)window.finishCareer?.(this.score,this.ai);this.hud();return;}}
 for(const id of ['left','right']){
 const e=document.getElementById(id);if(this.mode==='career'&&this.el.sceneEl.is('vr-mode')&&this.p.y>.65&&t>(this.lastHandball||0)+3000&&e.object3D.getWorldPosition(new THREE.Vector3()).distanceTo(this.p)<.19){this.lastHandball=t;const penalty=this.p.z>36&&Math.abs(this.p.x)<20.16;this.restart(penalty?'Penalty — handball':'Free kick — handball',penalty?0:this.p.x,penalty?41.5:this.p.z,-1,t);return;}if(!this.el.sceneEl.is('vr-mode')||!e.object3D.visible){delete this.prev[id];continue;}
 const state=window.halfFeet?.[id];if(!state)continue;
@@ -65,7 +65,7 @@ if(old){
 this.prev[id]=p;
 }
 if(this.spin){if(this.p.y>.13)this.v.addScaledVector(this.spin.clone().cross(this.v),.009*d);this.spin.multiplyScalar(Math.exp(-1.5*d));}
-let bot=document.getElementById('bot');if(this.mode==='career'){if(bot)bot.setAttribute('visible',false);window.careerTick?.(this,t,d);}else if(bot){window.hideCareer?.();bot.setAttribute('visible',this.mode!=='training');if(this.mode!=='training'){let q=bot.object3D.position;let target=this.mode==='penalty'?new THREE.Vector3(this.p.x,0,-10.7):new THREE.Vector3(this.p.x,0,this.p.z);target.x=THREE.MathUtils.clamp(target.x,-6.8,6.8);target.z=THREE.MathUtils.clamp(target.z,-10.7,10.7);let delta=target.sub(q);delta.y=0;q.add(delta.clampLength(0,d*2.1));if(Math.hypot(q.x-this.p.x,q.z-this.p.z)<.65&&this.p.y<1.1&&t>(this.lastBot||0)+800){this.v.set(-this.p.x*.2,.5,5);this.lastBot=t;}}}
+let bot=document.getElementById('bot');if(this.mode==='career'){if(bot)bot.setAttribute('visible',false);if(!window.onlineCareerGuest)window.careerTick?.(this,t,d);}else if(bot){window.hideCareer?.();bot.setAttribute('visible',this.mode!=='training');if(this.mode!=='training'){let q=bot.object3D.position;let target=this.mode==='penalty'?new THREE.Vector3(this.p.x,0,-10.7):new THREE.Vector3(this.p.x,0,this.p.z);target.x=THREE.MathUtils.clamp(target.x,-6.8,6.8);target.z=THREE.MathUtils.clamp(target.z,-10.7,10.7);let delta=target.sub(q);delta.y=0;q.add(delta.clampLength(0,d*2.1));if(Math.hypot(q.x-this.p.x,q.z-this.p.z)<.65&&this.p.y<1.1&&t>(this.lastBot||0)+800){this.v.set(-this.p.x*.2,.5,5);this.lastBot=t;}}}
 this.v.multiplyScalar(Math.exp(-.085*d));if(this.p.y>.1101||this.v.y>0)this.v.y-=9.81*d;else this.v.y=0;this.p.addScaledVector(this.v,d);this.el.object3D.rotation.x+=this.v.z*d/.11;this.el.object3D.rotation.z-=this.v.x*d/.11;if(this.p.y<=.1101){this.p.y=.11;this.v.y=this.v.y< -1.1?-this.v.y*.58:0;this.v.x*=Math.exp(-.85*d);this.v.z*=Math.exp(-.85*d);if(Math.hypot(this.v.x,this.v.z)<.18){this.v.x=0;this.v.z=0;}}const full=this.mode==='career', bx=full?34:7.3,bz=full?52.5:11.8;if(full&&Math.abs(this.p.x)>bx+.11){this.restart('Throw-in',Math.sign(this.p.x)*33.8,THREE.MathUtils.clamp(this.p.z,-51,51),-(this.lastTouch||1),t);}else if(!full&&Math.abs(this.p.x)>bx){this.p.x=Math.sign(this.p.x)*bx;this.v.x*=-.6;}if(Math.abs(this.p.z)>bz+.11){const goalZ=Math.sign(this.p.z)*(bz+.11);const backstep=Math.abs(this.v.z)>.001?THREE.MathUtils.clamp((this.p.z-goalZ)/this.v.z,0,d):0;const crossX=this.p.x-this.v.x*backstep,crossY=this.p.y-this.v.y*backstep;if(Math.abs(crossX)<(full?3.55:1.69)&&crossY<(full?2.33:1.89)){if(this.p.z<0){this.score++;window.halfSound?.("goal");window.recordGoal?.();}else {this.ai++;window.halfSound?.("goal");}this.p.x=crossX;this.p.y=Math.max(.11,crossY);this.p.z=Math.sign(this.p.z)*(bz+(full?1.5:.9));this.v.set(0,0,0);this.kickoffTeam=this.p.z<0?-1:1;this.goalAt=t+2400;this.notice='GOAL!';this.noticeUntil=t+3500;window.netRipple?.(full,Math.sign(this.p.z),t);}else if(full){const side=Math.sign(this.p.z),defender=side;const corner=this.lastTouch===defender;this.restart(corner?'Corner':'Goal kick',corner?Math.sign(this.p.x||1)*33.7:0,side*(corner?52.2:47),corner?-defender:defender,t);}else{if(this.p.y>(full?2.44:2)){this.reset();}else{this.p.z=Math.sign(this.p.z)*bz;this.v.z*=-.6;}}}this.el.object3D.position.copy(this.p);this.hud();}});
 AFRAME.registerComponent('move',{init(){this.axis={x:0,y:0};this.el.addEventListener('thumbstickmoved',e=>this.axis=e.detail);},tick(t,ms){let r=document.getElementById('rig').object3D,p=r.position,dir=document.getElementById('cam').object3D.getWorldDirection(new THREE.Vector3());dir.y=0;dir.normalize().negate();let side=new THREE.Vector3(-dir.z,0,dir.x);let d=Math.min(ms/1000,.04)*2.5*(window.sprintFactor||1);p.addScaledVector(dir,-this.axis.y*d);p.addScaledVector(side,this.axis.x*d);const full=document.getElementById('ball').components.football?.mode==='career';p.x=THREE.MathUtils.clamp(p.x,full?-34:-7,full?34:7);p.z=THREE.MathUtils.clamp(p.z,full?-52.5:-11,full?52.5:11);}});
 </script><style>body{font:15px system-ui;color:white}#menu{position:fixed;z-index:10;top:12px;left:12px;width:min(320px,85vw);max-height:75vh;overflow:auto;background:#101c30ee;padding:16px;border-radius:14px}button,input,select{font:inherit;padding:9px;margin:4px;border-radius:8px;border:0}button{background:#42c8ff;color:#102030;font-weight:bold}small{color:#bcd1e5}#open{position:fixed;top:10px;right:10px;z-index:11}#badges article{display:flex;align-items:center;gap:10px;background:#1d3049;padding:8px;margin:5px 0;border-radius:9px}#badges svg{flex:none}#badges article small{display:block}#badges h3{color:#69ddff}#preview input{width:110px} #menu>button{display:block;width:100%;margin:7px 0;text-align:left;background:#243a55;color:white}#menu h1{letter-spacing:2px}#clubPanel label{display:block}#clubPreview{text-align:center}#clubPanel{background:#192b43;padding:10px;border-radius:10px}#playerTag{display:flex;align-items:center;gap:10px;background:#243a55;padding:10px;border-radius:10px;font-weight:bold}#menu h1{margin:0 0 12px}#equipPanel{padding:10px;background:#192b43;border-radius:10px}#menu>button:hover{background:#365473}@media(pointer:coarse){#touch button{min-width:48px;min-height:48px;touch-action:none}#menu{box-sizing:border-box;max-height:70dvh}#touch{bottom:max(20px,env(safe-area-inset-bottom))!important}}#pausePanel{position:fixed;z-index:20;top:50%;left:50%;transform:translate(-50%,-50%);width:min(300px,82vw);padding:20px;background:#101c30f5;border:1px solid #42617e;border-radius:18px;box-shadow:0 12px 50px #0008}#pausePanel button{display:block;width:100%;margin:8px 0;text-align:left;background:#243a55;color:white}#pausePanel button:first-of-type{background:#42c8ff;color:#102030}#pausePanel h2{margin:8px 0}#wardrobePanel{background:#14243a;border:1px solid #46617b;border-radius:14px;padding:14px}#wardrobePanel label{display:flex;justify-content:space-between;align-items:center;margin:8px 0;gap:8px}#wardrobePanel select{max-width:55%}#wardrobePanel h2{color:#65d6ff}</style></head><body style="margin:0"><a-scene background="color:#91c9ed"><a-plane rotation="-90 0 0" width="15" height="24" color="#218447"></a-plane><a-box position="-7.45 .015 0" width=".06" height=".02" depth="24" color="white"></a-box><a-box position="7.45 .015 0" width=".06" height=".02" depth="24" color="white"></a-box><a-box position="0 .015 -11.95" width="15" height=".02" depth=".06" color="white"></a-box><a-box position="0 .015 11.95" width="15" height=".02" depth=".06" color="white"></a-box><a-ring rotation="-90 0 0" position="0 .012 0" radius-inner="1.9" radius-outer="2" color="white"></a-ring><a-box position="0 .01 0" width="15" height=".02" depth=".06" color="white"></a-box>
@@ -292,11 +292,17 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   if(!nav||!pages) return;
   const tab=document.createElement('button'); tab.textContent='Online BETA'; nav.append(tab);
   const page=document.createElement('section'); page.className='halfPage'; page.hidden=true; pages.append(page);
-  page.innerHTML='<h2>HALFTIME ONLINE BETA</h2><p>Create a room or join your mate with a 6-character code.</p><p><button id="onlineCreate">Create room</button> <input id="onlineCode" maxlength="6" placeholder="ROOM CODE" style="text-transform:uppercase"> <button id="onlineJoin">Join room</button></p><p id="onlineStatus">Not connected</p><p id="onlinePlayers"></p><button id="onlineLeave" disabled>Leave room</button><p><small>Beta: live room presence, player movement and ball syncing. Best with 2 players while we test it.</small></p>';
+  page.innerHTML='<h2>HALFTIME ONLINE BETA</h2><p>Create or join a normal online room.</p><p><button id="onlineCreate">Create room</button> <input id="onlineCode" maxlength="6" placeholder="ROOM CODE" style="text-transform:uppercase"> <button id="onlineJoin">Join room</button></p><h3>Online Career BETA</h3><p><button id="careerCreate">Create Career</button> <button id="careerJoin">Join Career</button></p><p id="careerRecord"></p><p id="onlineStatus">Not connected</p><p id="onlinePlayers"></p><button id="onlineLeave" disabled>Leave room</button><p><small>Online Career uses the same room code and tracks wins, draws, losses and points on this device.</small></p>';
   const status=page.querySelector('#onlineStatus'), players=page.querySelector('#onlinePlayers'), input=page.querySelector('#onlineCode'), leaveBtn=page.querySelector('#onlineLeave');
-  let ch=null, room='', host=false, subscribed=false, lastSend=0, lastBall=0;
+  let ch=null, room='', host=false, subscribed=false, lastSend=0, lastBall=0, desiredMode='training', lastCareerEnded=false;
   const remotes=new Map();
   const myKey=(profile?.playerId||('GUEST-'+Math.random().toString(36).slice(2,8))).toUpperCase();
+  let onlineCareer={w:0,d:0,l:0,pts:0};
+  try{Object.assign(onlineCareer,JSON.parse(localStorage.getItem('halftime-online-career')||'{}'));}catch(e){}
+  const careerRecord=page.querySelector('#careerRecord');
+  function saveCareer(){localStorage.setItem('halftime-online-career',JSON.stringify(onlineCareer));renderCareer();}
+  function renderCareer(){if(careerRecord)careerRecord.textContent='Career: '+onlineCareer.w+'W '+onlineCareer.d+'D '+onlineCareer.l+'L • '+onlineCareer.pts+' pts';}
+  renderCareer();
 
   function remoteEntity(id,nick,color){
     let e=remotes.get(id);
@@ -314,14 +320,23 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     for(const list of Object.values(state)) for(const p of list){ n++; if(p.playerId!==myKey) remoteEntity(p.playerId,p.nick,p.kit); }
     players.textContent='Players online: '+n+(host?' • You are host':'');
   }
-  async function connect(code,isHost){
+  async function connect(code,isHost,mode='training'){
     code=(code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
     if(code.length!==6){status.textContent='Enter a 6-character room code.';return;}
     await disconnect();
-    room=code; host=isHost; input.value=room; status.textContent='Connecting to '+room+'…';
+    room=code; host=isHost; desiredMode=mode; input.value=room; status.textContent='Connecting to '+room+'…';
     ch=sb.channel('halftime-room-'+room,{config:{presence:{key:myKey},broadcast:{self:false}}});
     ch.on('presence',{event:'sync'},presenceList);
     ch.on('presence',{event:'leave'},presenceList);
+    ch.on('broadcast',{event:'mode'},({payload})=>{
+      if(host||!payload?.mode)return;
+      desiredMode=payload.mode;
+      window.onlineCareerActive=desiredMode==='career';
+      window.onlineCareerGuest=window.onlineCareerActive;
+      const f=document.getElementById('ball')?.components?.football;
+      if(f)f.start(desiredMode);
+      if(window.onlineCareerActive)status.textContent='ONLINE CAREER • Room '+room;
+    });
     ch.on('broadcast',{event:'player'},({payload})=>{
       if(!payload||payload.id===myKey) return;
       const e=remoteEntity(payload.id,payload.nick,payload.kit);
@@ -331,7 +346,15 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     ch.on('broadcast',{event:'ball'},({payload})=>{
       if(host||!payload?.p) return;
       const f=document.getElementById('ball')?.components?.football;
-      if(f){f.p.set(payload.p[0],payload.p[1],payload.p[2]);if(payload.v)f.v.set(payload.v[0],payload.v[1],payload.v[2]);}
+      if(f){f.p.set(payload.p[0],payload.p[1],payload.p[2]);if(payload.v)f.v.set(payload.v[0],payload.v[1],payload.v[2]);if(payload.score!=null)f.score=payload.score;if(payload.ai!=null)f.ai=payload.ai;if(payload.time!=null)f.time=payload.time;if(payload.ended!=null)f.ended=payload.ended;f.hud?.();}
+    });
+    ch.on('broadcast',{event:'careerResult'},({payload})=>{
+      if(host||!window.onlineCareerActive||!payload)return;
+      if(payload.score>payload.ai){onlineCareer.w++;onlineCareer.pts+=3;}
+      else if(payload.score===payload.ai){onlineCareer.d++;onlineCareer.pts+=1;}
+      else onlineCareer.l++;
+      saveCareer();
+      status.textContent='ONLINE CAREER • Full time '+payload.score+'-'+payload.ai;
     });
     ch.on('broadcast',{event:'goal'},({payload})=>{
       const f=document.getElementById('ball')?.components?.football;if(!f||host)return;
@@ -339,9 +362,12 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     });
     ch.subscribe(async s=>{
       if(s==='SUBSCRIBED'){
-        subscribed=true; leaveBtn.disabled=false; status.textContent='ONLINE • Room '+room;
+        subscribed=true; leaveBtn.disabled=false; status.textContent=(desiredMode==='career'?'ONLINE CAREER':'ONLINE')+' • Room '+room;
         await ch.track({playerId:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',joined_at:new Date().toISOString()});
-        const f=document.getElementById('ball')?.components?.football; if(f) f.start('training');
+        window.onlineCareerActive=desiredMode==='career';
+        window.onlineCareerGuest=window.onlineCareerActive&&!host;
+        const f=document.getElementById('ball')?.components?.football; if(f) f.start(desiredMode);
+        if(host)ch.send({type:'broadcast',event:'mode',payload:{mode:desiredMode}});
         document.getElementById('menu').hidden=true;
       } else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'){status.textContent='Could not connect. Try again.';}
     });
@@ -349,10 +375,12 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   async function disconnect(){
     subscribed=false; leaveBtn.disabled=true; clearRemotes();
     if(ch){try{await ch.untrack();}catch(e){} try{await sb.removeChannel(ch);}catch(e){} ch=null;}
-    if(room) status.textContent='Left room '+room; room=''; host=false; players.textContent='';
+    if(room) status.textContent='Left room '+room; room=''; host=false; desiredMode='training'; window.onlineCareerActive=false; window.onlineCareerGuest=false; lastCareerEnded=false; players.textContent='';
   }
-  page.querySelector('#onlineCreate').onclick=()=>connect(roomCode(),true);
-  page.querySelector('#onlineJoin').onclick=()=>connect(input.value,false);
+  page.querySelector('#onlineCreate').onclick=()=>connect(roomCode(),true,'training');
+  page.querySelector('#onlineJoin').onclick=()=>connect(input.value,false,'training');
+  page.querySelector('#careerCreate').onclick=()=>connect(roomCode(),true,'career');
+  page.querySelector('#careerJoin').onclick=()=>connect(input.value,false,'career');
   leaveBtn.onclick=disconnect;
   tab.onclick=()=>{for(const p of pages.children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));};
   for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
@@ -361,7 +389,21 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     if(subscribed&&ch){
       const rig=document.getElementById('rig')?.object3D;
       if(rig&&t-lastSend>90){lastSend=t;ch.send({type:'broadcast',event:'player',payload:{id:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',p:[rig.position.x,rig.position.y,rig.position.z],y:rig.rotation.y}});}
-      if(host&&t-lastBall>66){lastBall=t;const f=document.getElementById('ball')?.components?.football;if(f)ch.send({type:'broadcast',event:'ball',payload:{p:[f.p.x,f.p.y,f.p.z],v:[f.v.x,f.v.y,f.v.z]}});}
+      if(host&&t-lastBall>66){
+        lastBall=t;
+        const f=document.getElementById('ball')?.components?.football;
+        if(f){
+          ch.send({type:'broadcast',event:'ball',payload:{p:[f.p.x,f.p.y,f.p.z],v:[f.v.x,f.v.y,f.v.z],score:f.score,ai:f.ai,time:f.time,ended:f.ended}});
+          if(desiredMode==='career'&&f.ended&&!lastCareerEnded){
+            lastCareerEnded=true;
+            if(f.score>f.ai){onlineCareer.w++;onlineCareer.pts+=3;}
+            else if(f.score===f.ai){onlineCareer.d++;onlineCareer.pts+=1;}
+            else onlineCareer.l++;
+            saveCareer();
+            ch.send({type:'broadcast',event:'careerResult',payload:{score:f.score,ai:f.ai}});
+          } else if(!f.ended) lastCareerEnded=false;
+        }
+      }
     }
     requestAnimationFrame(loop);
   }
