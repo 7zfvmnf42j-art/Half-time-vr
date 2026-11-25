@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
-window.halftimeBallPhysics={airDrag:.045,groundFriction:.48,bounce:.46,gravity:9.81,touchAssist:.46,kickPower:1.22,maxSpeed:32};
+window.halftimeBallPhysics={airDrag:.025,groundFriction:.28,bounce:.57,gravity:9.81,touchAssist:.34,kickPower:1.34,maxSpeed:34,contactRestitution:.72,juggleLift:.22};
 window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:999,smoothing:28,velocityCap:24};
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 AFRAME.registerComponent('football',{
@@ -43,30 +43,39 @@ if(old){
     const dist=n.length();
 
     // Larger, softer contact zone for easier dribbling and cleaner touches.
-    if(dist<.27&&dist>.0001){
+    if(dist<.30&&dist>.0001){
       n.normalize();
       const relative=footVel.clone().sub(this.v);
       const approach=relative.dot(n);
 
-      // Gentle touches move the ball with the foot instead of launching it.
-      if(footVel.length()<3.6 && dist<.245){
-        const ps=window.halftimePlaystyle||'Power Shot';const bp=window.halftimeBallPhysics||{};const control=footVel.clone().multiplyScalar((ps==='Playmaker' ? .66 : ps==='Defender' ? .62 : .57)*(bp.touchAssist||.46)/.46);
-        this.v.lerp(control,.46);
-        this.v.y=Math.max(this.v.y,0);
+      // Video-style boot contact: immediate response, no sticky "magnet" dribble.
+      const bp=window.halftimeBallPhysics||{};
+      const ps=window.halftimePlaystyle||'Power Shot';
+      if(footVel.length()<3.8 && dist<.255){
+        const carry=footVel.clone().multiplyScalar(ps==='Playmaker'?.44:.36);
+        this.v.addScaledVector(carry,.34);
         this.lastTouch=1;
       }
 
-      // Faster swings become proper shots/passes with controlled power.
-      if(approach>.055){
+      // Real collision-style kick: keep existing ball momentum and add the boot impulse.
+      if(approach>.018){
         this.lastTouch=1;this.lastHumanScorer='local';this.lastHumanTouchAt=t;
         const tangent=relative.clone().addScaledVector(n,-approach);
-        const ps=window.halftimePlaystyle||'Power Shot';const bp=window.halftimeBallPhysics||{};const mult=(ps==='Power Shot'?1.18:ps==='Playmaker' ? .9 : 1)*(bp.kickPower||1.22);const power=THREE.MathUtils.clamp(Math.pow(approach,1.03)*1.12*mult,0,24.5);
-        this.v.addScaledVector(n,power).addScaledVector(tangent,.22);
-        if(state.bent)this.v.y+=Math.min(2.8,footVel.length()*.10);
-        this.v.clampLength(0,(window.halftimeBallPhysics?.maxSpeed||32));
+        const styleMult=ps==='Power Shot'?1.15:ps==='Playmaker'?.93:1;
+        const restitution=bp.contactRestitution??.72;
+        const impulse=THREE.MathUtils.clamp(approach*(1+restitution)*(bp.kickPower||1.34)*styleMult,0,25.5);
+        this.v.addScaledVector(n,impulse).addScaledVector(tangent,.30);
+        if(footVel.y>0)this.v.y+=Math.min(4.4,footVel.y*(bp.juggleLift??.22));
+        if(state.bent)this.v.y+=Math.min(2.2,footVel.length()*.075);
+
+        // Separate the ball from the boot slightly so repeated frames do not make it stick.
+        const penetration=Math.max(0,.245-dist);
+        if(penetration)this.p.addScaledVector(n,penetration*.72);
+
+        this.v.clampLength(0,(bp.maxSpeed||34));
         if(window.onlineCareerGuest)window.onlineCareerSendKick?.(this.v,this.p);
-        this.spin=(this.spin||new THREE.Vector3()).add(n.clone().cross(tangent).multiplyScalar((window.halftimePlaystyle||'Power Shot')==='Finesse'?-1.6:-1.0)).clampLength(0,24);
-        if(t>(this.lastKickSound||0)+120){window.halfSound?.('kick');this.lastKickSound=t;}
+        this.spin=(this.spin||new THREE.Vector3()).add(n.clone().cross(tangent).multiplyScalar(ps==='Finesse'?-1.7:-1.05)).clampLength(0,26);
+        if(t>(this.lastKickSound||0)+90){window.halfSound?.('kick');this.lastKickSound=t;}
       }
     }
   }
