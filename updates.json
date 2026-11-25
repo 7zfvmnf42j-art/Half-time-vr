@@ -1,5 +1,23 @@
 [
   {
+    "version": "0.1.3",
+    "title": "Social & Store Update",
+    "date": "2026-11-25",
+    "added": [
+      "Local friends ID list",
+      "Home and away kit colour previews",
+      "Store equipped indicators"
+    ],
+    "fixed": [
+      "Club name compatibility"
+    ],
+    "pending": [
+      "Online multiplayer and invitations",
+      "Server profiles",
+      "Quest testing"
+    ]
+  },
+  {
     "version": "0.1.2",
     "title": "Player and Physics Update",
     "date": "2026-11-25",
