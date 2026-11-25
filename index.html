@@ -828,6 +828,71 @@ window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,contr
 })();
 </script>
 <script>
+/* HALFTIME PUB DRINK SYSTEM */
+(function(){
+  const rig=document.getElementById('rig');
+  const right=document.getElementById('right');
+  const scene=document.querySelector('a-scene');
+  if(!rig||!right||!scene)return;
+
+  let drinkCount=0;
+
+  function addPubDrinks(){
+    const stock=document.getElementById('cityShopStock');
+    if(!stock||stock.dataset.pubDrinks==='1')return;
+    stock.dataset.pubDrinks='1';
+    const wrap=document.createElement('a-entity');
+    wrap.id='pubDrinksDisplay';
+    wrap.innerHTML=
+      '<a-box position="-1.1 .85 -2.2" width=".35" height=".75" depth=".35" color="#ef4444"></a-box>'+
+      '<a-text value="Cola" position="-1.1 .35 -2.2" align="center" width="1.4" color="#ffffff"></a-text>'+
+      '<a-box position="0 .85 -2.2" width=".35" height=".75" depth=".35" color="#f59e0b"></a-box>'+
+      '<a-text value="Orange" position="0 .35 -2.2" align="center" width="1.4" color="#ffffff"></a-text>'+
+      '<a-box position="1.1 .85 -2.2" width=".35" height=".75" depth=".35" color="#38bdf8"></a-box>'+
+      '<a-text value="Water" position="1.1 .35 -2.2" align="center" width="1.4" color="#ffffff"></a-text>'+
+      '<a-text value="A in VR / E on keyboard to drink" position="0 1.65 -2.2" align="center" width="4.2" color="#ffd166"></a-text>';
+    stock.append(wrap);
+  }
+
+  function drink(){
+    if(!window.inCityRoom)return;
+    const title=document.getElementById('cityRoomTitle')?.getAttribute('value')||'';
+    if(title!=='HALFTIME PUB')return;
+    drinkCount++;
+    const info=document.getElementById('cityRoomInfo');
+    if(info)info.setAttribute('value','Soft drink finished • Drinks: '+drinkCount);
+    window.halfSound?.('menu');
+  }
+
+  window.halftimePubDrink=drink;
+
+  // Keyboard/mobile-friendly action while inside the pub.
+  window.addEventListener('keydown',e=>{
+    if(e.code==='KeyE'&&window.inCityRoom){
+      const title=document.getElementById('cityRoomTitle')?.getAttribute('value')||'';
+      if(title==='HALFTIME PUB'){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        drink();
+      }
+    }
+  },true);
+
+  // VR: A drinks when already inside the pub.
+  right.addEventListener('abuttondown',()=>{
+    if(!scene.is('vr-mode')||!window.inCityRoom)return;
+    const title=document.getElementById('cityRoomTitle')?.getAttribute('value')||'';
+    if(title==='HALFTIME PUB')drink();
+  });
+
+  const obs=new MutationObserver(()=>{
+    const title=document.getElementById('cityRoomTitle')?.getAttribute('value')||'';
+    if(window.inCityRoom&&title==='HALFTIME PUB')addPubDrinks();
+  });
+  obs.observe(document.body,{subtree:true,attributes:true,attributeFilter:['value','visible']});
+})();
+</script>
+<script>
 /* HALFTIME SNAP TURN SYSTEM */
 (function(){
   const rig=document.getElementById('rig');
