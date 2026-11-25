@@ -1,7 +1,8 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
 window.halftimeBallPhysics={airDrag:.025,groundFriction:.28,bounce:.57,gravity:9.81,touchAssist:.34,kickPower:1.34,maxSpeed:34,contactRestitution:.72,juggleLift:.22};
-window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:.95,smoothing:30,velocityCap:24};
+window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.05,smoothing:38,velocityCap:26};
+window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 window.halftimePlaceLegSegment=(mesh,a,b)=>{
   if(!mesh)return;
@@ -59,7 +60,8 @@ if(state.thigh&&state.lower){
   const forward=new THREE.Vector3(0,0,-1).applyQuaternion(headQ);forward.y=0;if(forward.lengthSq()>.001)forward.normalize();
 
   // Hips rotate with the player's body instead of staying locked to world X.
-  hip.y-=.72;
+  const measuredHeight=THREE.MathUtils.clamp(window.halftimePlayerHeight||1.72,1.25,2.15);
+  hip.y-=measuredHeight*.43;
   hip.addScaledVector(right,id==='left'?-.15:.15);
 
   const foot=p.clone().add(new THREE.Vector3(0,.135,0));
@@ -74,12 +76,13 @@ if(state.thigh&&state.lower){
     foot.z=p.z;
   }
   const knee=hip.clone().lerp(foot,.53);
-  knee.addScaledVector(forward,state.bent?.18:.09);
+  knee.addScaledVector(forward,state.bent?.20:.10);
   knee.addScaledVector(right,id==='left'?-.035:.035);
   knee.y+=.055;
 
   window.halftimePlaceLegSegment(state.thigh,hip,knee);
   window.halftimePlaceLegSegment(state.lower,knee,foot);
+  if(state.kneeCap){state.kneeCap.position.copy(knee);state.kneeCap.scale.set(1,.9,1);}
 }
 
 const old=this.prev[id];
@@ -290,9 +293,10 @@ for(const id of ['left','right']){
   mesh.add(toe);
 
   // Full visible leg: upper leg + lower leg stretch between hip, knee and foot.
-  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.095,.105,1,10),mat(sockColor));
-  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.075,.09,1,10),mat(sockColor));
-  legGroup.add(thigh,lower);
+  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.105,.135,1,12),mat(sockColor));
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.072,.105,1,12),mat(sockColor));
+  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.105,12,10),mat(sockColor));
+  legGroup.add(thigh,lower,kneeCap);
 
   for(const root of [mesh,legGroup])root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   scene.object3D.add(mesh);
@@ -300,7 +304,7 @@ for(const id of ['left','right']){
   mesh.visible=false;
   legGroup.visible=false;
 
-  const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,bent:false};
+  const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,kneeCap,bent:false};
   e.addEventListener('triggerdown',()=>state.bent=true);
   e.addEventListener('triggerup',()=>state.bent=false);
   scene.addEventListener('enter-vr',()=>{state.smooth=null;mesh.visible=true;legGroup.visible=true;});
@@ -766,8 +770,11 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     // Aim for a comfortable standing eye height while preserving X/Z location.
     const headWorld=cam.object3D.getWorldPosition(new THREE.Vector3());
     const headY=headWorld.y-rig.object3D.position.y;
-    const targetEye=1.6;
-    floorOffset=THREE.MathUtils.clamp(targetEye-headY,-1.2,1.2);
+    const eyeHeight=THREE.MathUtils.clamp(headY,.95,2.05);
+    window.halftimePlayerHeight=THREE.MathUtils.clamp(eyeHeight/.93,1.25,2.15);
+    localStorage.setItem('halftimePlayerHeight',String(window.halftimePlayerHeight));
+    // Preserve the detected floor origin; Quest Guardian remains managed by Quest.
+    floorOffset=THREE.MathUtils.clamp(floorOffset,-1.2,1.2);
     rig.object3D.position.y=floorOffset;
     localStorage.setItem('halftimeFloorOffset',String(floorOffset));
 
@@ -790,13 +797,13 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     if(!page)return;
 
     const wrap=document.createElement('div');
-    wrap.innerHTML='<h3>VR Recalibration</h3><p>Stand normally, keep your headset level, then press recalibrate. This resets your floor/height alignment.</p><button id="recalibrateVR">Recalibrate VR</button><button id="resetRecalVR">Reset Calibration</button><p id="recalStatus">Calibration ready.</p>';
+    wrap.innerHTML='<h3>VR Height & Floor Calibration</h3><p>Stand naturally in the centre of your play area, look straight ahead, then calibrate. HALFTIME reads your headset height to size your virtual player and legs. Your Quest Guardian boundary is still controlled by Quest.</p><button id="recalibrateVR">CALIBRATE MY HEIGHT</button><button id="resetRecalVR">Reset Calibration</button><p id="recalStatus">Height calibration ready.</p>';
     page.append(wrap);
 
     const status=wrap.querySelector('#recalStatus');
     wrap.querySelector('#recalibrateVR').onclick=()=>{
       const off=recalibrate();
-      status.textContent='Recalibrated. Floor offset: '+off.toFixed(2)+' m';
+      status.textContent='Height saved: '+(window.halftimePlayerHeight||1.72).toFixed(2)+' m player estimate • floor aligned.';
     };
     wrap.querySelector('#resetRecalVR').onclick=()=>{
       floorOffset=0;
