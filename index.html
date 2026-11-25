@@ -241,41 +241,34 @@ function syncWorldMode(){
  const mode=document.getElementById('mode')?.value||'training';
  const career=mode==='career';
  const scene=document.querySelector('a-scene');
- const challenge=document.getElementById('trainingChallenge');
- if(challenge)challenge.setAttribute('visible',!career && mode==='training');
- // The city is its own world and must never remain visible during a career match.
- const city=document.getElementById('cityHub');
- if(city)city.setAttribute('visible',!career);
- const cityRoom=document.getElementById('cityInterior');
- if(cityRoom)cityRoom.setAttribute('visible',!career);
- const careerGround=document.getElementById('careerStadiumEnvironment');
- if(careerGround)careerGround.setAttribute('visible',career);
- // All top-level primitive geometry belongs to the original training ground
- // (pitch, goals, painted lines, perimeter and background buildings).
- // Career stadium geometry is inside its own entity, so it is not affected.
+ const setVisible=(el,on)=>{if(!el)return;el.setAttribute('visible',on);if(el.object3D)el.object3D.visible=on;};
+ setVisible(document.getElementById('trainingChallenge'),!career && mode==='training');
+ // Career matches use their own generated stadium. Explicitly switch off every
+ // training-ground surface so the old pitch cannot show through at spawn.
+ setVisible(document.getElementById('cityHub'),!career);
+ setVisible(document.getElementById('cityInterior'),!career);
+ setVisible(document.getElementById('careerStadiumEnvironment'),career);
  if(scene){
   for(const el of [...scene.children]){
    const tag=el.tagName?.toLowerCase();
-   if(['a-plane','a-box','a-ring'].includes(tag)){
-    el.setAttribute('visible',!career);
-   }
+   if(['a-plane','a-box','a-ring'].includes(tag))setVisible(el,!career);
   }
  }
- // Keep player/ball and career teams visible; hide the training goalkeeper in Career.
+ setVisible(document.getElementById('worldGround'),!career);
+ setVisible(document.getElementById('trainingPitch'),!career);
  const bot=document.getElementById('bot');
- if(bot)bot.setAttribute('visible',!career && mode!=='training');
+ setVisible(bot,!career && mode!=='training');
  if(window.requestAnimationFrame){
   requestAnimationFrame(()=>{
    if(document.getElementById('mode')?.value!==mode)return;
-   const c=document.getElementById('cityHub');
-   if(c)c.setAttribute('visible',!career);
-   const cityRoom=document.getElementById('cityInterior');
-   if(cityRoom)cityRoom.setAttribute('visible',!career);
-   const g=document.getElementById('careerStadiumEnvironment');
-   if(g)g.setAttribute('visible',career);
+   setVisible(document.getElementById('cityHub'),!career);
+   setVisible(document.getElementById('cityInterior'),!career);
+   setVisible(document.getElementById('careerStadiumEnvironment'),career);
+   setVisible(document.getElementById('worldGround'),!career);
+   setVisible(document.getElementById('trainingPitch'),!career);
    if(scene)for(const el of [...scene.children]){
     const tag=el.tagName?.toLowerCase();
-    if(['a-plane','a-box','a-ring'].includes(tag))el.setAttribute('visible',!career);
+    if(['a-plane','a-box','a-ring'].includes(tag))setVisible(el,!career);
    }
   });
  }
