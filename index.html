@@ -2112,4 +2112,75 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  draw();
 })();
 </script>
+
+<script>
+/* HALFTIME SEASON 2 CLUB HQ */
+(function(){
+ const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+ if(!nav||!pages)return;
+ const tab=document.createElement('button');tab.type='button';tab.textContent='Season 2';
+ const page=document.createElement('section');page.className='halfPage';page.hidden=true;
+ page.innerHTML=`
+ <style>
+ #s2hub{color:#eef6ff}#s2hub .s2card{background:#172b43;border:1px solid #35516f;border-radius:12px;padding:12px;margin:10px 0}
+ #s2hub .s2grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}
+ #s2hub label{display:block;margin:7px 0}#s2hub input,#s2hub select{max-width:100%;padding:8px;border-radius:7px}
+ #s2hub button{margin:5px 4px 5px 0;padding:9px 12px;border:0;border-radius:8px;background:#1677d2;color:white;font-weight:700}
+ #s2hub button:disabled{opacity:.45}#s2hub .muted{color:#a9bed4;font-size:.9em}
+ #s2hub table{width:100%;border-collapse:collapse}#s2hub td,#s2hub th{padding:6px;border-bottom:1px solid #36516c;text-align:left}
+ #s2hub .kit{height:48px;width:36px;border-radius:8px 8px 5px 5px;border:2px solid #fff;display:inline-block;vertical-align:middle;margin-right:8px}
+ </style>
+ <div id="s2hub">
+ <h2>🏆 HALFTIME VR — SEASON 2</h2>
+ <p class="muted">Build your club, sign players, manage contracts and compete for promotion and cup glory. Your manager save is stored on this device.</p>
+ <div class="s2grid">
+  <div class="s2card"><h3>Club identity</h3><label>Club name <input id="s2name" maxlength="24" placeholder="Your club"></label><label>Home kit <input id="s2home" type="color" value="#7b1738"></label><label>Away kit <input id="s2away" type="color" value="#e8edf4"></label><label>Badge style <select id="s2badge"><option>Shield</option><option>Circle</option><option>Diamond</option></select></label><p><span class="kit" id="s2kit"></span><span id="s2kitlabel">Home kit preview</span></p><button id="s2save">SAVE CLUB</button><p id="s2msg" class="muted">Create your club to begin.</p></div>
+  <div class="s2card"><h3>Club finances</h3><h2 id="s2budget">£5,000,000</h2><p id="s2wages">Weekly wages: £0</p><p id="s2value">Squad value: £0</p><p class="muted">Transfers cost a fee and add weekly wages. Released players leave your squad.</p></div>
+ </div>
+ <div class="s2card"><h3>Transfer market</h3><p class="muted">Scout available players and sign them while your budget allows.</p><div id="s2market"></div></div>
+ <div class="s2card"><h3>Your squad & contracts</h3><div id="s2squad">Save a club to build your squad.</div></div>
+ <div class="s2grid">
+  <div class="s2card"><h3>League season</h3><p id="s2week">Week 1 of 18</p><button id="s2playweek">SIMULATE NEXT MATCHWEEK</button><button id="s2reset">START NEW SEASON</button><div id="s2table"></div><p class="muted">Top two earn promotion; bottom two are relegated when the season ends. Results are simulated for this career save.</p></div>
+  <div class="s2card"><h3>Season cup</h3><p id="s2cupstatus">Eight-team knockout cup.</p><button id="s2cup">START / SIMULATE CUP</button><div id="s2cupdraw"></div></div>
+ </div>
+ </div>`;
+ pages.append(page);nav.append(tab);
+ const hideAll=()=>{[...pages.children].forEach(p=>p.hidden=true);[...nav.children].forEach(b=>b.classList.remove('active'));};
+ tab.addEventListener('click',()=>{hideAll();page.hidden=false;tab.classList.add('active');render();});
+ [...nav.children].filter(b=>b!==tab).forEach(b=>b.addEventListener('click',()=>{page.hidden=true;tab.classList.remove('active');}));
+ const $=id=>page.querySelector('#'+id),key='halftime-season2-save';
+ const teams=['Eastford Athletic','Northbridge FC','Kingsport City','Riverside Town','Redmont United','Westvale FC','Harbour Rovers','Ashfield Town','Crownside FC','Lakeside City'];
+ const pool=[['M. Carter','ST',21,780000,4200],['J. Okafor','LW',19,1150000,6100],['A. Silva','CM',24,940000,5000],['T. Hughes','CB',22,690000,3600],['L. Bennett','GK',25,550000,3100],['R. Mensah','RW',20,1250000,6500],['D. Walsh','LB',23,620000,3300],['E. Petrov','CAM',18,1450000,7200],['S. Khan','CDM',26,800000,4400],['N. Costa','CB',20,1050000,5300],['P. Wilson','ST',27,1350000,7000],['I. Moreau','RB',21,710000,3900]];
+ let state;
+ function fresh(){return {name:'',home:'#7b1738',away:'#e8edf4',badge:'Shield',budget:5000000,squad:[],week:0,table:teams.map((name,i)=>({name,pts:0,p:0,w:0,d:0,l:0,gf:0,ga:0})),cup:null,market:pool.map((p,i)=>({id:i,name:p[0],pos:p[1],age:p[2],fee:p[3],wage:p[4]}))};}
+ function load(){try{const x=JSON.parse(localStorage.getItem(key)||'null');state=x&&Array.isArray(x.table)&&Array.isArray(x.squad)&&Array.isArray(x.market)?x:fresh();}catch(e){state=fresh();}}
+ function save(){localStorage.setItem(key,JSON.stringify(state));}
+ function money(n){return '£'+Math.max(0,Math.round(n)).toLocaleString('en-GB');}
+ function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function render(){
+  $('s2name').value=state.name;$('s2home').value=state.home;$('s2away').value=state.away;$('s2badge').value=state.badge;
+  $('s2kit').style.background='linear-gradient(90deg,'+state.home+' 0 50%,'+state.away+' 50%)';
+  $('s2budget').textContent=money(state.budget);
+  $('s2wages').textContent='Weekly wages: '+money(state.squad.reduce((a,p)=>a+p.wage,0));
+  $('s2value').textContent='Squad value: '+money(state.squad.reduce((a,p)=>a+p.fee,0));
+  $('s2market').innerHTML=state.market.length?state.market.map(p=>'<p><b>'+esc(p.name)+'</b> · '+p.pos+' · Age '+p.age+' · '+money(p.fee)+' · '+money(p.wage)+'/week <button data-buy="'+p.id+'">SIGN PLAYER</button></p>').join(''):'No players left in the market.';
+  $('s2squad').innerHTML=state.squad.length?'<table><tr><th>Player</th><th>Position</th><th>Contract</th><th></th></tr>'+state.squad.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+p.pos+'</td><td>'+p.years+' seasons</td><td><button data-release="'+p.id+'">RELEASE</button></td></tr>').join('')+'</table>':'No players signed yet. Visit the transfer market.';
+  $('s2week').textContent=state.week>=18?'Season complete': 'Week '+(state.week+1)+' of 18';
+  const sorted=[...state.table].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+  $('s2table').innerHTML='<table><tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>'+sorted.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(t.name)+(i<2&&state.week===18?' ↑':i>7&&state.week===18?' ↓':'')+'</td><td>'+t.p+'</td><td>'+t.w+'</td><td>'+t.d+'</td><td>'+t.l+'</td><td>'+(t.gf-t.ga)+'</td><td><b>'+t.pts+'</b></td></tr>').join('')+'</table>';
+  $('s2playweek').disabled=state.week>=18||!state.name;
+  $('s2cupstatus').textContent=state.cup?.done?'Cup winner: '+state.cup.winner:state.cup?'Round '+state.cup.round+' in progress':'Eight-team knockout cup.';
+  $('s2cupdraw').innerHTML=state.cup?state.cup.rounds.map((r,i)=>'<p><b>'+['Quarter-finals','Semi-finals','Final'][i]+'</b><br>'+r.map(x=>esc(x)).join('<br>')+'</p>').join(''):'';
+ }
+ $('s2save').onclick=()=>{const n=$('s2name').value.trim();if(n.length<3){$('s2msg').textContent='Club name must be at least 3 characters.';return;}state.name=n;state.home=$('s2home').value;state.away=$('s2away').value;state.badge=$('s2badge').value;save();$('s2msg').textContent=n+' saved on this device.';render();};
+ ['s2name','s2home','s2away','s2badge'].forEach(id=>$(id).addEventListener('input',()=>{$('s2kit').style.background='linear-gradient(90deg,'+$('s2home').value+' 0 50%,'+$('s2away').value+' 50%)';}));
+ $('s2market').addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(!b)return;const p=state.market.find(x=>x.id===Number(b.dataset.buy));if(!p)return;if(!state.name){$('s2msg').textContent='Save your club first.';return;}if(state.budget<p.fee){$('s2msg').textContent='Not enough transfer budget.';return;}if(state.squad.length>=18){$('s2msg').textContent='Squad limit reached (18 players).';return;}state.budget-=p.fee;state.squad.push({...p,years:3});state.market=state.market.filter(x=>x.id!==p.id);save();render();});
+ $('s2squad').addEventListener('click',e=>{const b=e.target.closest('[data-release]');if(!b)return;const p=state.squad.find(x=>x.id===Number(b.dataset.release));if(!p)return;state.budget+=Math.round(p.fee*.35);state.squad=state.squad.filter(x=>x.id!==p.id);save();render();});
+ $('s2playweek').onclick=()=>{if(state.week>=18)return;for(let i=0;i<state.table.length;i++){const a=state.table[i],b=state.table[(i+1+state.week)%state.table.length];if(a===b)continue;const ga=Math.floor(Math.random()*4),gb=Math.floor(Math.random()*4);a.p++;b.p++;a.gf+=ga;a.ga+=gb;b.gf+=gb;b.ga+=ga;if(ga>gb){a.w++;a.pts+=3;b.l++;}else if(gb>ga){b.w++;b.pts+=3;a.l++;}else{a.d++;b.d++;a.pts++;b.pts++;}}state.week++;if(state.week===18){const sorted=[...state.table].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga));state.lastPromotion=sorted.slice(0,2).map(x=>x.name);state.lastRelegation=sorted.slice(-2).map(x=>x.name);}save();render();if(state.week===18)$('s2msg').textContent='Season complete. Promoted: '+state.lastPromotion.join(', ')+'. Relegated: '+state.lastRelegation.join(', ')+'.';};
+ $('s2reset').onclick=()=>{if(!confirm('Start a new season? Your club and squad stay, but league results reset.'))return;state.week=0;state.table=teams.map(name=>({name,pts:0,p:0,w:0,d:0,l:0,gf:0,ga:0}));state.cup=null;save();render();};
+ $('s2cup').onclick=()=>{if(!state.cup){const entrants=[state.name||'Your Club',...teams.slice(0,7)];state.cup={round:1,rounds:[[]],done:false};for(let i=0;i<entrants.length;i+=2){const a=entrants[i],b=entrants[i+1],winner=Math.random()<.5?a:b;state.cup.rounds[0].push(a+' '+(Math.floor(Math.random()*4))+'–'+(Math.floor(Math.random()*4))+' '+b+' · '+winner+' advance');state.cup['w1']??=[];state.cup.w1.push(winner);}state.cup.round=2;}else if(!state.cup.done){const round=state.cup.round,prev=state.cup['w'+(round-1)]||[];if(prev.length<=1){state.cup.done=true;state.cup.winner=prev[0]||'No winner';}else{const next=[];state.cup.rounds[round-1]=[];for(let i=0;i<prev.length;i+=2){const a=prev[i],b=prev[i+1]||'BYE',winner=b==='BYE'?a:(Math.random()<.5?a:b);state.cup.rounds[round-1].push(a+' vs '+b+' · '+winner+' advance');next.push(winner);}state.cup['w'+round]=next;state.cup.round++;if(next.length===1){state.cup.done=true;state.cup.winner=next[0];}}}save();render();};
+ load();render();
+})();
+</script>
+
 </body></html>
