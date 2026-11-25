@@ -299,10 +299,38 @@ scene.addEventListener('exit-vr',()=>{for(const id of ['left','right'])$(id).set
 })();
 
 (function(){
-const names=['Halftime FC','Eastbridge','Northport','Kingsway','Oakfield','Riverside','Westvale','Southbank','Redwick','Hillcrest'];
-let season=profile.career||{round:0,rows:names.map(name=>({name,p:0,gd:0,played:0}))};
+const careerCountries={
+England:['Halftime FC','Eastbridge','Northport','Kingsway','Oakfield','Riverside','Westvale','Southbank','Redwick','Hillcrest'],
+Spain:['Halftime Madrid','Costa Athletic','Valencia Norte','Real Puerto','Sevilla Azul','Catalonia City','Bilbao United','Granada CF','Malaga Stars','Castilla FC'],
+France:['Halftime Paris','Lyon Bleu','Marseille Athletic','Lille United','Bordeaux FC','Nice Riviera','Toulouse City','Nantes Atlantique','Rennes Rouge','Monaco Stars'],
+Germany:['Halftime Berlin','Rhine FC','Munich Athletic','Dortmund City','Hamburg 04','Leipzig United','Frankfurt Adler','Stuttgart FC','Bremen Grün','Cologne 11'],
+Italy:['Halftime Roma','Milano Calcio','Torino FC','Napoli Blu','Firenze United','Bologna Rosso','Genova City','Verona Athletic','Palermo Stars','Lazio Nord'],
+Portugal:['Halftime Lisboa','Porto Azul','Braga United','Coimbra FC','Algarve Athletic','Madeira City','Setubal Stars','Aveiro FC','Minho United','Cascais 11'],
+Brazil:['Halftime Rio','Sao Paulo Stars','Santos Azul','Bahia United','Recife FC','Brasilia Athletic','Curitiba City','Fortaleza Verde','Manaus FC','Minas Stars'],
+Argentina:['Halftime Buenos Aires','Cordoba FC','Rosario Azul','Mendoza United','La Plata Athletic','Santa Fe City','Tucuman Stars','Salta FC','Mar del Plata','Patagonia United'],
+Netherlands:['Halftime Amsterdam','Rotterdam Oranje','Eindhoven FC','Utrecht City','Groningen United','Arnhem Athletic','Breda Stars','Tilburg FC','Alkmaar 11','Haarlem United'],
+USA:['Halftime United','New York Cityside','Los Angeles Stars','Miami Athletic','Chicago FC','Dallas United','Seattle City','Boston 11','Atlanta Stars','Denver FC'],
+Japan:['Halftime Tokyo','Osaka United','Kyoto FC','Yokohama Stars','Kobe Athletic','Nagoya City','Sapporo United','Fukuoka FC','Sendai 11','Hiroshima Stars'],
+Mexico:['Halftime Mexico City','Guadalajara FC','Monterrey United','Puebla Athletic','Tijuana Stars','Leon City','Merida FC','Toluca United','Queretaro 11','Cancun Athletic']
+};
+profile.careerCountry=profile.careerCountry||'England';
+let names=careerCountries[profile.careerCountry]||careerCountries.England;
+let season=profile.career&&profile.career.country===profile.careerCountry?profile.career:{country:profile.careerCountry,round:0,rows:names.map(name=>({name,p:0,gd:0,played:0}))};
 const players=[];for(const team of [1,-1])for(let j=0;j<(team===1?10:11);j++){const e=document.createElement('a-entity');e.setAttribute('visible',false);const kit=j===0?(team===1?'#facc15':'#a855f7'):(team===1?'#168bff':'#ef4444');const skin=['#b77c55','#e3b38b','#795039','#d29a70'][j%4];const body=new THREE.Group();const part=(geo,color,x,y,z,parent=body)=>{const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.85,flatShading:true}));m.position.set(x,y,z);parent.add(m);return m;};part(new THREE.CylinderGeometry(.28,.19,.48,4,1,false,Math.PI/4),kit,0,1.28,0).scale.z=.55;part(new THREE.BoxGeometry(.39,.23,.23),'#182336',0,.94,0);part(new THREE.BoxGeometry(.12,.12,.12),skin,0,1.54,0);part(new THREE.BoxGeometry(.25,.29,.19),skin,0,1.72,0);part(new THREE.BoxGeometry(.26,.075,.20),'#30251e',0,1.86,0);for(const side of [-1,1])part(new THREE.BoxGeometry(.025,.025,.006),'#20252c',side*.055,1.75,.098);const legs=[];for(const side of [-1,1]){const leg=new THREE.Group();leg.position.set(side*.11,.85,0);body.add(leg);part(new THREE.BoxGeometry(.17,.30,.18),'#182336',0,-.13,0,leg);part(new THREE.BoxGeometry(.12,.19,.13),skin,0,-.36,0,leg);part(new THREE.BoxGeometry(.13,.28,.14),kit,0,-.59,0,leg);part(new THREE.BoxGeometry(.15,.09,.26),'#111827',0,-.79,.055,leg);part(new THREE.BoxGeometry(.16,.025,.27),'#20252c',0,-.835,.055,leg);legs.push(leg);if(j!==0){part(new THREE.BoxGeometry(.16,.22,.18),kit,side*.29,1.32,0);const arm=part(new THREE.BoxGeometry(.12,.35,.13),skin,side*.34,1.07,0);arm.rotation.z=side*.12;}}e.setObject3D('careerBody',body);e.careerLegs=legs;scene.appendChild(e);const rating=35+((j*17+(team===1?13:29))%57);const tag=document.createElement('a-text');tag.setAttribute('value',String(rating));tag.setAttribute('position','0 2 0');tag.setAttribute('align','center');tag.setAttribute('width','2');e.append(tag);if(j===0){for(const side of [-1,1]){const arm=document.createElement('a-box');arm.setAttribute('position',side*.42+' 1.1 0');arm.setAttribute('width','.48');arm.setAttribute('height','.16');arm.setAttribute('depth','.18');arm.setAttribute('color','#facc15');e.append(arm);const glove=document.createElement('a-box');glove.setAttribute('position',side*.7+' 1.1 0');glove.setAttribute('width','.22');glove.setAttribute('height','.18');glove.setAttribute('depth','.13');glove.setAttribute('color','#ffffff');e.append(glove);}}players.push({e,team,j,cd:0,rating,dive:null});}
 window.hideCareer=()=>players.forEach(a=>a.e.setAttribute('visible',false));
+window.careerCountries=Object.keys(careerCountries);
+window.setCareerCountry=country=>{
+  if(!careerCountries[country])return false;
+  profile.careerCountry=country;
+  names=careerCountries[country];
+  season={country,round:0,rows:names.map(name=>({name,p:0,gd:0,played:0}))};
+  profile.career=season;
+  const tc=window.transferState?.();
+  if(tc){tc.country=country;tc.club=names[0];tc.offer=null;}
+  save();
+  refresh();
+  return true;
+};
 const opponent=()=>names[1+season.round%9];
 window.careerSummary=()=>{const sorted=[...season.rows].sort((a,b)=>b.p-a.p||b.gd-a.gd);return (window.divisionSummary?.()||'Division 5')+' | Round '+(season.round%18+1)+' | vs '+opponent()+' | '+(sorted.findIndex(a=>a.name===names[0])+1)+' / 10 | '+season.rows[0].p+' pts';};
 const status=document.createElement('p');$('mode').after(status);function refresh(){status.textContent=window.careerSummary()+' | '+[...season.rows].sort((a,b)=>b.p-a.p||b.gd-a.gd).map(a=>a.name+' '+a.p).join(' / ');}refresh();
@@ -353,11 +381,25 @@ const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);if(x>y){shop.
 })();
 
 (function(){
-const c=profile.transferCareer||{club:profile.club?.name||'Halftime FC',matches:0,wins:0,offer:null,wage:0,division:5};profile.transferCareer=c;
-const clubs=['Eastbridge United','Northport City','Kingsway Athletic','Oakfield Rovers','Riverside FC','Westvale Town'];
-function offer(){if(c.offer||c.matches<2)return;const club=clubs.filter(n=>n!==c.club)[c.matches%5];c.offer={club,wage:500+c.wins*250,fee:10000+c.wins*10000};save();render();}
+const c=profile.transferCareer||{club:profile.club?.name||'Halftime FC',country:profile.careerCountry||'England',matches:0,wins:0,offer:null,wage:0,division:5};profile.transferCareer=c;
+c.country=c.country||profile.careerCountry||'England';
+const clubPools={
+England:['Eastbridge United','Northport City','Kingsway Athletic','Oakfield Rovers','Riverside FC','Westvale Town'],
+Spain:['Costa Athletic','Valencia Norte','Real Puerto','Sevilla Azul','Catalonia City','Bilbao United'],
+France:['Lyon Bleu','Marseille Athletic','Lille United','Bordeaux FC','Nice Riviera','Toulouse City'],
+Germany:['Rhine FC','Munich Athletic','Dortmund City','Hamburg 04','Leipzig United','Frankfurt Adler'],
+Italy:['Milano Calcio','Torino FC','Napoli Blu','Firenze United','Bologna Rosso','Genova City'],
+Portugal:['Porto Azul','Braga United','Coimbra FC','Algarve Athletic','Madeira City','Setubal Stars'],
+Brazil:['Sao Paulo Stars','Santos Azul','Bahia United','Recife FC','Brasilia Athletic','Curitiba City'],
+Argentina:['Cordoba FC','Rosario Azul','Mendoza United','La Plata Athletic','Santa Fe City','Tucuman Stars'],
+Netherlands:['Rotterdam Oranje','Eindhoven FC','Utrecht City','Groningen United','Arnhem Athletic','Breda Stars'],
+USA:['New York Cityside','Los Angeles Stars','Miami Athletic','Chicago FC','Dallas United','Seattle City'],
+Japan:['Osaka United','Kyoto FC','Yokohama Stars','Kobe Athletic','Nagoya City','Sapporo United'],
+Mexico:['Guadalajara FC','Monterrey United','Puebla Athletic','Tijuana Stars','Leon City','Merida FC']
+};
+function offer(){if(c.offer||c.matches<2)return;const clubs=clubPools[c.country]||clubPools.England;const available=clubs.filter(n=>n!==c.club);const club=available[c.matches%available.length];c.offer={club,wage:500+c.wins*250,fee:10000+c.wins*10000};save();render();}
 window.transferState=()=>c;window.requestTransfer=offer;window.resolveTransfer=accept=>{if(!c.offer)return;if(accept){c.club=c.offer.club;c.wage=c.offer.wage;}c.offer=null;save();render();};
-const p=document.createElement('div');$('mode').after(p);function render(){p.replaceChildren();const t=document.createElement('p');t.textContent='Career club: '+c.club+' | Division '+c.division+' | '+c.wins+' wins'+(c.offer?' | Offer: '+c.offer.club+' • £'+c.offer.fee+' fee • £'+c.offer.wage+'/week':'');p.append(t);for(const [name,fn] of (c.offer?[['Accept offer',()=>window.resolveTransfer(true)],['Reject offer',()=>window.resolveTransfer(false)]]:[['Request transfer',offer]])){const b=document.createElement('button');b.textContent=name;b.onclick=fn;p.append(b);}}
+const p=document.createElement('div');$('mode').after(p);function render(){p.replaceChildren();const t=document.createElement('p');t.textContent='Career: '+c.country+' | '+c.club+' | Division '+c.division+' | '+c.wins+' wins'+(c.offer?' | Offer: '+c.offer.club+' • £'+c.offer.fee+' fee • £'+c.offer.wage+'/week':'');p.append(t);for(const [name,fn] of (c.offer?[['Accept offer',()=>window.resolveTransfer(true)],['Reject offer',()=>window.resolveTransfer(false)]]:[['Request transfer',offer]])){const b=document.createElement('button');b.textContent=name;b.onclick=fn;p.append(b);}}
 const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);c.matches++;if(x>y)c.wins++;if(c.matches%3===0&&c.wins>=2)offer();save();render();};render();
 })();
 
@@ -385,7 +427,20 @@ const board=$('score');const oldPlay=$('play').onclick;function switchPitch(){co
 const p=profile.roadToGlory||{tier:6,season:1,country:'England',caps:0,called:false,notice:'Start in Division 5'};profile.roadToGlory=p;const divisions=['Premier Division','Championship','Division 1','Division 2','Division 3','Division 4','Division 5'];
 window.divisionSummary=()=>divisions[p.tier]+' | Season '+p.season;
 const panel=document.createElement('div');const page=[...$('halfPages').children].find(e=>e.querySelector('h2')?.textContent==='Career Mode');(page||$('mode').parentElement).append(panel);
-const status=document.createElement('p');panel.append(status);const country=document.createElement('select');for(const n of ['England','Scotland','Wales','Northern Ireland','Ireland','France','Spain','Germany','Portugal','Brazil','Argentina','Netherlands','Italy','USA','Japan','Mexico','Australia','Canada'])country.add(new Option(n,n));country.value=p.country;country.onchange=()=>{if(p.caps||p.called){country.value=p.country;return;}p.country=country.value;save();render();};const label=document.createElement('label');label.textContent='International team ';label.append(country);panel.append(label);
+const status=document.createElement('p');panel.append(status);
+const leagueLabel=document.createElement('label');leagueLabel.textContent='Career league country ';
+const leagueCountry=document.createElement('select');
+for(const n of (window.careerCountries||['England']))leagueCountry.add(new Option(n,n));
+leagueCountry.value=profile.careerCountry||'England';
+leagueCountry.onchange=()=>{
+  if(window.transferState?.()?.matches>0){leagueCountry.value=profile.careerCountry||'England';return;}
+  if(window.setCareerCountry?.(leagueCountry.value)){
+    const tc=window.transferState?.();if(tc){tc.country=leagueCountry.value;tc.club=profile.career?.rows?.[0]?.name||tc.club;tc.offer=null;}
+    save();render();
+  }
+};
+leagueLabel.append(leagueCountry);panel.append(leagueLabel);
+const country=document.createElement('select');for(const n of ['England','Scotland','Wales','Northern Ireland','Ireland','France','Spain','Germany','Portugal','Brazil','Argentina','Netherlands','Italy','USA','Japan','Mexico','Australia','Canada'])country.add(new Option(n,n));country.value=p.country;country.onchange=()=>{if(p.caps||p.called){country.value=p.country;return;}p.country=country.value;save();render();};const label=document.createElement('label');label.textContent='International team ';label.append(country);panel.append(label);
 const international=document.createElement('button');international.textContent='Play international match';panel.append(international);
 function render(){status.textContent=window.divisionSummary()+' | '+p.notice+' | '+p.country+' caps: '+p.caps;international.disabled=!p.called;country.disabled=p.called||p.caps>0;}
 window.seasonComplete=rank=>{if(rank<=2&&p.tier>0){p.tier--;p.notice='Promoted to '+divisions[p.tier];}else if(rank>=9&&p.tier<6){p.tier++;p.notice='Relegated to '+divisions[p.tier];}else p.notice=rank===1?'League champions!':'Finished '+rank+'th';p.season++;const c=window.transferState?.();if(c)c.division=5-p.tier+6;save();render();};
