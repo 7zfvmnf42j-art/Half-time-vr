@@ -1,0 +1,20 @@
+[
+  {
+    "version": "0.1.1",
+    "title": "The Boot Update",
+    "date": "2026-11-25",
+    "added": [
+      "Local player IDs",
+      "Game website"
+    ],
+    "fixed": [
+      "Duplicate purple boots",
+      "Oversized heel geometry"
+    ],
+    "pending": [
+      "Online multiplayer",
+      "Improved ball physics",
+      "Headset verification"
+    ]
+  }
+]
