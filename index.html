@@ -5,7 +5,7 @@ init(){this.v=new THREE.Vector3();this.p=new THREE.Vector3(0,.23,0);this.prev={}
 start(mode){this.mode=mode;this.score=0;this.ai=0;this.time=180;this.ended=false;this.reset();this.hud();},
 reset(){this.p.set(0,.23,0);this.v.set(0,0,0);this.prev={};},
 hud(){document.getElementById('score')?.setAttribute('value',`HALFTIME | ${this.score} - ${this.ai} | ${this.mode==='training'?'TRAINING':this.ended?'FULL TIME':Math.floor(this.time/60)+':'+String(Math.floor(this.time%60)).padStart(2,'0')}`);},
-tick(t,ms){let d=Math.min(ms/1000,.04);if(!d||this.ended||window.matchPaused?.())return;if(window.ownerFrozen?.()){this.v.set(0,0,0);this.el.object3D.position.copy(this.p);return;}
+tick(t,ms){let d=Math.min(ms/1000,.04);if(!d||this.ended||window.matchPaused?.()||document.getElementById('vrMenu')?.getAttribute('visible'))return;if(window.ownerFrozen?.()){this.v.set(0,0,0);this.el.object3D.position.copy(this.p);return;}
 if(this.mode!=='training'){this.time=Math.max(0,this.time-d);if(!this.time){this.ended=true;this.hud();return;}}
 for(const id of ['left','right']){
 const e=document.getElementById(id);if(!this.el.sceneEl.is('vr-mode')||!e.object3D.visible){delete this.prev[id];continue;}
@@ -60,5 +60,22 @@ const tabs=[];for(const [name,ids] of defs){const b=document.createElement('butt
 if(name==='Online'){const t=document.createElement('p');t.textContent='Public matches and private rooms — in development. Online play is not available yet.';p.append(t);const status=children.find(n=>n.textContent.startsWith('Online server:'));if(status)p.append(status);}
 if(name==='Settings'){const help=children.find(n=>n.textContent.startsWith('Quest:'));if(help)p.append(help);}
 tabs.push([b,p]);b.onclick=()=>{for(const [button,page] of tabs){page.hidden=button!==b;button.setAttribute('aria-selected',String(button===b));}};}tabs[0][0].click();
+})();
+
+(function(){
+const panel=$('vrMenu');panel.replaceChildren();const make=(tag,attrs,parent=panel)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e;};
+make('plane',{width:2.2,height:1.5,color:'#101b2d',opacity:.98});make('text',{value:'HALFTIME VR',position:'0 .59 .015',align:'center',width:3.8,color:'#b8f34b'});
+const detail=make('text',{value:'Point and press trigger',position:'0 -.54 .02',align:'center',width:2.7,color:'#ffffff'});detail.id='vrMenuText';
+const buttons=[];let page='Home';function draw(items){for(const b of buttons)b.remove();buttons.length=0;items.forEach(([label,fn],i)=>{const x=i%2===0?-.52:.52,y=.29-Math.floor(i/2)*.25;const b=make('plane',{width:.96,height:.21,position:x+' '+y+' .025',color:'#23334b',class:'halfVRButton'});make('text',{value:label,align:'center',width:2.1,position:'0 0 .012',color:'#b8f34b'},b);b.addEventListener('click',fn);buttons.push(b);});}
+const home=()=>{page='Home';detail.setAttribute('value','Point and press trigger | B to close');draw([['PLAY',play],['ONLINE',()=>info('Online matches are not available yet')],['PROFILE',()=>info(profile.nick+' | '+(profile.demoBadges||[]).join(', '))],['EQUIPMENT',equipment],['CLUBS',()=>info(profile.club?.name||'Create a club in desktop menu')],['SETTINGS',settings]]);};
+function info(t){detail.setAttribute('value',t);draw([['BACK',home]]);}
+function play(){detail.setAttribute('value','Choose a game mode');draw([['TRAINING',()=>start('training')],['VS AI',()=>start('match')],['PENALTIES',()=>start('penalty')],['BACK',home]]);}
+function start(mode){$('mode').value=mode;$('play').click();if(vrMenuOpen)toggleVRMenu();}
+function equipment(){detail.setAttribute('value','Choose kit colour');draw([['BLUE',()=>kit('#168bff')],['RED',()=>kit('#ef4444')],['WHITE',()=>kit('#ffffff')],['PURPLE',()=>kit('#a855f7')],['BACK',home]]);}
+function kit(c){$('kit').value=c;$('kit').onchange();detail.setAttribute('value','Kit equipped');}
+function settings(){detail.setAttribute('value','Game controls');draw([['RESET BALL',()=>football()?.reset()],['EXIT VR',()=>scene.exitVR()],['BACK',home]]);}
+home();for(const id of ['left','right']){const e=$(id);e.setAttribute('raycaster','objects: .halfVRButton; enabled: false; far: 5');e.setAttribute('cursor','rayOrigin: entity; fuse: false; downEvents: triggerdown; upEvents: triggerup');}
+$('right').addEventListener('bbuttondown',()=>{if(vrMenuOpen)home();for(const id of ['left','right'])$(id).setAttribute('raycaster','enabled',vrMenuOpen);});
+scene.addEventListener('exit-vr',()=>{for(const id of ['left','right'])$(id).setAttribute('raycaster','enabled',false);});
 })();
 </script></body></html>
