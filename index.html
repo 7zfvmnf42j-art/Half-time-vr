@@ -2183,4 +2183,67 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
 })();
 </script>
 
+
+<script>
+/* HALFTIME CREATOR BOOT APPLICATIONS */
+(function(){
+ const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+ if(!nav||!pages||document.getElementById('ccBootApplyTab'))return;
+ const tab=document.createElement('button');tab.id='ccBootApplyTab';tab.type='button';tab.textContent='CC Boot Applications';
+ const page=document.createElement('section');page.className='halfPage';page.hidden=true;
+ page.innerHTML=`
+ <style>
+ #ccBootApply{color:#eef6ff}#ccBootApply .ccba-card{background:#172b43;border:1px solid #35516f;border-radius:12px;padding:13px;margin:10px 0}
+ #ccBootApply label{display:block;margin:9px 0}#ccBootApply input,#ccBootApply select,#ccBootApply textarea{box-sizing:border-box;max-width:100%;padding:9px;border-radius:7px}
+ #ccBootApply input[type=text],#ccBootApply input[type=url],#ccBootApply textarea{width:100%}
+ #ccBootApply button{background:#1677d2;color:white;border:0;border-radius:8px;padding:10px 14px;font-weight:700}
+ #ccBootApply .muted{color:#a9bed4;font-size:.9em}
+ </style>
+ <div id="ccBootApply"><h2>👟 CREATOR CUSTOM BOOT PROGRAMME</h2>
+ <p class="muted">HALFTIME CCs can apply for their own exclusive boot design. Applications are reviewed before a boot is approved.</p>
+ <div class="ccba-card" id="ccbaGate"></div>
+ <form id="ccbaForm" class="ccba-card">
+ <h3>Apply for your own boots</h3>
+ <label>Creator / CC name <input id="ccbaName" type="text" maxlength="30" required placeholder="Your creator name"></label>
+ <label>Content channel <select id="ccbaPlatform"><option value="TikTok">TikTok</option><option value="YouTube">YouTube</option><option value="Other">Other</option></select></label>
+ <label>Channel or profile link <input id="ccbaLink" type="url" maxlength="250" required placeholder="https://..."></label>
+ <label>Boot name <input id="ccbaBootName" type="text" maxlength="24" required placeholder="Your boot name"></label>
+ <label>Primary boot colour <input id="ccbaPrimary" type="color" value="#168bff"></label>
+ <label>Secondary boot colour <input id="ccbaSecondary" type="color" value="#ffffff"></label>
+ <label>Design description <textarea id="ccbaDesign" rows="3" maxlength="300" required placeholder="Describe the pattern, logo and details you want"></textarea></label>
+ <button type="submit" id="ccbaSubmit">SUBMIT APPLICATION</button>
+ <p class="muted">Only submit a link you are happy to share. Do not include private contact details.</p>
+ </form>
+ <div class="ccba-card"><h3>Your application</h3><div id="ccbaStatus">No application submitted yet.</div></div>
+ </div>`;
+ pages.append(page);nav.append(tab);
+ const hide=()=>{[...pages.children].forEach(p=>p.hidden=true);[...nav.children].forEach(b=>b.classList.remove('active'));};
+ tab.addEventListener('click',()=>{hide();page.hidden=false;tab.classList.add('active');render();});
+ [...nav.children].filter(b=>b!==tab).forEach(b=>b.addEventListener('click',()=>{page.hidden=true;tab.classList.remove('active');}));
+ const profile=window.profile||(()=>{try{return JSON.parse(localStorage.getItem('halftime-profile')||'{}')}catch(e){return {}}})();
+ const $=id=>page.querySelector('#'+id);
+ function hasCC(){
+  const vals=[...(profile.demoBadges||[]),...(profile.badges||[]),...(profile.earnedBadges||[])].map(x=>typeof x==='string'?x:(x?.name||x?.title||''));
+  return vals.some(x=>/\bCC\b|Content Creator|Official CC|Founding CC|Creator Partner/i.test(x));
+ }
+ function render(){
+  const ok=hasCC(),gate=$('ccbaGate'),form=$('ccbaForm');
+  gate.innerHTML=ok?'<b>CC status detected ✓</b><p class="muted">Your creator badge gives you access to the custom boot application.</p>':'<b>CC badge required</b><p class="muted">You need a HALFTIME Content Creator (CC) badge before you can apply. Once it is awarded to your profile, return here.</p>';
+  form.hidden=!ok;
+  const a=profile.ccBootApplication;
+  $('ccbaStatus').textContent=a?'Status: '+a.status+' · '+a.bootName+' · Submitted '+a.submittedAt:'No application submitted yet.';
+  if(a){$('ccbaStatus').textContent+=' · '+a.platform+' · '+a.primary+' / '+a.secondary;}
+ }
+ $('ccbaForm').addEventListener('submit',e=>{
+  e.preventDefault();if(!hasCC())return;
+  const name=$('ccbaName').value.trim(),bootName=$('ccbaBootName').value.trim(),link=$('ccbaLink').value.trim(),design=$('ccbaDesign').value.trim();
+  if(!name||!bootName||!link||!design)return;
+  let u;try{u=new URL(link);if(!['http:','https:'].includes(u.protocol))throw 0;}catch(e){$('ccbaStatus').textContent='Please enter a valid public profile link.';return;}
+  profile.ccBootApplication={creator:name,platform:$('ccbaPlatform').value,link:u.href,bootName,primary:$('ccbaPrimary').value,secondary:$('ccbaSecondary').value,design,status:'Submitted — awaiting review',submittedAt:new Date().toLocaleDateString('en-GB')};
+  try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}
+  render();
+ });
+ render();
+})();
+</script>
 </body></html>
