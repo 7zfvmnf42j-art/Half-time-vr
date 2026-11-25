@@ -460,6 +460,7 @@ const players=[];const careerPlayersContainer=document.createElement("a-entity")
 window.hideCareer=()=>{careerPlayersContainer.setAttribute("visible",false);players.forEach(a=>a.e.setAttribute("visible",false));};
 window.spawnCareerPlayers=()=>{
  careerPlayersContainer.setAttribute("visible",true);
+ careerPlayersContainer.object3D.visible=true;
  const formation=[[0,10.7],[-5,6],[-1.7,7],[1.7,7],[5,6],[-4,1],[0,2],[4,1],[-4,-4],[0,-5],[4,-4]];
  for(const a of players){
   const [fx,bz]=formation[a.j];
@@ -467,8 +468,16 @@ window.spawnCareerPlayers=()=>{
   a.e.object3D.rotation.set(0,a.team===1?Math.PI:0,0);
   a.e.object3D.rotation.z=0;
   a.e.setAttribute('visible',true);
+  a.e.object3D.visible=true;
   a.dive=null;
  }
+ // A-Frame can apply visibility during its next render/update cycle.
+ // Reassert it after the scene has processed the newly spawned team.
+ requestAnimationFrame(()=>{
+  careerPlayersContainer.setAttribute("visible",true);
+  careerPlayersContainer.object3D.visible=true;
+  for(const a of players){a.e.setAttribute('visible',true);a.e.object3D.visible=true;}
+ });
 };
 window.careerCountries=Object.keys(careerCountries);
 window.setCareerCountry=country=>{
