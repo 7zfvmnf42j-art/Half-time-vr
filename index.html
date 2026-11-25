@@ -30,10 +30,11 @@ const offset=new THREE.Vector3(0,state.bent?.04:0,state.bent?.16:-.14).applyQuat
 raw.add(offset);
 // Touch controllers are not foot trackers: use their horizontal movement for steps,
 // but keep the virtual boot sole planted at pitch height instead of following hand height.
-const rigY=document.getElementById('rig')?.object3D.position.y||0;
-// Controller height contributes a little to foot lift, but cannot pull the boot far off the pitch.
-const handHeight=THREE.MathUtils.clamp(raw.y-rigY-.25,-.10,.28);
-raw.y=rigY+.09+handHeight*.32+(state.bent?.035:0);
+const floorY=-.035;
+// The boot meshes are attached to the scene, so align their soles to the actual world floor,
+// not to the rig/controller height. Only a small amount of controller lift is retained.
+const handHeight=THREE.MathUtils.clamp(raw.y-(document.getElementById('rig')?.object3D.position.y||0)-.25,-.10,.28);
+raw.y=floorY+.08+Math.max(0,handHeight)*.22+(state.bent?.012:0);
 
 // Smooth controller noise while retaining responsive movement. Adapt smoothing to movement speed.
 state.smooth=state.smooth||raw.clone();
@@ -44,8 +45,8 @@ const p=state.smooth.clone();
 // Small natural step lift from controller motion; never lets the sole drop below the floor.
 state.lastFootPos=state.lastFootPos||p.clone();
 const stepSpeed=p.distanceTo(state.lastFootPos)/Math.max(d,.001);
-const stepLift=THREE.MathUtils.clamp((stepSpeed-0.35)*.012,0,.075);
-p.y=Math.max(rigY+.075,p.y+stepLift);
+const stepLift=THREE.MathUtils.clamp((stepSpeed-0.35)*.009,0,.045);
+p.y=Math.max(floorY+.08,p.y+stepLift);
 state.lastFootPos.copy(p);
 
 state.mesh.position.copy(p);
