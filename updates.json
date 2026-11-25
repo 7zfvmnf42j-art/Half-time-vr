@@ -1,5 +1,23 @@
 [
   {
+    "version": "0.1.2",
+    "title": "Player and Physics Update",
+    "date": "2026-11-25",
+    "added": [
+      "Original flat player models",
+      "Player ID display and copy"
+    ],
+    "fixed": [
+      "Ball contact response",
+      "Rolling resistance",
+      "Bounce and shot lift"
+    ],
+    "pending": [
+      "Online multiplayer",
+      "Headset verification"
+    ]
+  },
+  {
     "version": "0.1.1",
     "title": "The Boot Update",
     "date": "2026-11-25",
