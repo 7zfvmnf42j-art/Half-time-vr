@@ -29,7 +29,7 @@ raw.y=raw.y-(lf.verticalOffset??0);
 const offset=new THREE.Vector3(0,state.bent?.04:0,state.bent?.16:-.14).applyQuaternion(q);
 raw.add(offset);
 // Let the boot sole touch the pitch instead of floating above it.
-raw.y=Math.max(.09,raw.y);
+raw.y=Math.max(.075,raw.y);
 
 // Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
 // Keep only a generous reach cap from the player's body to prevent tracking glitches.
@@ -42,27 +42,30 @@ const p=state.smooth.clone();
 
 state.mesh.position.copy(p);
 
-// Stable foot orientation: follow controller direction without letting hand roll twist the boot.
-// Apply bend to the target quaternion once, rather than accumulating rotation every frame.
+// Stable boot orientation: use controller yaw, limit pitch, and remove roll so feet stay flat.
 const footEuler=new THREE.Euler().setFromQuaternion(q,'YXZ');
-footEuler.x=THREE.MathUtils.clamp(footEuler.x,-1.25,.75);
-footEuler.z=THREE.MathUtils.clamp(footEuler.z,-.28,.28);
-if(state.bent)footEuler.x-=.58;
-const footTargetQ=new THREE.Quaternion().setFromEuler(footEuler);
-state.mesh.quaternion.slerp(footTargetQ,THREE.MathUtils.clamp(d*24,0,1));
+const stablePitch=state.bent?-.58:THREE.MathUtils.clamp(footEuler.x,-.32,.24);
+const footTargetQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(stablePitch,footEuler.y,0,'YXZ'));
+state.mesh.quaternion.slerp(footTargetQ,THREE.MathUtils.clamp(d*28,0,1));
 
 // Simple two-segment visual leg IK. Hip follows the headset/body, knee bends naturally toward the foot.
 if(state.thigh&&state.lower){
-  const hip=document.getElementById('cam').object3D.getWorldPosition(new THREE.Vector3());
+  const camObj=document.getElementById('cam').object3D;
+  const headQ=camObj.getWorldQuaternion(new THREE.Quaternion());
+  const hip=camObj.getWorldPosition(new THREE.Vector3());
+  const right=new THREE.Vector3(1,0,0).applyQuaternion(headQ);right.y=0;if(right.lengthSq()>.001)right.normalize();
+  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(headQ);forward.y=0;if(forward.lengthSq()>.001)forward.normalize();
+
+  // Hips rotate with the player's body instead of staying locked to world X.
   hip.y-=.72;
-  hip.x+=(id==='left'?-.14:.14);
-  const foot=p.clone().add(new THREE.Vector3(0,.10,0));
-  const knee=hip.clone().lerp(foot,.52);
-  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(document.getElementById('cam').object3D.getWorldQuaternion(new THREE.Quaternion()));
-  forward.y=0;
-  if(forward.lengthSq()>.001)forward.normalize();
-  knee.addScaledVector(forward,state.bent?.20:.10);
-  knee.y+=.05;
+  hip.addScaledVector(right,id==='left'?-.15:.15);
+
+  const foot=p.clone().add(new THREE.Vector3(0,.105,0));
+  const knee=hip.clone().lerp(foot,.53);
+  knee.addScaledVector(forward,state.bent?.18:.09);
+  knee.addScaledVector(right,id==='left'?-.035:.035);
+  knee.y+=.055;
+
   window.halftimePlaceLegSegment(state.thigh,hip,knee);
   window.halftimePlaceLegSegment(state.lower,knee,foot);
 }
@@ -272,7 +275,7 @@ for(const id of ['left','right']){
   const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,bent:false};
   e.addEventListener('triggerdown',()=>state.bent=true);
   e.addEventListener('triggerup',()=>state.bent=false);
-  scene.addEventListener('enter-vr',()=>{mesh.visible=true;legGroup.visible=true;});
+  scene.addEventListener('enter-vr',()=>{state.smooth=null;mesh.visible=true;legGroup.visible=true;});
   scene.addEventListener('exit-vr',()=>{mesh.visible=false;legGroup.visible=false;state.bent=false;});
 }
 })();
