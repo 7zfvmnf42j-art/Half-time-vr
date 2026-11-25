@@ -117,28 +117,28 @@ AFRAME.registerComponent('move',{init(){this.axis={x:0,y:0};this.el.addEventList
     <a-box position="0 2 0" width="7" height="4" depth="6" material="color:#1f4f7a; roughness:.86" shadow="cast:true; receive:true"></a-box>
     <a-box position="0 1.1 3.02" width="1.7" height="2.2" depth=".12" color="#17324d"></a-box>
     <a-text value="KIT SHOP" position="0 3.3 3.08" align="center" width="4.5" color="#ffffff"></a-text>
-    <a-plane class="cityDoor" data-room="kit" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".18"></a-plane>
+    <a-plane class="cityDoor" data-room="kit" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".10"></a-plane><a-text class="cityEnterLabel" value="ENTER" position="0 2.55 3.16" align="center" width="2.5" color="#ffffff"></a-text>
   <a-box position="0 4.22 0" width="7.35" height=".38" depth="6.35" color="#15364f" shadow="cast:true"></a-box><a-box position="-2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box><a-box position="2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box></a-entity>
 
   <a-entity id="cityShop2" position="11 0 -5">
     <a-box position="0 2 0" width="7" height="4" depth="6" material="color:#3f5f2f; roughness:.86" shadow="cast:true; receive:true"></a-box>
     <a-box position="0 1.1 3.02" width="1.7" height="2.2" depth=".12" color="#2b4620"></a-box>
     <a-text value="BOOT SHOP" position="0 3.3 3.08" align="center" width="4.5" color="#ffffff"></a-text>
-    <a-plane class="cityDoor" data-room="boots" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".18"></a-plane>
+    <a-plane class="cityDoor" data-room="boots" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".10"></a-plane><a-text class="cityEnterLabel" value="ENTER" position="0 2.55 3.16" align="center" width="2.5" color="#ffffff"></a-text>
   <a-box position="0 4.22 0" width="7.35" height=".38" depth="6.35" color="#2c4322" shadow="cast:true"></a-box><a-box position="-2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box><a-box position="2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box></a-entity>
 
   <a-entity id="cityShop3" position="-6 0 5">
     <a-box position="0 2 0" width="8" height="4" depth="6" material="color:#5a315f; roughness:.86" shadow="cast:true; receive:true"></a-box>
     <a-box position="0 1.1 3.02" width="1.7" height="2.2" depth=".12" color="#3f2144"></a-box>
     <a-text value="MUSIC SHOP" position="0 3.3 3.08" align="center" width="5" color="#ffffff"></a-text>
-    <a-plane class="cityDoor" data-room="music" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".18"></a-plane>
+    <a-plane class="cityDoor" data-room="music" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".10"></a-plane><a-text class="cityEnterLabel" value="ENTER" position="0 2.55 3.16" align="center" width="2.5" color="#ffffff"></a-text>
   <a-box position="0 4.22 0" width="8.35" height=".38" depth="6.35" color="#3d2042" shadow="cast:true"></a-box><a-box position="-2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box><a-box position="2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box></a-entity>
 
   <a-entity id="cityShop4" position="6 0 5">
     <a-box position="0 2 0" width="8" height="4" depth="6" material="color:#6b4f20; roughness:.86" shadow="cast:true; receive:true"></a-box>
     <a-box position="0 1.1 3.02" width="1.7" height="2.2" depth=".12" color="#4a3515"></a-box>
     <a-text value="GAME SHOP" position="0 3.3 3.08" align="center" width="5" color="#ffffff"></a-text>
-    <a-plane class="cityDoor" data-room="game" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".18"></a-plane>
+    <a-plane class="cityDoor" data-room="game" position="0 1.1 3.11" width="1.7" height="2.2" color="#111827" opacity=".10"></a-plane><a-text class="cityEnterLabel" value="ENTER" position="0 2.55 3.16" align="center" width="2.5" color="#ffffff"></a-text>
   <a-box position="0 4.22 0" width="8.35" height=".38" depth="6.35" color="#4c3716" shadow="cast:true"></a-box><a-box position="-2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box><a-box position="2.15 2.25 3.08" width="1.25" height="1.05" depth=".06" color="#9dd7f7" opacity=".78"></a-box></a-entity>
 </a-entity>
 
@@ -597,6 +597,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
 <script>
 /* HALFTIME CITY HUB SYSTEM */
 (function(){
+  const scene=document.querySelector('a-scene');
   const rig=document.getElementById('rig');
   const city=document.getElementById('cityHub');
   const interior=document.getElementById('cityInterior');
@@ -613,6 +614,12 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   };
 
   window.inCityRoom=false;
+
+  function rigWorld(){
+    const p=new THREE.Vector3();
+    rig.object3D.getWorldPosition(p);
+    return p;
+  }
 
   function renderStock(type){
     const stock=document.getElementById('cityShopStock');
@@ -665,7 +672,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     renderStock(type);
     const floor=interior.querySelector('a-plane');
     if(floor)floor.setAttribute('material','color:'+(type==='pub'?'#4b3a31':'#555f6c')+'; roughness:.82');
-    rig.object3D.position.set(45,0,3.5);
+    rig.object3D.position.set(45,0,1.4);
     rig.object3D.rotation.set(0,Math.PI,0);
   }
 
@@ -679,6 +686,10 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
 
   window.enterCityRoom=enterRoom;
   window.exitCityRoom=exitRoom;
+  window.halftimeDoorDebug=()=>{
+    const p=rigWorld();
+    return {inRoom:!!window.inCityRoom,room:window.currentCityRoom||'',x:+p.x.toFixed(2),z:+p.z.toFixed(2),doors:document.querySelectorAll('.cityDoor').length};
+  };
 
   // Spawn beside the pitch so the city is immediately visible.
   rig.object3D.position.set(0,0,3);
@@ -702,9 +713,9 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     if(!pub)return false;
     const wp=new THREE.Vector3();
     pub.object3D.getWorldPosition(wp);
-    const rp=rig.object3D.position;
+    const rp=rigWorld();
     const dx=Math.abs(wp.x-rp.x), dz=Math.abs(wp.z-rp.z);
-    if(dx<1.35&&dz<1.75){
+    if(dx<2.1&&dz<2.35){
       doorCooldown=performance.now()+1400;
       enterRoom('pub');
       return true;
@@ -719,8 +730,8 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
         if(exit){
           const wp=new THREE.Vector3();
           exit.object3D.getWorldPosition(wp);
-          const rp=rig.object3D.position;
-          if(Math.hypot(wp.x-rp.x,wp.z-rp.z)<1.15){
+          const rp=rigWorld();
+          if(Math.hypot(wp.x-rp.x,wp.z-rp.z)<1.65){
             doorCooldown=now+1200;
             exitRoom();
           }
@@ -730,8 +741,8 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
         for(const d of document.querySelectorAll('.cityDoor')){
           const wp=new THREE.Vector3();
           d.object3D.getWorldPosition(wp);
-          const rp=rig.object3D.position;
-          if(Math.hypot(wp.x-rp.x,wp.z-rp.z)<1.05){
+          const rp=rigWorld();
+          if(Math.hypot(wp.x-rp.x,wp.z-rp.z)<1.75){
             doorCooldown=now+1200;
             enterRoom(d.dataset.room);
             break;
@@ -744,11 +755,11 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   requestAnimationFrame(autoDoorTick);
 
   function nearestDoor(){
-    let best=null,bestD=2.5;
+    let best=null,bestD=3.2;
     for(const d of document.querySelectorAll('.cityDoor')){
       const wp=new THREE.Vector3();
       d.object3D.getWorldPosition(wp);
-      const rp=rig.object3D.position;
+      const rp=rigWorld();
       const dist=Math.hypot(wp.x-rp.x,wp.z-rp.z);
       if(dist<bestD){bestD=dist;best=d;}
     }
