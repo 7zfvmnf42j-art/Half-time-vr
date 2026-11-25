@@ -1156,6 +1156,65 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
 })();
 </script>
 <script>
+/* HALFTIME MATCHDAY SCUFFLES */
+(function(){
+  const scene=document.querySelector('a-scene');
+  if(!scene)return;
+
+  const group=document.createElement('a-entity');
+  group.id='matchdayScuffles';
+  scene.append(group);
+
+  function person(x,z,shirt,label){
+    const e=document.createElement('a-entity');
+    e.setAttribute('position',x+' 0 '+z);
+    e.innerHTML=
+      '<a-cylinder radius=".24" height=".78" position="0 .92 0" color="'+shirt+'"></a-cylinder>'+
+      '<a-sphere radius=".21" position="0 1.52 0" color="#c8926a"></a-sphere>'+
+      '<a-box width=".18" height=".55" depth=".18" position="-.12 .28 0" color="#1f2937"></a-box>'+
+      '<a-box width=".18" height=".55" depth=".18" position=".12 .28 0" color="#1f2937"></a-box>'+
+      '<a-text value="'+label+'" position="0 1.9 0" align="center" width="2" color="#ffffff"></a-text>';
+    group.append(e);
+    return e;
+  }
+
+  const fanA=person(-9.6,-2.2,'#7a263a','FAN');
+  const fanB=person(-9.0,-1.7,'#2563eb','FAN');
+  const steward=person(-8.2,-2.0,'#facc15','STEWARD');
+  group.setAttribute('visible',false);
+
+  let active=false,start=0,next=performance.now()+18000;
+  function begin(){
+    active=true;start=performance.now();
+    group.setAttribute('visible',true);
+  }
+  function end(){
+    active=false;
+    group.setAttribute('visible',false);
+    next=performance.now()+22000+Math.random()*30000;
+  }
+
+  function tick(t){
+    const matchMode=document.getElementById('mode')?.value;
+    const stadium=['match','career','penalty'].includes(matchMode);
+    if(stadium&&!active&&t>next)begin();
+    if(active){
+      const p=(t-start)/1000;
+      // Non-graphic scuffle: arguing, shoving motions, steward steps between them.
+      fanA.object3D.position.x=-9.6+Math.sin(p*5)*.12;
+      fanB.object3D.position.x=-9.0-Math.sin(p*5)*.12;
+      fanA.object3D.rotation.y=Math.sin(p*7)*.25;
+      fanB.object3D.rotation.y=-Math.sin(p*7)*.25;
+      steward.object3D.position.x=-8.2-Math.min(1, p/3)*.45;
+      steward.object3D.rotation.y=-.35;
+      if(p>6)end();
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+<script>
 /* HALFTIME BETTER PUB INTERIOR */
 (function(){
   const interior=document.getElementById('cityInterior');
