@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
 window.halftimeBallPhysics={airDrag:.025,groundFriction:.28,bounce:.57,gravity:9.81,touchAssist:.34,kickPower:1.34,maxSpeed:34,contactRestitution:.72,juggleLift:.22};
-window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:999,smoothing:28,velocityCap:24};
+window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:.95,smoothing:30,velocityCap:24};
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 window.halftimePlaceLegSegment=(mesh,a,b)=>{
   if(!mesh)return;
@@ -25,11 +25,12 @@ const state=window.halfFeet?.[id];if(!state)continue;
 const q=e.object3D.getWorldQuaternion(new THREE.Quaternion());
 const raw=e.object3D.getWorldPosition(new THREE.Vector3());
 const lf=window.halftimeLegFreedom||{};
-raw.y=raw.y-(lf.verticalOffset??0);
 const offset=new THREE.Vector3(0,state.bent?.04:0,state.bent?.16:-.14).applyQuaternion(q);
 raw.add(offset);
-// Let the boot sole touch the pitch instead of floating above it.
-raw.y=Math.max(.075,raw.y);
+// Touch controllers are not foot trackers: use their horizontal movement for steps,
+// but keep the virtual boot sole planted at pitch height instead of following hand height.
+const rigY=document.getElementById('rig')?.object3D.position.y||0;
+raw.y=rigY+.09;
 
 // Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
 // Keep only a generous reach cap from the player's body to prevent tracking glitches.
@@ -42,11 +43,12 @@ const p=state.smooth.clone();
 
 state.mesh.position.copy(p);
 
-// Stable boot orientation: use controller yaw, limit pitch, and remove roll so feet stay flat.
-const footEuler=new THREE.Euler().setFromQuaternion(q,'YXZ');
-const stablePitch=state.bent?-.58:THREE.MathUtils.clamp(footEuler.x,-.32,.24);
-const footTargetQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(stablePitch,footEuler.y,0,'YXZ'));
-state.mesh.quaternion.slerp(footTargetQ,THREE.MathUtils.clamp(d*28,0,1));
+// Keep both boots flat and pointing where the player is facing, not wherever the wrists turn.
+const camForFeet=document.getElementById('cam').object3D;
+const headForFeet=camForFeet.getWorldQuaternion(new THREE.Quaternion());
+const headYaw=new THREE.Euler().setFromQuaternion(headForFeet,'YXZ').y;
+const footTargetQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(state.bent?-.12:0,headYaw,0,'YXZ'));
+state.mesh.quaternion.slerp(footTargetQ,THREE.MathUtils.clamp(d*30,0,1));
 
 // Simple two-segment visual leg IK. Hip follows the headset/body, knee bends naturally toward the foot.
 if(state.thigh&&state.lower){
@@ -60,7 +62,17 @@ if(state.thigh&&state.lower){
   hip.y-=.72;
   hip.addScaledVector(right,id==='left'?-.15:.15);
 
-  const foot=p.clone().add(new THREE.Vector3(0,.105,0));
+  const foot=p.clone().add(new THREE.Vector3(0,.135,0));
+  const horizontalReach=new THREE.Vector3(foot.x-hip.x,0,foot.z-hip.z);
+  const maxReach=lf.maxReach||.95;
+  if(horizontalReach.length()>maxReach){
+    horizontalReach.setLength(maxReach);
+    p.x=hip.x+horizontalReach.x;
+    p.z=hip.z+horizontalReach.z;
+    state.mesh.position.copy(p);
+    foot.x=p.x;
+    foot.z=p.z;
+  }
   const knee=hip.clone().lerp(foot,.53);
   knee.addScaledVector(forward,state.bent?.18:.09);
   knee.addScaledVector(right,id==='left'?-.035:.035);
@@ -263,7 +275,7 @@ for(const id of ['left','right']){
 
   // Full visible leg: upper leg + lower leg stretch between hip, knee and foot.
   const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.095,.105,1,10),mat(sockColor));
-  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.075,.09,1,10),mat(skinColor));
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.075,.09,1,10),mat(sockColor));
   legGroup.add(thigh,lower);
 
   for(const root of [mesh,legGroup])root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
@@ -281,10 +293,11 @@ for(const id of ['left','right']){
 })();
 
 (function(){
-const menu=$('menu'), children=[...menu.children];const style=document.createElement('style');style.textContent='#menu{width:min(850px,94vw)!important;max-height:86vh!important;overflow:auto!important;background:#101b2d!important;color:#fff!important;border:1px solid #34465d;border-radius:16px;padding:18px!important;box-sizing:border-box}#halfNav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}#halfNav button{flex:1;background:#23334b;color:white;border:0;border-radius:8px;padding:12px}#halfNav button[aria-selected=true]{background:#b8f34b;color:#14210a;font-weight:bold}#halfPages .halfPage{padding:12px;background:#17263a;border-radius:12px}#halfPages label{display:block;margin:10px 0}#halfPages select,#halfPages input:not([type=color]){max-width:100%;box-sizing:border-box}#halfPages button{margin:5px}#play{background:#b8f34b!important;color:#14210a!important;font-weight:bold;width:90%;padding:15px!important}#halfPages [hidden]{display:none!important}';document.head.append(style);
+const menu=$('menu'), children=[...menu.children];const style=document.createElement('style');style.textContent='#menu{position:fixed!important;top:12px!important;left:12px!important;width:min(920px,calc(100vw - 24px))!important;max-height:calc(100dvh - 24px)!important;overflow:auto!important;background:linear-gradient(155deg,#101d31 0%,#0b1422 100%)!important;color:#f7fbff!important;border:1px solid #3a526d!important;border-radius:22px!important;padding:20px!important;box-sizing:border-box;box-shadow:0 22px 70px #0009!important}#menu .menuHero{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:4px 2px 14px;border-bottom:1px solid #2d435b}#menu .menuBrand{min-width:0}#menu .menuEyebrow{display:block;color:#b8f34b;font-size:11px;font-weight:900;letter-spacing:2.4px;margin-bottom:5px}#menu h1{font-size:clamp(25px,4vw,36px);letter-spacing:2.5px;margin:0!important;line-height:1.05}#menu .menuSubtitle{display:block;color:#9fb4ca;font-size:12px;margin-top:7px;letter-spacing:.4px}#menu .menuStatus{flex:none;padding:9px 12px;border:1px solid #42617b;border-radius:999px;background:#192c42;color:#b8f34b;font-size:11px;font-weight:900;letter-spacing:1px}#halfNav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:14px 0 12px;padding:4px 0;position:sticky;top:-20px;z-index:3;background:#101d31}#halfNav button{min-width:0;background:#1c3048;color:#dce9f5;border:1px solid #344d68;border-radius:12px;padding:12px 7px;font-weight:800;transition:background .15s,transform .15s}#halfNav button:hover{background:#2b4562;transform:translateY(-1px)}#halfNav button[aria-selected=true]{background:#b8f34b;color:#15210d;border-color:#d2ff75;box-shadow:0 4px 18px #b8f34b22}#halfPages .halfPage{padding:18px;background:linear-gradient(155deg,#182b42,#122137);border:1px solid #2d4661;border-radius:17px;min-height:160px}#halfPages .halfPage h2{margin:0 0 12px;color:#f7fbff;font-size:21px}#halfPages .halfPage p{color:#b8c9da;line-height:1.5}#halfPages label{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 12px;background:#20364f;border:1px solid #304c68;border-radius:12px;margin:10px 0;color:#e8f2fb}#halfPages select,#halfPages input:not([type=color]){max-width:100%;min-width:0;box-sizing:border-box;background:#f1f6fb;color:#142337;border:1px solid #b9c9d8;border-radius:9px;padding:11px}#halfPages button{margin:5px 4px 5px 0;border:1px solid #3c5875;border-radius:11px;background:#263f5a;color:#f5faff;padding:11px 14px;font-weight:800}#halfPages button:hover{background:#365675}#play,#playNow{display:block;width:100%;margin:12px 0!important;background:#b8f34b!important;color:#14210a!important;border:0!important;font-weight:950!important;padding:15px!important;font-size:16px!important;box-shadow:0 7px 22px #b8f34b24}#reset{background:#30465e!important}#halfPages [hidden]{display:none!important}#playerTag{background:#20364f!important;border:1px solid #3a5673;border-radius:13px!important;padding:12px!important}#equipPanel,#clubPanel,#wardrobePanel,#ownerPanel,#ownerHT001Panel{border:1px solid #35516e!important;border-radius:14px!important;background:#14263c!important;padding:14px!important}#open{background:#b8f34b!important;color:#15210d!important;border:0!important;border-radius:999px!important;padding:12px 18px!important;box-shadow:0 8px 25px #0007!important;font-weight:950!important}@media(max-width:560px){#menu{top:8px!important;left:8px!important;width:calc(100vw - 16px)!important;max-height:calc(100dvh - 16px)!important;padding:14px!important;border-radius:17px!important}#menu .menuHero{align-items:flex-start}#menu .menuStatus{font-size:9px;padding:7px 8px}#halfNav{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#halfNav button{padding:10px 5px;font-size:13px}#halfPages .halfPage{padding:13px}#halfPages label{align-items:flex-start}#halfPages select,#halfPages input:not([type=color]){width:100%}}';document.head.append(style);
 const nav=document.createElement('nav');nav.id='halfNav';const pages=document.createElement('div');pages.id='halfPages';menu.append(nav,pages);
-const defs=[['Play',['mapChoice','mode','play','reset']],['Online',[]],['Profile',['nick','stats','playerTag','myBadges','equipPanel']],['Equipment',['kit','wardrobe','wardrobePanel','catalog','badges']],['Clubs',['clubToggle','clubPanel']],['Settings',['ownerToggle','ownerPanel']]];
-const tabs=[];for(const [name,ids] of defs){const b=document.createElement('button');b.textContent=name;nav.append(b);const p=document.createElement('div');p.className='halfPage';pages.append(p);const h=document.createElement('h2');h.textContent=name;p.append(h);for(const id of ids){const e=$(id);if(!e)continue;const parent=children.find(n=>n===e||n.contains(e));if(parent)p.append(parent);}
+const hero=document.createElement('div');hero.className='menuHero';const brand=document.createElement('div');brand.className='menuBrand';const eyebrow=document.createElement('small');eyebrow.className='menuEyebrow';eyebrow.textContent='VR FOOTBALL • CLUBS • CAREER';const title=menu.querySelector('h1');const subtitle=document.createElement('small');subtitle.className='menuSubtitle';subtitle.textContent='Build your player. Pick your pitch. Own the match.';brand.append(eyebrow,title,subtitle);const statusPill=document.createElement('div');statusPill.className='menuStatus';statusPill.textContent='● READY TO PLAY';hero.append(brand,statusPill);menu.insertBefore(hero,nav);const alphaNote=[...menu.children].find(e=>e.tagName==='SMALL'&&e.textContent.includes('Offline training alpha'));if(alphaNote)alphaNote.remove();
+const defs=[['Play',['mapChoice','mode','play','playNow','reset']],['Online',[]],['Profile',['nick','stats','playerTag','myBadges','equipPanel']],['Equipment',['kit','wardrobe','wardrobePanel','catalog','badges']],['Clubs',['clubToggle','clubPanel']],['Settings',['ownerToggle','ownerPanel','ownerHT001Panel']]];
+const tabs=[];for(const [name,ids] of defs){const b=document.createElement('button');b.textContent=name;nav.append(b);const p=document.createElement('div');p.className='halfPage';pages.append(p);const h=document.createElement('h2');h.textContent=name;p.append(h);if(name==='Play'){const intro=document.createElement('p');intro.textContent='Choose a stadium and game mode, then jump straight into football.';p.append(intro);}for(const id of ids){const e=$(id);if(!e)continue;const parent=children.find(n=>n===e||n.contains(e));if(parent&&!p.contains(parent)){if(id==='mode'&&parent===e){const label=document.createElement('label');label.textContent='Game mode';label.append(e);p.append(label);}else p.append(parent);}}
 if(name==='Profile'){const id=document.createElement('p');id.textContent='Player ID: '+profile.playerId;p.append(id);const note=document.createElement('small');note.textContent='Saved on this browser. Keep your browser data to retain your ID.';p.append(note);const copy=document.createElement('button');copy.textContent='Copy player ID';copy.onclick=async()=>{try{await navigator.clipboard.writeText(profile.playerId);copy.textContent='Copied';}catch(e){copy.textContent='Copy the ID shown above';}};p.append(copy);}if(name==='Online'){const t=document.createElement('p');t.textContent='Public matches and private rooms — in development. Online play is not available yet.';p.append(t);const status=children.find(n=>n.textContent.startsWith('Online server:'));if(status)p.append(status);}
 if(name==='Settings'){const help=children.find(n=>n.textContent.startsWith('Quest:'));if(help)p.append(help);}
 tabs.push([b,p]);b.onclick=()=>{for(const [button,page] of tabs){page.hidden=button!==b;button.setAttribute('aria-selected',String(button===b));}};}tabs[0][0].click();
