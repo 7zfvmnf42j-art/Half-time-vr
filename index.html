@@ -2246,4 +2246,62 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  render();
 })();
 </script>
+
+<script>
+/* HALFTIME STADIUM CREATOR */
+(function(){
+ const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+ if(!nav||!pages||document.getElementById('stadiumCreatorTab'))return;
+ const tab=document.createElement('button');tab.id='stadiumCreatorTab';tab.type='button';tab.textContent='Stadium Creator';
+ const page=document.createElement('section');page.className='halfPage';page.hidden=true;
+ page.innerHTML=`
+ <style>
+ #stadiumCreator .sc-preview{background:#0b1726;border:1px solid #3a5875;border-radius:14px;padding:12px;margin:12px 0}
+ #stadiumCreator svg{display:block;width:100%;height:auto;max-height:250px}
+ #stadiumCreator .sc-small{color:#a9bed4;font-size:12px}
+ #stadiumCreator input[type=text],#stadiumCreator input[type=number],#stadiumCreator select{max-width:100%;padding:9px;border-radius:8px}
+ #stadiumCreator button{background:#b8f34b!important;color:#15210d!important;border:0!important;border-radius:9px;padding:11px 14px;font-weight:900}
+ </style>
+ <div id="stadiumCreator"><h2>🏟️ Build Your Own Stadium</h2>
+ <p>Create a stadium identity, choose its colours and layout, then save your design to your player profile.</p>
+ <div class="sc-preview"><div id="scVisual"></div><p id="scSummary" class="sc-small"></p></div>
+ <label>Stadium name <input id="scName" type="text" maxlength="32" placeholder="e.g. Cockney Park"></label>
+ <label>Stadium capacity <select id="scCapacity"><option value="5000">5,000</option><option value="12000">12,000</option><option value="25000" selected>25,000</option><option value="40000">40,000</option><option value="60000">60,000</option><option value="85000">85,000</option></select></label>
+ <label>Stand style <select id="scStyle"><option value="classic">Classic four stands</option><option value="bowl">Full bowl</option><option value="twoTier">Two-tier stands</option><option value="compact">Compact ground</option></select></label>
+ <label>Seat colour <input id="scSeats" type="color" value="#168bff"></label>
+ <label>Pitch colour <input id="scPitch" type="color" value="#238b45"></label>
+ <label>Roof <select id="scRoof"><option value="covered">Full roof</option><option value="partial">Corner roofs</option><option value="open">Open sky</option></select></label>
+ <label>Floodlights <select id="scLights"><option value="yes">Yes</option><option value="no">No</option></select></label>
+ <label>Scoreboard style <select id="scBoard"><option value="modern">Modern screen</option><option value="classic">Classic scoreboard</option><option value="none">No scoreboard</option></select></label>
+ <button id="scSave">SAVE MY STADIUM</button> <button id="scReset">RESET DESIGN</button>
+ <p id="scStatus" class="sc-small">Design a stadium and save it to your profile.</p>
+ <div class="sc-preview"><h3>Saved stadium</h3><div id="scSaved">No stadium saved yet.</div></div>
+ <p class="sc-small">Your design is saved locally on this device. It is not yet a playable online stadium or shared with friends.</p>
+ </div>`;
+ pages.append(page);nav.append(tab);
+ const profile=(()=>{try{return JSON.parse(localStorage.getItem('halftime-profile')||'{}')}catch(e){return {}}})();
+ const $=id=>page.querySelector('#'+id);
+ const hide=()=>{[...pages.children].forEach(p=>p.hidden=true);[...nav.children].forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false')});};
+ tab.addEventListener('click',()=>{hide();page.hidden=false;tab.classList.add('active');tab.setAttribute('aria-selected','true');renderSaved();draw();});
+ [...nav.children].filter(b=>b!==tab).forEach(b=>b.addEventListener('click',()=>{page.hidden=true;tab.classList.remove('active');tab.setAttribute('aria-selected','false');}));
+ const fields=['Name','Capacity','Style','Seats','Pitch','Roof','Lights','Board'];
+ function values(){return {name:$('scName').value.trim()||'My Stadium',capacity:Number($('scCapacity').value),style:$('scStyle').value,seats:$('scSeats').value,pitch:$('scPitch').value,roof:$('scRoof').value,lights:$('scLights').value,board:$('scBoard').value};}
+ function draw(){
+  const v=values(),roof=v.roof==='covered',partial=v.roof==='partial',two=v.style==='twoTier',bowl=v.style==='bowl';
+  const stand=(x,y,w,h)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="5" fill="#344b64"/><rect x="'+(x+4)+'" y="'+(y+4)+'" width="'+(w-8)+'" height="'+(h-8)+'" rx="3" fill="'+v.seats+'"/>';
+  const roofSvg=roof||partial?'<path d="M24 52 L24 28 L276 28 L276 52 M24 228 L24 252 L276 252 L276 228" fill="none" stroke="#d8e5ef" stroke-width="8"/>':'';
+  const side=stand(36,64,228,30),ends=stand(36,166,228,30);
+  const upper=two?'<rect x="36" y="52" width="228" height="8" fill="'+v.seats+'"/><rect x="36" y="200" width="228" height="8" fill="'+v.seats+'"/>':'';
+  const lights=v.lights==='yes'?'<g fill="#f7f4cf"><circle cx="28" cy="38" r="5"/><circle cx="272" cy="38" r="5"/><circle cx="28" cy="218" r="5"/><circle cx="272" cy="218" r="5"/></g>':'';
+  const board=v.board==='none'?'':'<rect x="118" y="10" width="64" height="15" rx="3" fill="#111827" stroke="#dce8f3"/><text x="150" y="21" text-anchor="middle" font-size="8" fill="#b8f34b">HOME  0 - 0</text>';
+  $('scVisual').innerHTML='<svg viewBox="0 0 300 270" role="img" aria-label="Stadium layout preview">'+board+roofSvg+side+ends+upper+'<rect x="73" y="99" width="154" height="62" rx="2" fill="'+v.pitch+'" stroke="#e8f5eb" stroke-width="2"/><path d="M150 99 V161 M73 130 H227 M150 130 m-12 0 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0" fill="none" stroke="#e8f5eb" stroke-width="1.5"/>'+lights+'</svg>';
+  $('scSummary').textContent=v.name+' • '+v.capacity.toLocaleString()+' seats • '+v.style+' layout • '+v.roof+' roof';
+ }
+ function renderSaved(){const v=profile.customStadium;if(!v){$('scSaved').textContent='No stadium saved yet.';return;}$('scSaved').textContent=v.name+' • '+v.capacity.toLocaleString()+' seats • '+v.style+' • '+v.roof+' roof';}
+ ['scName','scCapacity','scStyle','scSeats','scPitch','scRoof','scLights','scBoard'].forEach(id=>$(id).addEventListener('input',draw));
+ $('scSave').addEventListener('click',()=>{profile.customStadium=values();try{localStorage.setItem('halftime-profile',JSON.stringify(profile));$('scStatus').textContent='✓ '+profile.customStadium.name+' saved to your player profile.';renderSaved();}catch(e){$('scStatus').textContent='Could not save on this device.';}});
+ $('scReset').addEventListener('click',()=>{$('scName').value='';$('scCapacity').value='25000';$('scStyle').value='classic';$('scSeats').value='#168bff';$('scPitch').value='#238b45';$('scRoof').value='covered';$('scLights').value='yes';$('scBoard').value='modern';draw();$('scStatus').textContent='Design reset.';});
+ draw();renderSaved();
+})();
+</script>
 </body></html>
