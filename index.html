@@ -718,4 +718,83 @@ window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,contr
   apply();
 })();
 </script>
+
+<script>
+/* HALFTIME GLOVE PULL-OUT SYSTEM */
+(function(){
+  const left=document.getElementById('left'), right=document.getElementById('right');
+  const select=document.getElementById('lockerGloves');
+  if(!left||!right||!select)return;
+
+  let out=false;
+  const meshes={};
+
+  function makeGlove(hand){
+    const g=document.createElement('a-entity');
+    g.setAttribute('visible','false');
+    g.innerHTML=
+      '<a-box position="0 0 -.035" width=".16" height=".18" depth=".12" color="#182334"></a-box>'+
+      '<a-box position="0 -.12 .005" width=".13" height=".10" depth=".10" color="#182334"></a-box>'+
+      '<a-box position="0 .105 -.055" width=".12" height=".05" depth=".04" color="#ffffff"></a-box>';
+    hand.append(g);
+    return g;
+  }
+
+  meshes.left=makeGlove(left);
+  meshes.right=makeGlove(right);
+
+  function currentColor(){
+    const v=select.value;
+    return (!v||v==='none')?null:v;
+  }
+
+  function apply(){
+    const color=currentColor();
+    const show=!!color&&out;
+    for(const g of Object.values(meshes)){
+      g.setAttribute('visible',show);
+      for(const b of g.querySelectorAll('a-box')){
+        if(b.getAttribute('color')!=='#ffffff')b.setAttribute('color',color||'#182334');
+      }
+    }
+    profile.glovesOut=show;
+    profile.gloveColor=color||'none';
+    try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}
+  }
+
+  function toggle(){
+    if(!currentColor()){out=false;apply();return;}
+    out=!out;
+    apply();
+  }
+
+  window.toggleHalftimeGloves=toggle;
+  window.halftimeGlovesOut=()=>out;
+
+  select.addEventListener('change',()=>{
+    profile.gloveColor=select.value;
+    if(select.value==='none')out=false;
+    apply();
+  });
+
+  // Right A button pulls gloves out / puts them away.
+  right.addEventListener('abuttondown',toggle);
+
+  // Also add a normal menu button.
+  const btn=document.createElement('button');
+  btn.id='toggleGloves';
+  btn.textContent='Pull Out / Put Away Gloves';
+  btn.onclick=toggle;
+  select.parentElement?.after(btn);
+
+  if(profile.gloveColor&&profile.gloveColor!=='none'){
+    if(![...select.options].some(o=>o.value===profile.gloveColor)){
+      const o=document.createElement('option');o.value=profile.gloveColor;o.textContent='Equipped Gloves';select.append(o);
+    }
+    select.value=profile.gloveColor;
+  }
+  out=!!profile.glovesOut;
+  apply();
+})();
+</script>
 </body></html>
