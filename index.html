@@ -2330,6 +2330,10 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  #ccBootApply input[type=text],#ccBootApply input[type=url],#ccBootApply textarea{width:100%}
  #ccBootApply button{background:#1677d2;color:white;border:0;border-radius:8px;padding:10px 14px;font-weight:700}
  #ccBootApply .muted{color:#a9bed4;font-size:.9em}
+ #ccBootApply .ccba-sign-wrap{background:#0c1929;border:1px solid #42617e;border-radius:10px;padding:10px}
+ #ccBootApply #ccbaSignature{display:block;width:100%;height:150px;background:#f8fafc;border-radius:7px;touch-action:none;cursor:crosshair}
+ #ccBootApply .ccba-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+ #ccBootApply .ccba-preview{display:block;width:100%;max-width:420px;height:90px;object-fit:contain;background:#f8fafc;border-radius:8px;margin-top:8px}
  </style>
  <div id="ccBootApply"><h2>👟 CREATOR CUSTOM BOOT PROGRAMME</h2>
  <p class="muted">HALFTIME CCs can apply for their own exclusive boot design. Applications are reviewed before a boot is approved.</p>
@@ -2343,6 +2347,7 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  <label>Primary boot colour <input id="ccbaPrimary" type="color" value="#168bff"></label>
  <label>Secondary boot colour <input id="ccbaSecondary" type="color" value="#ffffff"></label>
  <label>Design description <textarea id="ccbaDesign" rows="3" maxlength="300" required placeholder="Describe the pattern, logo and details you want"></textarea></label>
+ <div class="ccba-sign-wrap"><h3>✍️ Sign your boots</h3><p class="muted">Use the pen below to draw your own creator signature. It will be attached to your boot application.</p><canvas id="ccbaSignature" width="900" height="300" aria-label="Draw your boot signature"></canvas><div class="ccba-tools"><label>Pen colour <input id="ccbaPenColour" type="color" value="#172b43"></label><label>Pen size <select id="ccbaPenSize"><option value="3">Fine</option><option value="6" selected>Medium</option><option value="10">Bold</option></select></label><button type="button" id="ccbaClearSignature">CLEAR SIGNATURE</button></div><p class="muted">Signature preview</p><canvas id="ccbaSignaturePreview" class="ccba-preview" width="900" height="190"></canvas></div>
  <button type="submit" id="ccbaSubmit">SUBMIT APPLICATION</button>
  <p class="muted">Only submit a link you are happy to share. Do not include private contact details.</p>
  </form>
@@ -2358,20 +2363,31 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   const vals=[...(profile.demoBadges||[]),...(profile.badges||[]),...(profile.earnedBadges||[])].map(x=>typeof x==='string'?x:(x?.name||x?.title||''));
   return vals.some(x=>/\bCC\b|Content Creator|Official CC|Founding CC|Creator Partner/i.test(x));
  }
+ const signature=$('ccbaSignature'),preview=$('ccbaSignaturePreview'),sigCtx=signature.getContext('2d'),previewCtx=preview.getContext('2d');
+ let drawing=false,hasInk=false,lastPoint=null;
+ function drawSignatureLine(a,b){sigCtx.strokeStyle=$('ccbaPenColour').value;sigCtx.lineWidth=Number($('ccbaPenSize').value);sigCtx.lineCap='round';sigCtx.lineJoin='round';sigCtx.beginPath();sigCtx.moveTo(a.x,a.y);sigCtx.lineTo(b.x,b.y);sigCtx.stroke();hasInk=true;previewCtx.clearRect(0,0,preview.width,preview.height);previewCtx.drawImage(signature,0,0,preview.width,preview.height);}
+ function pointFromEvent(e){const r=signature.getBoundingClientRect();return {x:(e.clientX-r.left)*signature.width/r.width,y:(e.clientY-r.top)*signature.height/r.height};}
+ signature.addEventListener('pointerdown',e=>{drawing=true;lastPoint=pointFromEvent(e);signature.setPointerCapture(e.pointerId);drawSignatureLine(lastPoint,{x:lastPoint.x+.1,y:lastPoint.y+.1});});
+ signature.addEventListener('pointermove',e=>{if(!drawing)return;const p=pointFromEvent(e);drawSignatureLine(lastPoint,p);lastPoint=p;});
+ function stopDrawing(){drawing=false;lastPoint=null;}
+ signature.addEventListener('pointerup',stopDrawing);signature.addEventListener('pointercancel',stopDrawing);signature.addEventListener('lostpointercapture',stopDrawing);
+ $('ccbaClearSignature').onclick=()=>{sigCtx.clearRect(0,0,signature.width,signature.height);previewCtx.clearRect(0,0,preview.width,preview.height);hasInk=false;};
+ function restoreSignature(data){if(!data)return;const img=new Image();img.onload=()=>{sigCtx.clearRect(0,0,signature.width,signature.height);sigCtx.drawImage(img,0,0,signature.width,signature.height);previewCtx.clearRect(0,0,preview.width,preview.height);previewCtx.drawImage(img,0,0,preview.width,preview.height);hasInk=true;};img.src=data;}
  function render(){
   const ok=hasCC(),gate=$('ccbaGate'),form=$('ccbaForm');
-  gate.innerHTML=ok?'<b>CC status detected ✓</b><p class="muted">Your creator badge gives you access to the custom boot application.</p>':'<b>CC badge required</b><p class="muted">You need a HALFTIME Content Creator (CC) badge before you can apply. Once it is awarded to your profile, return here.</p>';
+  gate.innerHTML=ok?'<b>CC status detected ✓</b><p class="muted">Your creator badge gives you access to the custom boot application and signature pen.</p>':'<b>CC badge required</b><p class="muted">You need a HALFTIME Content Creator (CC) badge before you can apply. Once it is awarded to your profile, return here.</p>';
   form.hidden=!ok;
   const a=profile.ccBootApplication;
   $('ccbaStatus').textContent=a?'Status: '+a.status+' · '+a.bootName+' · Submitted '+a.submittedAt:'No application submitted yet.';
-  if(a){$('ccbaStatus').textContent+=' · '+a.platform+' · '+a.primary+' / '+a.secondary;}
+  if(a){$('ccbaStatus').textContent+=' · '+a.platform+' · '+a.primary+' / '+a.secondary;if(a.signature)restoreSignature(a.signature);}
  }
  $('ccbaForm').addEventListener('submit',e=>{
   e.preventDefault();if(!hasCC())return;
   const name=$('ccbaName').value.trim(),bootName=$('ccbaBootName').value.trim(),link=$('ccbaLink').value.trim(),design=$('ccbaDesign').value.trim();
   if(!name||!bootName||!link||!design)return;
+  if(!hasInk){$('ccbaStatus').textContent='Please draw your creator signature with the pen before submitting.';return;}
   let u;try{u=new URL(link);if(!['http:','https:'].includes(u.protocol))throw 0;}catch(e){$('ccbaStatus').textContent='Please enter a valid public profile link.';return;}
-  profile.ccBootApplication={creator:name,platform:$('ccbaPlatform').value,link:u.href,bootName,primary:$('ccbaPrimary').value,secondary:$('ccbaSecondary').value,design,status:'Submitted — awaiting review',submittedAt:new Date().toLocaleDateString('en-GB')};
+  profile.ccBootApplication={creator:name,platform:$('ccbaPlatform').value,link:u.href,bootName,primary:$('ccbaPrimary').value,secondary:$('ccbaSecondary').value,design,signature:signature.toDataURL('image/png'),status:'Submitted — awaiting review',submittedAt:new Date().toLocaleDateString('en-GB')};
   try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}
   render();
  });
