@@ -155,7 +155,7 @@ AFRAME.registerComponent('move',{init(){this.axis={x:0,y:0};this.el.addEventList
   <a-plane id="cityExitDoor" position="0 1.1 5.7" width="2" height="2.2" color="#7f1d1d"></a-plane>
   <a-text value="EXIT" position="0 2.6 5.65" rotation="0 180 0" align="center" width="3.5" color="#ffffff"></a-text>
 </a-entity>
-</a-scene><button id="open">Menu</button><section id="menu"><h1>HALFTIME VR</h1><div id="playerTag"></div><button id="myBadges">My Badges</button><section id="equipPanel" hidden><h3>My badge previews</h3><select id="equipBadge"></select><button id="equipApply">Equip</button><button id="equipClear">Unequip</button><small>Local test badges only, not official awards.</small></section><small>Offline training alpha • progress saved on this device</small><p><label>Player nickname <input id="nick" maxlength="20" placeholder="Player"></label></p><label>Kit <select id="kit"><option value="#168bff">Blue</option><option value="#ef4444">Red</option><option value="#ffffff">White</option><option value="#a855f7">Purple</option></select></label><p id="stats"></p><label>Map <select id="mapChoice"><option value="training">Training Ground</option><option value="stadium">Halftime Arena</option><option value="street">Street Cage</option><option value="night">Floodlit Stadium</option></select></label><select id="mode"><option value="training">Free training</option><option value="match">1v1 vs AI</option><option value="career">Career League 11v11</option><option value="penalty">Goalkeeper challenge</option></select><button id="play">Start game</button><button id="reset">Reset ball</button><button id="clubToggle">Create a Club</button><section id="clubPanel" hidden><h2>Create a Club</h2><label>Club name <input id="clubName" maxlength="24"></label><label>Badge <select id="clubShape"><option>Shield</option><option>Circle</option></select></label><label>Symbol <select id="clubSymbol"><option>Star</option><option>Football</option><option>Diamond</option></select></label><label>Home colour <input type="color" id="clubHome" value="#168bff"></label><label>Away colour <input type="color" id="clubAway" value="#ffffff"></label><div id="clubPreview"></div><button id="clubSave">Save club</button><p id="clubStatus"></p><small>Local club only. No custom image uploads.</small></section><button id="wardrobe">Dressing Room</button><section id="wardrobePanel" hidden><h2>Dressing Room</h2><p>YOUR LOCKER • Local cosmetics</p><label>Kit <select id="lockerKit"><option value="#168bff">Blue</option><option value="#ef4444">Red</option><option value="#ffffff">White</option><option value="#a855f7">Purple</option></select></label><label>Gloves <select id="lockerGloves"><option value="none">None</option><option value="#182334">Black</option><option value="#ffffff">White</option><option value="#facc15">Gold</option></select></label><label>Football <select id="lockerBall"><option value="#ffffff">Classic</option><option value="#facc15">Gold</option><option value="#ff7733">Orange</option></select></label><label>Badge <select id="lockerBadge"></select></label><p>Choose an item to equip and save it.</p><label>Hair <select id="hair"><option value="#30231b">Brown</option><option value="#151515">Black</option><option value="#d6b36a">Blond</option></select></label><label>Skin <select id="skin"><option value="#c89570">Warm</option><option value="#f0c6a5">Light</option><option value="#805239">Deep</option></select></label><label>Boots <select id="boots"><option value="#182334">Black</option><option value="#ffffff">White</option><option value="#facc15">Gold</option></select></label><button id="closeWardrobe">Close</button></section><button id="catalog">CC, TT & all badges</button><div id="badges" hidden></div><button id="ownerToggle">Owner sandbox (local demo)</button><section id="ownerPanel" hidden><h2>OWNER • #000001 (demo)</h2><small>Public offline testing tools. Not authenticated; no real staff roles or online awards.</small><p><select id="award"></select><button id="grant">Equip preview</button><button id="removeAward">Remove preview</button></p><p id="equipped"></p><button id="ownerReset">Reset ball</button><button id="ownerRestart">Restart training</button><button id="ownerGoal">Add demo goal</button><button id="ownerClear">Clear score</button><button id="ownerFreeze">Freeze ball</button><button id="ownerHome">Return to centre</button><button id="ownerPower">Toggle super shot</button><p id="ownerStatus"></p><small>In VR, left controller X resets the ball and Y returns to centre in training while sandbox is enabled. Exit VR to use the full panel.</small></section><p><small>Quest: enter VR using the headset icon. Left stick moves; B opens the VR menu; gentle controller movements kick. Keep feet on the floor and clear your play area. Desktop: WASD and Space near ball. Online matches, accounts and staff permissions are not connected.</small></p></section><div id="touch" style="position:fixed;bottom:20px;left:12px;right:12px;z-index:9;display:flex;justify-content:space-between;pointer-events:none"><div style="pointer-events:auto;touch-action:none"><button data-m="0,-1">↑</button><br><button data-m="-1,0">←</button><button data-m="0,1">↓</button><button data-m="1,0">→</button></div><div style="pointer-events:auto"><button id="pass">Pass</button><button id="shoot">Shoot</button><button id="lob">Lob</button><small id="kickHint" style="display:block"></small></div></div>
+</a-scene><button id="open">Menu</button><section id="menu"><h1>HALFTIME VR</h1><div id="playerTag"></div><button id="myBadges">My Badges</button><section id="equipPanel" hidden><h3>My badge previews</h3><select id="equipBadge"></select><button id="equipApply">Equip</button><button id="equipClear">Unequip</button><small>Local test badges only, not official awards.</small></section><small>Offline training alpha • progress saved on this device</small><p><label>Player nickname <input id="nick" maxlength="20" placeholder="Player"></label></p><label>Kit <select id="kit"><option value="#168bff">Blue</option><option value="#ef4444">Red</option><option value="#ffffff">White</option><option value="#a855f7">Purple</option></select></label><p id="stats"></p><label>Map <select id="mapChoice"><option value="training">Training Ground</option><option value="stadium">Halftime Arena</option><option value="street">Street Cage</option><option value="night">Floodlit Stadium</option></select></label><select id="mode"><option value="training">Free training</option><option value="match">1v1 vs AI</option><option value="career">Career League 11v11</option><option value="penalty">Goalkeeper challenge</option></select><button id="play">Start game</button><button id="reset">Reset ball</button><button id="clubToggle">Create a Club</button><section id="clubPanel" hidden><h2>Create a Club</h2><label>Club name <input id="clubName" maxlength="24"></label><label>Badge <select id="clubShape"><option>Shield</option><option>Circle</option></select></label><label>Symbol <select id="clubSymbol"><option>Star</option><option>Football</option><option>Diamond</option></select></label><label>Home colour <input type="color" id="clubHome" value="#168bff"></label><label>Away colour <input type="color" id="clubAway" value="#ffffff"></label><div id="clubPreview"></div><button id="clubSave">Save club</button><p id="clubStatus"></p><small>Local club only. No custom image uploads.</small></section><button id="wardrobe">Dressing Room</button><section id="wardrobePanel" hidden><h2>Dressing Room</h2><p>YOUR LOCKER • Local cosmetics</p><label>Kit <select id="lockerKit"><option value="#168bff">Blue</option><option value="#ef4444">Red</option><option value="#ffffff">White</option><option value="#a855f7">Purple</option></select></label><label>Gloves <select id="lockerGloves"><option value="none">None</option><option value="#182334">Black</option><option value="#ffffff">White</option><option value="#facc15">Gold</option></select></label><label>Football <select id="lockerBall"><option value="#ffffff">Classic</option><option value="#facc15">Gold</option><option value="#ff7733">Orange</option></select></label><label>Badge <select id="lockerBadge"></select></label><p>Choose an item to equip and save it.</p><label>Hair <select id="hair"><option value="#30231b">Brown</option><option value="#151515">Black</option><option value="#d6b36a">Blond</option></select></label><label>Skin <select id="skin"><option value="#c89570">Warm</option><option value="#f0c6a5">Light</option><option value="#805239">Deep</option></select></label><label>Boots <select id="boots"><option value="#182334">Black</option><option value="#ffffff">White</option><option value="#facc15">Gold</option></select></label><button id="closeWardrobe">Close</button></section><button id="catalog">CC, TT & all badges</button><div id="badges" hidden></div><button id="ownerToggle">Owner sandbox (local demo)</button><section id="ownerPanel" hidden><h2>OWNER • #000001 (demo)</h2><small>Public offline testing tools. Not authenticated; no real staff roles or online awards.</small><p><select id="award"></select><button id="grant">Equip preview</button><button id="removeAward">Remove preview</button></p><p id="equipped"></p><button id="ownerReset">Reset ball</button><button id="spawnBall">Spawn ball</button><button id="clearSpawnedBalls">Clear spawned balls</button><button id="ownerRestart">Restart training</button><button id="ownerGoal">Add demo goal</button><button id="ownerClear">Clear score</button><button id="ownerFreeze">Freeze ball</button><button id="ownerHome">Return to centre</button><button id="ownerPower">Toggle super shot</button><p id="ownerStatus"></p><small>In VR, left controller X resets the ball and Y returns to centre in training while sandbox is enabled. Exit VR to use the full panel.</small></section><p><small>Quest: enter VR using the headset icon. Left stick moves; B opens the VR menu; gentle controller movements kick. Keep feet on the floor and clear your play area. Desktop: WASD and Space near ball. Online matches, accounts and staff permissions are not connected.</small></p></section><div id="touch" style="position:fixed;bottom:20px;left:12px;right:12px;z-index:9;display:flex;justify-content:space-between;pointer-events:none"><div style="pointer-events:auto;touch-action:none"><button data-m="0,-1">↑</button><br><button data-m="-1,0">←</button><button data-m="0,1">↓</button><button data-m="1,0">→</button></div><div style="pointer-events:auto"><button id="pass">Pass</button><button id="shoot">Shoot</button><button id="lob">Lob</button><small id="kickHint" style="display:block"></small></div></div>
 <script>
 const $=id=>document.getElementById(id);const scene=document.querySelector('a-scene');let profile={nick:'Player',kit:'#168bff',goals:0,careerGoals:0,playstyle:'Power Shot'};try{Object.assign(profile,JSON.parse(localStorage.getItem('halftime-profile')||'{}'))}catch(e){};if(profile.playerId==='HT-60E1ADDBE5421A47'){profile.playerId='HT-001';try{localStorage.setItem('halftime-profile',JSON.stringify(profile));}catch(e){}}if(!/^HT-(?:[A-F0-9]{16}|001)$/.test(profile.playerId||'')){profile.playerId='HT-'+Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();}function save(){try{localStorage.setItem('halftime-profile',JSON.stringify(profile))}catch(e){};$('stats').textContent='Training goals: '+profile.goals+' | Career goals: '+(profile.careerGoals||0)+(profile.goals>=100?' • FINISHER':'');} $('nick').value=profile.nick;$('kit').value=profile.kit;$('nick').onchange=()=>{profile.nick=$('nick').value;save()};$('kit').onchange=()=>{profile.kit=$('kit').value;document.querySelectorAll('.boot').forEach(e=>e.setAttribute('color',profile.kit));save()};window.recordGoal=()=>{profile.goals++;save()};window.recordCareerGoal=()=>{profile.careerGoals=(profile.careerGoals||0)+1;save()};save();$('open').onclick=()=>{$('menu').hidden=!$('menu').hidden};$('play').onclick=()=>{let f=$('ball').components.football;if(f)f.start($('mode').value);$('rig').object3D.position.set(0,0,3);$('bot').object3D.position.set(0,0,-8);$('menu').hidden=true};scene.addEventListener('enter-vr',()=>{$('menu').hidden=true});$('reset').onclick=()=>{let f=$('ball').components.football;if(f){f.p.set(0,.11,0);f.v.set(0,0,0)}};
 const tiers=['Copper','Bronze','Silver','Gold','Platinum','Diamond','Ruby','Emerald','Elite','Master','Legendary','Icon'], views=[500,1000,5000,15000,30000,50000,75000,100000,150000,250000,500000,1000000], leagues=['Academy','Division 5','Division 4','Division 3','Division 2','Division 1','Championship','Premier','Elite','World League'];$('catalog').onclick=()=>{$('badges').hidden=!$('badges').hidden};const colors=['#b87333','#cd7f32','#cbd5e1','#facc15','#5eead4','#38bdf8','#fb405e','#4ade80','#c084fc','#818cf8','#fb923c','#ffd700'];
@@ -208,7 +208,7 @@ function transfers(){const c=window.transferState?.();if(!c?.offer){detail.setAt
 function start(mode){$('mode').value=mode;$('play').click();if(vrMenuOpen)toggleVRMenu();for(const id of ['left','right']){$(id).setAttribute('raycaster','enabled',false);$(id).setAttribute('raycaster','showLine',false);}}
 function store(offset=0){const items=window.shopItems||[];detail.setAttribute('value',window.shopSummary?.()||'Store loading');const rows=items.slice(offset,offset+4).map(item=>[item.name+' '+(window.shopOwned(item.id)?'EQUIP':'1 TOKEN'),()=>{window.shopBuy(item.id);store(offset);}]);draw([...rows,['NEXT',()=>store(items.length?(offset+4)%items.length:0)],['BACK',home]]);}function equipment(){detail.setAttribute('value','Choose kit colour');draw([['BLUE',()=>kit('#168bff')],['RED',()=>kit('#ef4444')],['WHITE',()=>kit('#ffffff')],['PURPLE',()=>kit('#a855f7')],['BACK',home]]);}
 function kit(c){$('kit').value=c;$('kit').onchange();detail.setAttribute('value','Kit equipped');}
-function settings(){detail.setAttribute('value','Game controls');draw([['RESET BALL',()=>football()?.reset()],['EXIT VR',()=>scene.exitVR()],['BACK',home]]);}
+function settings(){detail.setAttribute('value','Game controls');draw([['RESET BALL',()=>football()?.reset()],['SPAWN BALL',()=>window.spawnHalftimeBall?.()],['CLEAR BALLS',()=>window.clearHalftimeBalls?.()],['EXIT VR',()=>scene.exitVR()],['BACK',home]]);}
 home();for(const id of ['left','right']){const e=$(id);e.setAttribute('raycaster','objects: .halfVRButton; enabled: false; far: 5; showLine: false; lineColor: #b8f34b; lineOpacity: 0.85');e.setAttribute('cursor','rayOrigin: entity; fuse: false; downEvents: triggerdown; upEvents: triggerup');}
 $('right').addEventListener('bbuttondown',()=>{if(vrMenuOpen)home();for(const id of ['left','right']){$(id).setAttribute('raycaster','enabled',vrMenuOpen);$(id).setAttribute('raycaster','showLine',vrMenuOpen);}});
 scene.addEventListener('exit-vr',()=>{for(const id of ['left','right'])$(id).setAttribute('raycaster','enabled',false);});
@@ -737,6 +737,88 @@ window.halftimeFootTuning={smoothing:18,contactRadius:.255,maxKickSpeed:29,contr
 })();
 </script>
 
+<script>
+/* HALFTIME MULTI BALL SPAWNER */
+(function(){
+  const scene=document.querySelector('a-scene');
+  const rig=document.getElementById('rig');
+  const cam=document.getElementById('cam');
+  if(!scene||!rig||!cam)return;
+  const spawned=[];
+  let count=0;
+
+  function spawnBall(){
+    if(spawned.length>=20)return;
+    const e=document.createElement('a-sphere');
+    e.classList.add('spawnedFootball');
+    e.setAttribute('radius','.11');
+    e.setAttribute('color','#ffffff');
+    const pos=cam.object3D.getWorldPosition(new THREE.Vector3());
+    const dir=cam.object3D.getWorldDirection(new THREE.Vector3()).negate();
+    dir.y=0; if(dir.lengthSq()<.001)dir.set(0,0,-1); else dir.normalize();
+    pos.addScaledVector(dir,1.4);
+    pos.y=.18;
+    e.object3D.position.copy(pos);
+    scene.appendChild(e);
+
+    const state={el:e,p:pos.clone(),v:new THREE.Vector3(),last:performance.now(),id:++count};
+    spawned.push(state);
+  }
+
+  function clearBalls(){
+    while(spawned.length){
+      const b=spawned.pop();
+      b.el.remove();
+    }
+  }
+
+  window.spawnHalftimeBall=spawnBall;
+  window.clearHalftimeBalls=clearBalls;
+
+  document.getElementById('spawnBall')?.addEventListener('click',spawnBall);
+  document.getElementById('clearSpawnedBalls')?.addEventListener('click',clearBalls);
+
+  // VR shortcut: right thumbstick press spawns a ball.
+  document.getElementById('right')?.addEventListener('thumbstickdown',()=>{
+    if(scene.is('vr-mode')&&!window.inCityRoom)spawnBall();
+  });
+
+  function tick(t){
+    const dt=.016;
+    for(let i=spawned.length-1;i>=0;i--){
+      const b=spawned[i];
+      const p=b.p,v=b.v;
+      // Simple gravity + bounce.
+      if(p.y>.111||v.y>0)v.y-=9.81*dt;
+      p.addScaledVector(v,dt);
+      if(p.y<.11){p.y=.11;if(v.y<-.7)v.y=-v.y*.5;else v.y=0;v.x*=.985;v.z*=.985;}
+
+      // Kick with VR feet.
+      if(scene.is('vr-mode')){
+        for(const id of ['left','right']){
+          const foot=window.halfFeet?.[id]?.mesh;
+          if(!foot?.visible)continue;
+          const fp=foot.position;
+          const d=fp.distanceTo(p);
+          if(d<.28){
+            const n=p.clone().sub(fp);
+            if(n.lengthSq()<.0001)n.set(0,0,-1); else n.normalize();
+            v.addScaledVector(n,6.5);
+            v.y+=1.2;
+            window.halfSound?.('kick');
+          }
+        }
+      }
+      b.el.object3D.position.copy(p);
+      if(Math.abs(p.x)>62||Math.abs(p.z)>62||p.y<-5){
+        b.el.remove(); spawned.splice(i,1);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
 <script>
 /* HALFTIME GLOVE PULL-OUT SYSTEM */
 (function(){
