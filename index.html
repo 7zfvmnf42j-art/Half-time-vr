@@ -366,7 +366,19 @@ items.push(...[
 {id:520,name:'Lime Attack',color:'#a3e635',accent:'#111827',mark:'ATTACK'},
 {id:521,name:'Royal Blue',color:'#4338ca',accent:'#ffffff',mark:'ROYAL'},
 {id:522,name:'Teal Control',color:'#14b8a6',accent:'#f8fafc',mark:'CTRL'},
-{id:523,name:'Whiteout',color:'#ffffff',accent:'#cbd5e1',mark:'WHITE'}
+{id:523,name:'Whiteout',color:'#ffffff',accent:'#cbd5e1',mark:'WHITE'},
+{id:600,name:'England Champion',color:'#ffffff',accent:'#dc2626',mark:'ENG'},
+{id:601,name:'Spain Champion',color:'#dc2626',accent:'#facc15',mark:'ESP'},
+{id:602,name:'France Champion',color:'#1d4ed8',accent:'#ef4444',mark:'FRA'},
+{id:603,name:'Germany Champion',color:'#111111',accent:'#facc15',mark:'GER'},
+{id:604,name:'Italy Champion',color:'#168bff',accent:'#ffffff',mark:'ITA'},
+{id:605,name:'Portugal Champion',color:'#16a34a',accent:'#dc2626',mark:'POR'},
+{id:606,name:'Brazil Champion',color:'#facc15',accent:'#16a34a',mark:'BRA'},
+{id:607,name:'Argentina Champion',color:'#7dd3fc',accent:'#ffffff',mark:'ARG'},
+{id:608,name:'Netherlands Champion',color:'#f97316',accent:'#ffffff',mark:'NED'},
+{id:609,name:'USA Champion',color:'#1d4ed8',accent:'#ef4444',mark:'USA'},
+{id:610,name:'Japan Champion',color:'#ffffff',accent:'#ef4444',mark:'JPN'},
+{id:611,name:'Mexico Champion',color:'#16a34a',accent:'#dc2626',mark:'MEX'}
 ].map(x=>({...x,type:'Boots'})));profile.shop=profile.shop||{credits:0,owned:[]};const shop=profile.shop;shop.owned=shop.owned||[];const starter=[0,1,3,125,128,250,253,375,376];if(!shop.starterGranted){shop.owned=[...new Set([...shop.owned,...starter])];profile.demoBadges=[...new Set([...(profile.demoBadges||[]),'Founder'])];shop.starterGranted=true;save();}const vintage=items.filter(x=>x.id%125<25);
 const page=document.createElement('div');page.className='halfPage';page.hidden=true;const nav=$('halfNav'), tab=document.createElement('button');tab.textContent='Shop';nav.append(tab);$('halfPages').append(page);
 const title=document.createElement('h2');title.textContent='Cosmetics Shop • '+items.length+' items';page.append(title);
@@ -377,7 +389,18 @@ const list=document.createElement('div');list.style.cssText='display:grid;grid-t
 function equip(item){const id={Boots:'boots',Gloves:'lockerGloves',Kits:'lockerKit',Footballs:'lockerBall'}[item.type];const e=$(id);if(!e)return;if(![...e.options].some(o=>o.value===item.color)){const o=document.createElement('option');o.value=item.color;o.textContent=item.name;e.append(o);}e.value=item.color;e.dispatchEvent(new Event('change'));shop.equipped=shop.equipped||{};shop.equipped[item.type]=item.id;if(item.type==='Boots'){profile.specialBoot=item.accent?{accent:item.accent,mark:item.mark}:null;window.refreshSpecialBoot?.();}save();if(item.type==='Gloves')window.refreshHalftimeGloves?.();}
 function render(){balance.textContent='Free item tokens: '+shop.credits+' | Owned: '+shop.owned.length+' / '+items.length+' + Founder badge';list.replaceChildren();if(collection.value==='Starter pack'){const note=document.createElement('p');note.textContent='Founder badge — free, equip in Profile / Badges';list.append(note);}for(const item of (collection.value==='Special edition boots'?items.filter(x=>x.id>=500):collection.value==='Vintage Store'?vintage:collection.value==='Starter pack'?items.filter(x=>starter.includes(x.id)):items).filter(x=>(collection.value==='Starter pack'||collection.value==='Special edition boots'||x.type===filter.value)&&(!ownedOnly.checked||shop.owned.includes(x.id)))){const b=document.createElement('button');b.style.cssText='background:#23334b;color:white;min-height:85px;white-space:normal';const sw=document.createElement('span');sw.style.cssText='display:block;height:22px;border-radius:5px;background:'+item.color;const owned=shop.owned.includes(item.id);const equipped=shop.equipped?.[item.type]===item.id;sw.style.height='36px';if(item.accent)sw.style.background='linear-gradient(120deg,'+item.color+' 65%,'+item.accent+' 65%)';b.append(sw,document.createTextNode(item.name+' • '+(equipped?'Equipped':owned?'Equip':'1 token')));b.disabled=equipped||(!owned&&shop.credits<1);b.onclick=()=>{if(!shop.owned.includes(item.id)){if(shop.credits<1)return;shop.credits--;shop.owned.push(item.id);}equip(item);render();};list.append(b);}}
 filter.onchange=render;ownedOnly.onchange=render;tab.onclick=()=>{for(const p of $('halfPages').children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));render();};for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
-const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);if(x>y){shop.credits++;save();}render();};window.shopItems=[...items.filter(x=>x.id>=500),...items.filter(x=>x.id<500)];window.shopOwned=id=>shop.owned.includes(id);window.shopBuy=id=>{const item=items.find(x=>x.id===id);if(!item)return false;if(!shop.owned.includes(id)){if(shop.credits<1)return false;shop.credits--;shop.owned.push(id);}equip(item);save();render();return true;};window.shopSummary=()=>shop.credits+' free item tokens | '+shop.owned.length+' owned';for(const id of Object.values(shop.equipped||{})){const item=items.find(x=>x.id===id);if(item)equip(item);}render();
+const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);if(x>y){shop.credits++;save();}render();};window.shopItems=[...items.filter(x=>x.id>=500),...items.filter(x=>x.id<500)];
+window.grantLeagueChampionBoot=country=>{
+  const ids={England:600,Spain:601,France:602,Germany:603,Italy:604,Portugal:605,Brazil:606,Argentina:607,Netherlands:608,USA:609,Japan:610,Mexico:611};
+  const id=ids[country]||600;
+  const item=items.find(x=>x.id===id);
+  if(!item)return null;
+  if(!shop.owned.includes(id))shop.owned.push(id);
+  profile.lastLeagueReward={country,id,name:item.name};
+  save();render();
+  return item.name;
+};
+window.shopOwned=id=>shop.owned.includes(id);window.shopBuy=id=>{const item=items.find(x=>x.id===id);if(!item)return false;if(!shop.owned.includes(id)){if(shop.credits<1)return false;shop.credits--;shop.owned.push(id);}equip(item);save();render();return true;};window.shopSummary=()=>shop.credits+' free item tokens | '+shop.owned.length+' owned';for(const id of Object.values(shop.equipped||{})){const item=items.find(x=>x.id===id);if(item)equip(item);}render();
 })();
 
 (function(){
@@ -443,7 +466,7 @@ leagueLabel.append(leagueCountry);panel.append(leagueLabel);
 const country=document.createElement('select');for(const n of ['England','Scotland','Wales','Northern Ireland','Ireland','France','Spain','Germany','Portugal','Brazil','Argentina','Netherlands','Italy','USA','Japan','Mexico','Australia','Canada'])country.add(new Option(n,n));country.value=p.country;country.onchange=()=>{if(p.caps||p.called){country.value=p.country;return;}p.country=country.value;save();render();};const label=document.createElement('label');label.textContent='International team ';label.append(country);panel.append(label);
 const international=document.createElement('button');international.textContent='Play international match';panel.append(international);
 function render(){status.textContent=window.divisionSummary()+' | '+p.notice+' | '+p.country+' caps: '+p.caps;international.disabled=!p.called;country.disabled=p.called||p.caps>0;}
-window.seasonComplete=rank=>{if(rank<=2&&p.tier>0){p.tier--;p.notice='Promoted to '+divisions[p.tier];}else if(rank>=9&&p.tier<6){p.tier++;p.notice='Relegated to '+divisions[p.tier];}else p.notice=rank===1?'League champions!':'Finished '+rank+'th';p.season++;const c=window.transferState?.();if(c)c.division=5-p.tier+6;save();render();};
+window.seasonComplete=rank=>{const won=rank===1;const wonCountry=profile.careerCountry||window.transferState?.()?.country||'England';let reward='';if(won)reward=window.grantLeagueChampionBoot?.(wonCountry)||'';if(rank<=2&&p.tier>0){p.tier--;p.notice=(won?'League champions! • ':'')+'Promoted to '+divisions[p.tier];}else if(rank>=9&&p.tier<6){p.tier++;p.notice='Relegated to '+divisions[p.tier];}else p.notice=won?'League champions!':'Finished '+rank+'th';if(reward)p.notice+=' • Unlocked '+reward+' boots';p.season++;const c=window.transferState?.();if(c)c.division=5-p.tier+6;save();render();};
 window.internationalSummary=()=>p.called?'Called up by '+p.country+' | Caps '+p.caps:'International selection requires 70 OVR and 5 career wins';
 window.startInternational=()=>{if(!p.called)return;window.internationalActive=true;$('mode').value='career';$('play').click();};international.onclick=window.startInternational;
 const old=window.finishCareer;window.finishCareer=(x,y)=>{if(window.internationalActive){window.internationalActive=false;p.caps++;p.called=false;p.notice=p.country+' international result: '+x+'–'+y;save();render();return;}old(x,y);if(!p.called&&(window.playerOverall?.()||45)>=70&&(window.transferState?.()?.wins||0)>=5&&((window.transferState?.()?.matches||0)%3===0)){p.called=true;p.notice='International call-up: '+p.country+'!';}save();render();};render();
