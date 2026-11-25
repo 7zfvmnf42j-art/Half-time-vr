@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
 window.halftimeBallPhysics={airDrag:.012,groundFriction:.18,bounce:.49,gravity:9.81,touchAssist:.22,kickPower:1.42,maxSpeed:37,contactRestitution:.78,juggleLift:.32};
-window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.05,smoothing:38,velocityCap:26};
+window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:.92,smoothing:16,velocityCap:18};
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 window.halftimePlaceLegSegment=(mesh,a,b)=>{
@@ -31,16 +31,22 @@ raw.add(offset);
 // Touch controllers are not foot trackers: use their horizontal movement for steps,
 // but keep the virtual boot sole planted at pitch height instead of following hand height.
 const rigY=document.getElementById('rig')?.object3D.position.y||0;
-raw.y=rigY+.09;
+// Controller height contributes a little to foot lift, but cannot pull the boot far off the pitch.
+const handHeight=THREE.MathUtils.clamp(raw.y-rigY-.25,-.10,.28);
+raw.y=rigY+.09+handHeight*.32+(state.bent?.035:0);
 
-// Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
-// Keep only a generous reach cap from the player's body to prevent tracking glitches.
-// True free tracking: no body reach clamp. The virtual foot follows the tracked controller freely.
-
-// VRFS-style smoothing: feet track quickly but do not jitter.
+// Smooth controller noise while retaining responsive movement. Adapt smoothing to movement speed.
 state.smooth=state.smooth||raw.clone();
-state.smooth.lerp(raw,THREE.MathUtils.clamp(d*(window.halftimeLegFreedom?.smoothing||26),0,1));
+const frameMove=state.smooth.distanceTo(raw);
+const smoothRate=THREE.MathUtils.clamp((lf.smoothing||16)+(frameMove> .12?8:0),10,25);
+state.smooth.lerp(raw,THREE.MathUtils.clamp(d*smoothRate,0,1));
 const p=state.smooth.clone();
+// Small natural step lift from controller motion; never lets the sole drop below the floor.
+state.lastFootPos=state.lastFootPos||p.clone();
+const stepSpeed=p.distanceTo(state.lastFootPos)/Math.max(d,.001);
+const stepLift=THREE.MathUtils.clamp((stepSpeed-0.35)*.012,0,.075);
+p.y=Math.max(rigY+.075,p.y+stepLift);
+state.lastFootPos.copy(p);
 
 state.mesh.position.copy(p);
 
@@ -75,10 +81,12 @@ if(state.thigh&&state.lower){
     foot.x=p.x;
     foot.z=p.z;
   }
+  const stride=THREE.MathUtils.clamp((state.lastStepSpeed||0)/3,0,1);
+  state.lastStepSpeed=stepSpeed;
   const knee=hip.clone().lerp(foot,.53);
-  knee.addScaledVector(forward,state.bent?.20:.10);
+  knee.addScaledVector(forward,(state.bent?.20:.085)+stride*.045);
   knee.addScaledVector(right,id==='left'?-.035:.035);
-  knee.y+=.055;
+  knee.y+=.055+stride*.035;
 
   window.halftimePlaceLegSegment(state.thigh,hip,knee);
   window.halftimePlaceLegSegment(state.lower,knee,foot);
