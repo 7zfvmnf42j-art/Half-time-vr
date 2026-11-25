@@ -151,7 +151,7 @@ AFRAME.registerComponent('move',{init(){this.axis={x:0,y:0};this.el.addEventList
   <a-text id="cityRoomTitle" value="SHOP" position="0 3.8 -5.4" align="center" width="7" color="#ffffff"></a-text>
   <a-text id="cityRoomInfo" value="Welcome" position="0 2.9 -5.3" align="center" width="6" color="#d1d5db"></a-text>
   <a-box position="0 .7 -3" width="6" height="1.4" depth="1.2" color="#374151"></a-box>
-  <a-entity id="cityShopStock"></a-entity>
+  <a-entity id="cityShopStock"></a-entity><a-entity id="cityInteriorShopSigns"><a-text value="BROWSE ITEMS" position="0 2.15 -3.02" align="center" width="4.2" color="#ffffff"></a-text><a-box position="-4.4 .9 -4.7" width="2.2" height="1.8" depth=".5" color="#2f3945"></a-box><a-box position="4.4 .9 -4.7" width="2.2" height="1.8" depth=".5" color="#2f3945"></a-box></a-entity>
   <a-plane id="cityExitDoor" position="0 1.1 5.7" width="2" height="2.2" color="#7f1d1d"></a-plane>
   <a-text value="EXIT" position="0 2.6 5.65" rotation="0 180 0" align="center" width="3.5" color="#ffffff"></a-text>
 </a-entity>
@@ -656,16 +656,20 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   function enterRoom(type){
     const room=rooms[type]||['SHOP','Welcome'];
     window.inCityRoom=true;
+    window.currentCityRoom=type;
     interior.setAttribute('visible',true);
     title.setAttribute('value',room[0]);
-    info.setAttribute('value',room[1]);
+    info.setAttribute('value',room[1]+(type==='pub'?' • Fans are inside':' • Walk around and browse'));
     renderStock(type);
+    const floor=interior.querySelector('a-plane');
+    if(floor)floor.setAttribute('material','color:'+(type==='pub'?'#4b3a31':'#555f6c')+'; roughness:.82');
     rig.object3D.position.set(45,0,3.5);
     rig.object3D.rotation.set(0,Math.PI,0);
   }
 
   function exitRoom(){
     window.inCityRoom=false;
+    window.currentCityRoom='';
     interior.setAttribute('visible',false);
     rig.object3D.position.set(27,0,9);
     rig.object3D.rotation.set(0,0,0);
@@ -987,6 +991,71 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+})();
+</script>
+<script>
+/* HALFTIME CITY INTERIOR CROWD */
+(function(){
+  const interior=document.getElementById('cityInterior');
+  const title=document.getElementById('cityRoomTitle');
+  if(!interior||!title)return;
+
+  const crowd=document.createElement('a-entity');
+  crowd.id='cityInteriorCrowd';
+  interior.append(crowd);
+
+  const decor=document.createElement('a-entity');
+  decor.id='cityInteriorDecor';
+  decor.innerHTML=
+    '<a-box position="-3.8 .75 -2.6" width="2.4" height="1.5" depth=".7" color="#5b4636"></a-box>'+
+    '<a-box position="3.8 .75 -2.6" width="2.4" height="1.5" depth=".7" color="#5b4636"></a-box>'+
+    '<a-box position="-3.8 .45 1.6" width="2.6" height=".12" depth=".8" color="#6b4f35"></a-box>'+
+    '<a-box position="3.8 .45 1.6" width="2.6" height=".12" depth=".8" color="#6b4f35"></a-box>'+
+    '<a-cylinder position="-4.8 .65 3.6" radius=".16" height="1.3" color="#38414c"></a-cylinder>'+
+    '<a-sphere position="-4.8 1.45 3.6" radius=".22" color="#fff0b8" material="emissive:#fff0b8; emissiveIntensity:.45"></a-sphere>'+
+    '<a-cylinder position="4.8 .65 3.6" radius=".16" height="1.3" color="#38414c"></a-cylinder>'+
+    '<a-sphere position="4.8 1.45 3.6" radius=".22" color="#fff0b8" material="emissive:#fff0b8; emissiveIntensity:.45"></a-sphere>';
+  interior.append(decor);
+
+  function fan(x,z,kit,rot=0,label='FAN'){
+    const e=document.createElement('a-entity');
+    e.className='pubFanNPC';
+    e.setAttribute('position',x+' 0 '+z);
+    e.setAttribute('rotation','0 '+rot+' 0');
+    e.innerHTML=
+      '<a-cylinder radius=".25" height=".78" position="0 .92 0" color="'+kit+'"></a-cylinder>'+
+      '<a-sphere radius=".21" position="0 1.52 0" color="#c8926a"></a-sphere>'+
+      '<a-box width=".18" height=".55" depth=".2" position="-.13 .32 0" color="#1f2937"></a-box>'+
+      '<a-box width=".18" height=".55" depth=".2" position=".13 .32 0" color="#1f2937"></a-box>'+
+      '<a-text value="'+label+'" position="0 1.92 0" align="center" width="2.2" color="#ffffff"></a-text>';
+    crowd.append(e);
+    return e;
+  }
+
+  const pubFans=[
+    fan(-3.8,-1.8,'#7f1734',20,'FAN'),
+    fan(-2.3,.7,'#80c7ff',-25,'FAN'),
+    fan(2.4,-1.4,'#7f1734',-15,'FAN'),
+    fan(3.8,.8,'#80c7ff',30,'FAN'),
+    fan(-.8,2.7,'#f8fafc',170,'FAN'),
+    fan(1.1,2.4,'#7f1734',190,'FAN')
+  ];
+
+  let start=performance.now();
+  function animate(t){
+    const pub=(title.getAttribute('value')||'')==='HALFTIME PUB'&&window.inCityRoom;
+    crowd.setAttribute('visible',pub);
+    decor.setAttribute('visible',!!window.inCityRoom);
+    if(pub){
+      pubFans.forEach((e,i)=>{
+        const bob=Math.sin((t-start)*.002+i)*.025;
+        e.object3D.position.y=bob;
+        e.object3D.rotation.y+=Math.sin((t-start)*.001+i)*.0008;
+      });
+    }
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
 })();
 </script>
 <script>
