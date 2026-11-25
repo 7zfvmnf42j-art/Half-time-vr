@@ -2393,7 +2393,7 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  function fresh(season=1){
   const name=$('umClub').value.trim()||'Your Club';
   const names=[name,...clubs];const teams=names.map((n,i)=>({name:n,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0,form:[],scorers:0}));
-  const rounds=[];for(let r=0;r<9;r++){const games=[];for(let i=0;i<5;i++){const a=(r+i)%9,b=(9-i+r)%9;games.push([a,b]);}rounds.push(games);}
+  const rounds=[];let rotation=[0,1,2,3,4,5,6,7,8,9];for(let r=0;r<9;r++){const games=[];for(let i=0;i<5;i++)games.push([rotation[i],rotation[9-i]]);rounds.push(games);rotation=[rotation[0],rotation[9],...rotation.slice(1,9)];}
   return {season,week:0,teams,rounds,results:[],cup:null,honours:[],club:{name,home:$('umHome').value,away:$('umAway').value,ground:$('umGround').value}};
  }
  function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch(e){$('umRoundStatus').textContent='Could not save on this device.';}}
