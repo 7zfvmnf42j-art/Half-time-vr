@@ -497,7 +497,7 @@ function addCoyiDetail(){
  ctx.strokeStyle='#fff';ctx.lineWidth=13;ctx.beginPath();ctx.moveTo(35,205);ctx.lineTo(477,205);ctx.stroke();
  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
  const mat=new THREE.MeshStandardMaterial({map:tex,transparent:false,roughness:.6,side:THREE.DoubleSide});
- for(const side of [-1,1]){const decal=new THREE.Mesh(new THREE.PlaneGeometry(.145,.075),mat);decal.position.set(side*.071,.028,-.015);decal.rotation.y=side*Math.PI/2;decal.rotation.z=-.12;state.mesh.add(decal);}
+ for(const side of [-1,1]){const decal=new THREE.Mesh(new THREE.PlaneGeometry(.145,.075),mat);decal.position.set(side*.071,.028,-.015);decal.rotation.y=side*Math.PI/2;decal.rotation.z=-.12;decal.userData.coyiDecal=true;state.mesh.add(decal);}
 }
 if(coyiBoot)addCoyiDetail();
 }
