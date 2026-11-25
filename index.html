@@ -28,8 +28,8 @@ const lf=window.halftimeLegFreedom||{};
 raw.y=raw.y-(lf.verticalOffset??0);
 const offset=new THREE.Vector3(0,state.bent?.04:0,state.bent?.16:-.14).applyQuaternion(q);
 raw.add(offset);
-// Let the boot plant on the floor without limiting high/free leg movement.
-raw.y=Math.max(.18,raw.y);
+// Let the boot sole touch the pitch instead of floating above it.
+raw.y=Math.max(.09,raw.y);
 
 // Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
 // Keep only a generous reach cap from the player's body to prevent tracking glitches.
@@ -41,15 +41,22 @@ state.smooth.lerp(raw,THREE.MathUtils.clamp(d*(window.halftimeLegFreedom?.smooth
 const p=state.smooth.clone();
 
 state.mesh.position.copy(p);
-state.mesh.quaternion.slerp(q,THREE.MathUtils.clamp(d*24,0,1));
-if(state.bent)state.mesh.rotateX(-.72);
+
+// Stable foot orientation: follow controller direction without letting hand roll twist the boot.
+// Apply bend to the target quaternion once, rather than accumulating rotation every frame.
+const footEuler=new THREE.Euler().setFromQuaternion(q,'YXZ');
+footEuler.x=THREE.MathUtils.clamp(footEuler.x,-1.25,.75);
+footEuler.z=THREE.MathUtils.clamp(footEuler.z,-.28,.28);
+if(state.bent)footEuler.x-=.58;
+const footTargetQ=new THREE.Quaternion().setFromEuler(footEuler);
+state.mesh.quaternion.slerp(footTargetQ,THREE.MathUtils.clamp(d*24,0,1));
 
 // Simple two-segment visual leg IK. Hip follows the headset/body, knee bends naturally toward the foot.
 if(state.thigh&&state.lower){
   const hip=document.getElementById('cam').object3D.getWorldPosition(new THREE.Vector3());
   hip.y-=.72;
   hip.x+=(id==='left'?-.14:.14);
-  const foot=p.clone().add(new THREE.Vector3(0,.05,0));
+  const foot=p.clone().add(new THREE.Vector3(0,.10,0));
   const knee=hip.clone().lerp(foot,.52);
   const forward=new THREE.Vector3(0,0,-1).applyQuaternion(document.getElementById('cam').object3D.getWorldQuaternion(new THREE.Quaternion()));
   forward.y=0;
@@ -431,7 +438,7 @@ const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);c.matches++;i
 (function(){
 function decorate(){const ball=$('ball');const mesh=ball.getObject3D('mesh');if(!mesh||mesh.userData.panelled)return;mesh.userData.panelled=true;const group=new THREE.Group();const geo=new THREE.IcosahedronGeometry(.111,1);const pos=geo.attributes.position;const dark=new THREE.MeshStandardMaterial({color:0x15243b,roughness:.65});const seam=new THREE.LineBasicMaterial({color:0x526478});for(let i=0;i<pos.count;i+=3){const v=[0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(pos,i+j));const c=v[0].clone().add(v[1]).add(v[2]).divideScalar(3);const points=v.map(p=>p.clone().lerp(c,.12).normalize().multiplyScalar(.114));if((i/3)%3===0){const g=new THREE.BufferGeometry().setFromPoints(points);g.computeVertexNormals();group.add(new THREE.Mesh(g,dark));}group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points),seam));}mesh.add(group);}
 if(scene.hasLoaded)decorate();else scene.addEventListener('loaded',decorate,{once:true});$('ball').addEventListener('object3dset',decorate);
-for(const [id,state] of Object.entries(window.halfFeet||{})){const m=state.mesh;m.clear();const color=new THREE.MeshStandardMaterial({color:profile.boots||'#168bff',roughness:.5});const rubber=new THREE.MeshStandardMaterial({color:0x20252c});const white=new THREE.MeshStandardMaterial({color:0xffffff});function piece(g,mat,x,y,z,sx=1,sy=1,sz=1){const o=new THREE.Mesh(g,mat);o.position.set(x,y,z);o.scale.set(sx,sy,sz);m.add(o);return o;}const rings=[[-.205,.008,.009,.0],[-.18,.055,.032,-.005],[-.12,.079,.042,0],[-.045,.078,.055,.01],[.025,.067,.064,.02],[.085,.062,.062,.02],[.135,.047,.045,.012],[.15,.008,.008,0]];const verts=[],uv=[],idx=[];for(let i=0;i<rings.length;i++){const [z,w,h,y]=rings[i];for(let j=0;j<=24;j++){const a=j/24*Math.PI*2;verts.push(Math.cos(a)*w,y+Math.sin(a)*h,z);uv.push(j/24,i/(rings.length-1));}}for(let i=0;i<rings.length-1;i++)for(let j=0;j<24;j++){const a=i*25+j,b=a+25;idx.push(a,a+1,b,b,a+1,b+1);}const upper=new THREE.BufferGeometry();upper.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));upper.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));upper.setIndex(idx);upper.computeVertexNormals();color.side=THREE.DoubleSide;piece(upper,color,0,0,0);piece(new THREE.SphereGeometry(1,24,12),rubber,0,-.042,-.027,.081,.014,.175);for(let j=0;j<5;j++)piece(new THREE.BoxGeometry(.069,.006,.009),white,0,.055+j*.005,-.09+j*.025);for(const x of [-.055,.055])for(const z of [-.14,-.045,.075])piece(new THREE.CylinderGeometry(.012,.017,.026,8),rubber,x,-.075,z);state.bootMaterial=color;}
+for(const [id,state] of Object.entries(window.halfFeet||{})){const m=state.mesh;m.clear();const color=new THREE.MeshStandardMaterial({color:profile.boots||'#168bff',roughness:.5});const ankleMat=new THREE.MeshStandardMaterial({color:'#d2a07a',roughness:.78});const ankleMesh=new THREE.Mesh(new THREE.CylinderGeometry(.065,.075,.16,10),ankleMat);ankleMesh.position.set(0,.055,.055);ankleMesh.castShadow=true;m.add(ankleMesh);const rubber=new THREE.MeshStandardMaterial({color:0x20252c});const white=new THREE.MeshStandardMaterial({color:0xffffff});function piece(g,mat,x,y,z,sx=1,sy=1,sz=1){const o=new THREE.Mesh(g,mat);o.position.set(x,y,z);o.scale.set(sx,sy,sz);m.add(o);return o;}const rings=[[-.205,.008,.009,.0],[-.18,.055,.032,-.005],[-.12,.079,.042,0],[-.045,.078,.055,.01],[.025,.067,.064,.02],[.085,.062,.062,.02],[.135,.047,.045,.012],[.15,.008,.008,0]];const verts=[],uv=[],idx=[];for(let i=0;i<rings.length;i++){const [z,w,h,y]=rings[i];for(let j=0;j<=24;j++){const a=j/24*Math.PI*2;verts.push(Math.cos(a)*w,y+Math.sin(a)*h,z);uv.push(j/24,i/(rings.length-1));}}for(let i=0;i<rings.length-1;i++)for(let j=0;j<24;j++){const a=i*25+j,b=a+25;idx.push(a,a+1,b,b,a+1,b+1);}const upper=new THREE.BufferGeometry();upper.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));upper.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));upper.setIndex(idx);upper.computeVertexNormals();color.side=THREE.DoubleSide;piece(upper,color,0,0,0);piece(new THREE.SphereGeometry(1,24,12),rubber,0,-.042,-.027,.081,.014,.175);for(let j=0;j<5;j++)piece(new THREE.BoxGeometry(.069,.006,.009),white,0,.055+j*.005,-.09+j*.025);for(const x of [-.055,.055])for(const z of [-.14,-.045,.075])piece(new THREE.CylinderGeometry(.012,.017,.026,8),rubber,x,-.075,z);state.bootMaterial=color;}
 const boots=$('boots');boots?.addEventListener('change',()=>{for(const state of Object.values(window.halfFeet||{}))state.bootMaterial?.color.set(boots.value);});
 })();
 
