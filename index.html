@@ -633,9 +633,58 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     page=document.createElement('section'); page.className='halfPage'; page.hidden=true; pages.append(page);
   }
   if(!page)return;
-  page.innerHTML='<h2>PLAY ONLINE</h2><p>Play with another HALFTIME player using a 6-character room code.</p><p><button id="onlineCreate">PLAY ONLINE • Create Room</button> <input id="onlineCode" maxlength="6" placeholder="ROOM CODE" style="text-transform:uppercase"> <button id="onlineJoin">JOIN ROOM</button></p><h3>Online Career Co-op</h3><p>You + 1 friend play on the same team against AI.</p><p><button id="careerCreate">CREATE CO-OP</button> <button id="careerJoin">JOIN CO-OP</button></p><p id="careerRecord"></p><p id="onlineStatus">Not connected</p><p id="onlinePlayers"></p><button id="onlineLeave" disabled>Leave room</button><p><small>Share the room code with your friend. Movement and ball state use Realtime while connected.</small></p>';
+  page.innerHTML='<h2>PLAY ONLINE</h2><p>Jump into an open public match and get paired with another player, or use a private room code.</p><p><button id="publicMatch">FIND PUBLIC MATCH</button> <span id="publicQueueStatus">Public matchmaking ready</span></p><p><button id="onlineCreate">PLAY ONLINE • Create Room</button> <input id="onlineCode" maxlength="6" placeholder="ROOM CODE" style="text-transform:uppercase"> <button id="onlineJoin">JOIN ROOM</button></p><h3>Online Career Co-op</h3><p>You + 1 friend play on the same team against AI.</p><p><button id="careerCreate">CREATE CO-OP</button> <button id="careerJoin">JOIN CO-OP</button></p><p id="careerRecord"></p><p id="onlineStatus">Not connected</p><p id="onlinePlayers"></p><button id="onlineLeave" disabled>Leave room</button><p><small>Share the room code with your friend. Movement and ball state use Realtime while connected.</small></p>';
   const status=page.querySelector('#onlineStatus'), players=page.querySelector('#onlinePlayers'), input=page.querySelector('#onlineCode'), leaveBtn=page.querySelector('#onlineLeave');
   let ch=null, room='', host=false, subscribed=false, lastSend=0, lastBall=0, desiredMode='training', lastCareerEnded=false;
+  let queueCh=null,queueActive=false,queueFound=false,queueKey='',queueStartedAt=0;
+  const publicMatchBtn=page.querySelector('#publicMatch'),queueStatus=page.querySelector('#publicQueueStatus');
+  function setQueueStatus(message){if(queueStatus)queueStatus.textContent=message;}
+  async function leavePublicQueue(showReady=true){
+    queueActive=false;queueFound=false;
+    if(queueCh){try{await queueCh.untrack();}catch(e){}try{await sb.removeChannel(queueCh);}catch(e){}queueCh=null;}
+    if(publicMatchBtn)publicMatchBtn.textContent='FIND PUBLIC MATCH';
+    if(showReady)setQueueStatus('Public matchmaking ready');
+  }
+  function publicRoomCode(a,b){let h=2166136261;for(const c of [a,b].sort().join('|')){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(36).toUpperCase().padStart(6,'0').slice(-6);}
+  async function launchPublicPair(code,isHost){
+    if(queueFound)return;queueFound=true;
+    setQueueStatus('Match found! Connecting…');
+    await leavePublicQueue(false);
+    await connect(code,isHost,'training');
+    setQueueStatus('Connected to public match');
+  }
+  async function findPublicMatch(){
+    if(queueActive){await leavePublicQueue();return;}
+    await disconnect();
+    queueActive=true;queueFound=false;queueStartedAt=Date.now();
+    queueKey=(profile?.playerId||'PLAYER')+'-'+Math.random().toString(36).slice(2,9).toUpperCase();
+    publicMatchBtn.textContent='CANCEL SEARCH';setQueueStatus('Searching for players…');
+    queueCh=sb.channel('halftime-public-matchmaking',{config:{presence:{key:queueKey},broadcast:{self:false}}});
+    queueCh.on('presence',{event:'sync'},()=>{
+      if(!queueActive||queueFound||!queueCh)return;
+      const all=Object.values(queueCh.presenceState()).flat().filter(p=>p?.queueKey&&p.mode==='public-1v1');
+      const unique=[...new Map(all.map(p=>[p.queueKey,p])).values()].sort((a,b)=>(a.queuedAt-b.queuedAt)||a.queueKey.localeCompare(b.queueKey));
+      const index=unique.findIndex(p=>p.queueKey===queueKey);
+      if(index<0||index%2!==0||!unique[index+1]){setQueueStatus('Waiting for another player… '+unique.length+' searching');return;}
+      const partner=unique[index+1].queueKey,code=publicRoomCode(queueKey,partner);
+      if(queueCh)queueCh.send({type:'broadcast',event:'publicMatchFound',payload:{leader:queueKey,partner,code}});
+      launchPublicPair(code,true);
+    });
+    queueCh.on('broadcast',{event:'publicMatchFound'},({payload})=>{
+      if(!queueActive||queueFound||!payload||payload.partner!==queueKey||!payload.code)return;
+      launchPublicPair(payload.code,false);
+    });
+    queueCh.subscribe(async state=>{
+      if(state==='SUBSCRIBED'&&queueActive&&queueCh){
+        await queueCh.track({queueKey,playerId:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',mode:'public-1v1',queuedAt:queueStartedAt});
+        setQueueStatus('Searching for an opponent…');
+      }else if(state==='CHANNEL_ERROR'||state==='TIMED_OUT'){
+        setQueueStatus('Matchmaking connection failed. Try again.');await leavePublicQueue(false);
+      }
+    });
+  }
+  publicMatchBtn.onclick=findPublicMatch;
+  window.halftimeFindPublicMatch=findPublicMatch;
   const remotes=new Map();
   const myKey=(profile?.playerId||('GUEST-'+Math.random().toString(36).slice(2,8))).toUpperCase();
   window.onlineCareerSendKick=(v,p)=>{
@@ -745,6 +794,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     });
   }
   async function disconnect(){
+    if(queueCh)await leavePublicQueue(false);
     subscribed=false; leaveBtn.disabled=true; clearRemotes();
     if(ch){try{await ch.untrack();}catch(e){} try{await sb.removeChannel(ch);}catch(e){} ch=null;}
     if(room) status.textContent='Left room '+room; window.onlineCareerHostChannel=null; room=''; host=false; desiredMode='training'; window.onlineCareerActive=false; window.onlineCareerGuest=false; lastCareerEnded=false; players.textContent='';
@@ -759,7 +809,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   page.querySelector('#onlineJoin').onclick=()=>window.halftimeOnlineJoin(input.value);
   page.querySelector('#careerCreate').onclick=window.halftimeOnlineCareerCreate;
   page.querySelector('#careerJoin').onclick=()=>window.halftimeOnlineCareerJoin(input.value);
-  leaveBtn.onclick=disconnect;
+  leaveBtn.onclick=async()=>{await leavePublicQueue();await disconnect();};
   tab.onclick=()=>{for(const p of pages.children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));};
   for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
 
