@@ -356,4 +356,81 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   });
 })();
 </script>
+
+<script>
+/* HALFTIME AI FANS */
+(function(){
+  const scene=document.querySelector('a-scene');
+  const pub=document.getElementById('halftimePub');
+  if(!scene||!pub)return;
+
+  const fanData=[
+    [-6,0,-5,'#7dd3fc'],[-4.5,0,-5.8,'#ffffff'],[-3,0,-4.7,'#60a5fa'],
+    [3.2,0,-5.2,'#f87171'],[4.8,0,-5.9,'#ffffff'],[6.2,0,-4.6,'#ef4444'],
+    [-5.8,0,1.5,'#60a5fa'],[-3.8,0,2.3,'#93c5fd'],[3.8,0,1.7,'#fca5a5'],
+    [5.8,0,2.6,'#ef4444'],[-1.8,0,6.3,'#ffffff'],[1.8,0,6.1,'#38bdf8']
+  ];
+  const fans=[];
+
+  function makeFan(i,x,z,shirt){
+    const e=document.createElement('a-entity');
+    e.classList.add('aiFan');
+    e.setAttribute('position',x+' 0 '+z);
+    e.innerHTML=
+      '<a-cylinder class="fanBody" radius=".24" height=".78" position="0 .98 0" color="'+shirt+'"></a-cylinder>'+
+      '<a-sphere radius=".2" position="0 1.55 0" color="#c89570"></a-sphere>'+
+      '<a-box class="fanArm fanArmL" width=".13" height=".55" depth=".13" position="-.33 1.05 0" color="'+shirt+'"></a-box>'+
+      '<a-box class="fanArm fanArmR" width=".13" height=".55" depth=".13" position=".33 1.05 0" color="'+shirt+'"></a-box>';
+    pub.append(e);
+    fans.push({e,phase:i*.71,baseY:0,cheerUntil:0});
+  }
+  fanData.forEach((d,i)=>makeFan(i,...d));
+
+  let lastScore='0-0';
+  function tick(t){
+    const f=document.getElementById('ball')?.components?.football;
+    if(f){
+      const s=f.score+'-'+f.ai;
+      if(s!==lastScore){
+        lastScore=s;
+        const now=performance.now();
+        for(const fan of fans) fan.cheerUntil=now+2200+Math.random()*1400;
+      }
+    }
+    const now=performance.now();
+    for(const fan of fans){
+      const cheer=now<fan.cheerUntil;
+      const bob=(cheer?.12:.035)*Math.sin(t*.008+fan.phase);
+      fan.e.object3D.position.y=bob;
+      fan.e.object3D.rotation.y=Math.sin(t*.0012+fan.phase)*.12;
+      const la=fan.e.querySelector('.fanArmL')?.object3D;
+      const ra=fan.e.querySelector('.fanArmR')?.object3D;
+      if(la&&ra){
+        const up=cheer?Math.sin(t*.015+fan.phase)*.7+1.2:.18*Math.sin(t*.004+fan.phase);
+        la.rotation.z= up;
+        ra.rotation.z=-up;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // Small ambient fan chatter using existing sound system when available.
+  let lastChant=0;
+  function ambience(t){
+    if(window.inPub && t-lastChant>9000){
+      lastChant=t;
+      const phrases=['Come on Halftime!','What a match!','Go on!','Nice one!'];
+      const text=phrases[Math.floor(Math.random()*phrases.length)];
+      if(window.speechSynthesis&&window.SpeechSynthesisUtterance){
+        const u=new SpeechSynthesisUtterance(text);
+        u.lang='en-GB'; u.rate=.95; u.volume=.12;
+        window.speechSynthesis.speak(u);
+      }
+    }
+    requestAnimationFrame(ambience);
+  }
+  requestAnimationFrame(ambience);
+})();
+</script>
 </body></html>
