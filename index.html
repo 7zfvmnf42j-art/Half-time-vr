@@ -846,6 +846,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     if(floor)floor.setAttribute('material','color:'+(type==='pub'?'#4b3a31':'#555f6c')+'; roughness:.82');
     rig.object3D.position.set(45,0,1.4);
     rig.object3D.rotation.set(0,Math.PI,0);
+    window.applyHalftimeBallLayout?.();
   }
 
   function exitRoom(){
@@ -854,6 +855,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
     interior.setAttribute('visible',false);
     rig.object3D.position.set(27,0,9);
     rig.object3D.rotation.set(0,0,0);
+    window.applyHalftimeBallLayout?.();
   }
 
   window.enterCityRoom=enterRoom;
