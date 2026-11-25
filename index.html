@@ -3,6 +3,15 @@ AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){i
 window.halftimeBallPhysics={airDrag:.025,groundFriction:.28,bounce:.57,gravity:9.81,touchAssist:.34,kickPower:1.34,maxSpeed:34,contactRestitution:.72,juggleLift:.22};
 window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:999,smoothing:28,velocityCap:24};
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
+window.halftimePlaceLegSegment=(mesh,a,b)=>{
+  if(!mesh)return;
+  const mid=a.clone().add(b).multiplyScalar(.5);
+  const dir=b.clone().sub(a);
+  const len=Math.max(.05,dir.length());
+  mesh.position.copy(mid);
+  mesh.scale.set(1,len,1);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+};
 AFRAME.registerComponent('football',{
 init(){this.v=new THREE.Vector3();this.p=new THREE.Vector3(0,.11,0);this.prev={};this.start('training');},
 start(mode){this.mode=mode;this.score=0;this.ai=0;this.time=180;this.ended=false;this.reset();this.hud();},
@@ -19,6 +28,8 @@ const lf=window.halftimeLegFreedom||{};
 raw.y=raw.y-(lf.verticalOffset??0);
 const offset=new THREE.Vector3(0,state.bent?.04:0,state.bent?.16:-.14).applyQuaternion(q);
 raw.add(offset);
+// Let the boot plant on the floor without limiting high/free leg movement.
+raw.y=Math.max(.18,raw.y);
 
 // Free-leg mode: preserve vertical tracking instead of pinning the foot to the floor.
 // Keep only a generous reach cap from the player's body to prevent tracking glitches.
@@ -32,6 +43,22 @@ const p=state.smooth.clone();
 state.mesh.position.copy(p);
 state.mesh.quaternion.slerp(q,THREE.MathUtils.clamp(d*24,0,1));
 if(state.bent)state.mesh.rotateX(-.72);
+
+// Simple two-segment visual leg IK. Hip follows the headset/body, knee bends naturally toward the foot.
+if(state.thigh&&state.lower){
+  const hip=document.getElementById('cam').object3D.getWorldPosition(new THREE.Vector3());
+  hip.y-=.72;
+  hip.x+=(id==='left'?-.14:.14);
+  const foot=p.clone().add(new THREE.Vector3(0,.05,0));
+  const knee=hip.clone().lerp(foot,.52);
+  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(document.getElementById('cam').object3D.getWorldQuaternion(new THREE.Quaternion()));
+  forward.y=0;
+  if(forward.lengthSq()>.001)forward.normalize();
+  knee.addScaledVector(forward,state.bent?.20:.10);
+  knee.y+=.05;
+  window.halftimePlaceLegSegment(state.thigh,hip,knee);
+  window.halftimePlaceLegSegment(state.lower,knee,foot);
+}
 
 const old=this.prev[id];
 if(old){
@@ -204,16 +231,15 @@ fetch('https://tumddybiqdokmvlmvdbx.supabase.co/rest/v1/',{headers:{apikey:'sb_p
 (function(){
 window.halfFeet={};
 for(const id of ['left','right']){
-  const e=$(id),mesh=new THREE.Group();
+  const e=$(id),mesh=new THREE.Group(),legGroup=new THREE.Group();
   const bootColor=profile?.boots||'#111827';
   const sockColor=profile?.kit||'#168bff';
+  const skinColor='#d2a07a';
 
   const mat=(color)=>new THREE.MeshStandardMaterial({color,roughness:.78,metalness:0});
-  const shin=new THREE.Mesh(new THREE.BoxGeometry(.16,.48,.16),mat(sockColor));
-  shin.position.set(0,.27,0);
-  mesh.add(shin);
 
-  const ankle=new THREE.Mesh(new THREE.BoxGeometry(.14,.17,.14),mat('#d2a07a'));
+  // Foot/ankle mesh.
+  const ankle=new THREE.Mesh(new THREE.BoxGeometry(.14,.17,.14),mat(skinColor));
   ankle.position.set(0,-.05,0);
   mesh.add(ankle);
 
@@ -225,15 +251,22 @@ for(const id of ['left','right']){
   toe.position.set(0,-.16,-.30);
   mesh.add(toe);
 
-  mesh.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-  scene.object3D.add(mesh);
-  mesh.visible=false;
+  // Full visible leg: upper leg + lower leg stretch between hip, knee and foot.
+  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.095,.105,1,10),mat(sockColor));
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.075,.09,1,10),mat(skinColor));
+  legGroup.add(thigh,lower);
 
-  const state=window.halfFeet[id]={mesh,bent:false};
+  for(const root of [mesh,legGroup])root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  scene.object3D.add(mesh);
+  scene.object3D.add(legGroup);
+  mesh.visible=false;
+  legGroup.visible=false;
+
+  const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,bent:false};
   e.addEventListener('triggerdown',()=>state.bent=true);
   e.addEventListener('triggerup',()=>state.bent=false);
-  scene.addEventListener('enter-vr',()=>mesh.visible=true);
-  scene.addEventListener('exit-vr',()=>{mesh.visible=false;state.bent=false;});
+  scene.addEventListener('enter-vr',()=>{mesh.visible=true;legGroup.visible=true;});
+  scene.addEventListener('exit-vr',()=>{mesh.visible=false;legGroup.visible=false;state.bent=false;});
 }
 })();
 
