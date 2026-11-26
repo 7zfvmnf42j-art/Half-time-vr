@@ -608,18 +608,18 @@ tabs.push([b,p]);b.onclick=()=>{for(const [button,page] of tabs){page.hidden=but
 (function(){
 const panel=$('vrMenu');panel.replaceChildren();
 const make=(tag,attrs,parent=panel)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e;};
-const lime='#b8f34b',cyan='#55d6ff',ink='#0a1424';
-make('plane',{width:4.5,height:3.15,color:ink,opacity:1,material:'shader:flat; transparent:false'});
-make('plane',{width:4.4,height:3.05,position:'0 0 -.012',color:'#14243a',opacity:1,material:'shader:flat'});
-make('plane',{width:4.4,height:.06,position:'0 1.48 .012',color:lime,material:'shader:flat'});
-make('plane',{width:.06,height:2.9,position:'-2.17 0 .012',color:cyan,material:'shader:flat'});
-make('text',{value:'HALFTIME  /  VR',position:'-2.0 1.22 .025',align:'left',width:3.2,color:lime});
-make('text',{value:'MATCH HUB',position:'-2.0 .88 .025',align:'left',width:5.4,color:'#ffffff'});
-make('text',{value:'YOUR GAME. YOUR CLUB. YOUR CAREER.',position:'-1.98 .68 .025',align:'left',width:4.2,color:'#9fb2c9'});
-const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-1.98 .45 .025',align:'left',width:5.1,color:lime});
-const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO SELECT  •  B TO CLOSE',position:'0 -1.42 .03',align:'center',width:5.8,color:'#d8e5f2'});detail.id='vrMenuText';
-make('plane',{width:4.05,height:.018,position:'0 -1.24 .02',color:'#38516d',material:'shader:flat'});
-const buttons=[];let page='Home';
+const lime='#ffb45f',cyan='#cbd5e1',ink='#101522';
+make('plane',{width:5.6,height:3.2,color:'#111827',opacity:1,material:'shader:flat; transparent:false'});
+make('plane',{width:5.54,height:3.12,position:'0 0 -.012',color:'#171d2c',opacity:1,material:'shader:flat'});
+make('plane',{width:5.5,height:.025,position:'0 1.57 .012',color:'#ffb45f',material:'shader:flat'});
+make('plane',{width:1.58,height:3.1,position:'-1.97 0 .012',color:'#141b2a',material:'shader:flat'});
+make('text',{value:'HALFTIME VR',position:'-2.62 1.31 .025',align:'left',width:2.1,color:'#ffffff'});
+make('text',{value:'YOUR FOOTBALL WORLD',position:'-2.60 1.08 .025',align:'left',width:2.1,color:'#aab5c8'});
+make('text',{value:'YOUR GAME. YOUR CLUB. YOUR CAREER.',position:'-.92 .95 .025',align:'left',width:3.4,color:'#cbd5e1'});
+const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-.92 1.31 .025',align:'left',width:3.4,color:'#ffb45f'});
+const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO SELECT  •  B TO CLOSE',position:'.68 -1.43 .03',align:'center',width:4.1,color:'#d8deea'});detail.id='vrMenuText';
+make('plane',{width:3.48,height:.018,position:'.70 .99 .025',color:'#39445a',material:'shader:flat'});
+const buttons=[],navButtons=[];let page='Home';
 function draw(items,page=0){
  clearBootPreview?.();
  for(const b of buttons)b.remove();buttons.length=0;
@@ -627,8 +627,8 @@ function draw(items,page=0){
  const shown=[...content];
  if(paged){if(page>0)shown.push(['PREVIOUS',()=>draw(items,page-1)]);if((page+1)*6<items.length)shown.push(['MORE',()=>draw(items,page+1)]);}
  shown.forEach(([label,fn],i)=>{
-  const col=i%2,row=Math.floor(i/2),x=col===0?-1.05:1.05,y=.06-row*.43;
-  const b=make('plane',{width:1.98,height:.36,position:x+' '+y+' .035',color:'#223650',class:'halfVRButton',material:'shader:flat'});
+  const col=i%2,row=Math.floor(i/2),x=col===0?-.12:1.62,y=.42-row*.52;
+  const b=make('plane',{width:1.62,height:.43,position:x+' '+y+' .075',color:'#223650',class:'halfVRButton',material:'shader:flat'});
   make('plane',{width:1.72,height:.025,position:'0 -.145 .012',color:i%2?cyan:lime,material:'shader:flat'},b);
   make('plane',{width:1.98,height:.36,position:'0 0 -.012',color:'#304966',opacity:.42,material:'shader:flat'},b);
   make('plane',{width:.045,height:.27,position:'-.91 0 .018',color:i%2?cyan:lime,material:'shader:flat'},b);
@@ -688,6 +688,17 @@ function equipment(){detail.setAttribute('value','EQUIPMENT  •  Choose your ki
 function kit(c){$('kit').value=c;$('kit').onchange();detail.setAttribute('value','Kit equipped');}
 function settings(){detail.setAttribute('value','SETTINGS  •  Match tools and VR controls');draw([['RESET BALL',()=>{football()?.reset();detail.setAttribute('value','Ball reset');}],['SPAWN BALL',()=>{window.spawnHalftimeBall?.();detail.setAttribute('value','Ball spawn requested');}],['CLEAR BALLS',()=>{window.clearHalftimeBalls?.();detail.setAttribute('value','Extra balls cleared');}],['GLOVES',()=>{window.toggleHalftimeGloves?.();detail.setAttribute('value','Glove setting toggled');}],['RECALIBRATE',()=>{window.recalibrateHalftimeVR?.();detail.setAttribute('value','VR recalibration requested');}],['OWNER SANDBOX',()=>{$('ownerToggle')?.click();detail.setAttribute('value','Owner sandbox toggled');}],['BACK',home]]);}
 home();
+function addNav(label,y,fn){
+ const b=make('plane',{width:1.34,height:.39,position:'-2.02 '+y+' .06',color:'#252d3d',class:'halfVRButton',material:'shader:flat'});
+ make('plane',{width:.045,height:.25,position:'-.61 0 .02',color:lime,material:'shader:flat'},b);
+ make('text',{value:label,position:'-.48 0 .03',align:'left',width:1.05,color:'#f2f4f8',shader:'msdf'},b);
+ const outline=make('plane',{width:1.39,height:.43,position:'0 0 -.01',color:lime,visible:false,material:'shader:flat'},b);
+ b.addEventListener('raycaster-intersected',()=>outline.setAttribute('visible',true));
+ b.addEventListener('raycaster-intersected-cleared',()=>outline.setAttribute('visible',false));
+ b.addEventListener('click',()=>{if(vrMenuOpen){window.halfSound?.('menu');fn();}});
+ navButtons.push(b);
+}
+addNav('PLAY',.65,play);addNav('LIBRARY',.13,profileMenu);addNav('FRIENDS',-.39,onlineMenu);addNav('STORE',-.91,()=>store(0));addNav('SETTINGS',-1.43,settings);
 const vrButtonRay=new THREE.Raycaster();
 for(const id of ['left','right']){
  const controller=$(id);
@@ -701,11 +712,11 @@ for(const id of ['left','right']){
   const origin=controller.object3D.getWorldPosition(new THREE.Vector3());
   const direction=new THREE.Vector3(0,0,-1).applyQuaternion(controller.object3D.getWorldQuaternion(new THREE.Quaternion())).normalize();
   vrButtonRay.set(origin,direction);
-  const hits=vrButtonRay.intersectObjects(buttons.filter(b=>b.object3D&&b.object3D.visible).map(b=>b.object3D),true);
+  const hits=vrButtonRay.intersectObjects([...buttons,...navButtons].filter(b=>b.object3D&&b.object3D.visible).map(b=>b.object3D),true);
   if(!hits.length)return;
   let hit=hits[0].object;
-  while(hit&& !buttons.some(b=>b.object3D===hit))hit=hit.parent;
-  const target=buttons.find(b=>b.object3D===hit);
+  while(hit&& ![...buttons,...navButtons].some(b=>b.object3D===hit))hit=hit.parent;
+  const target=[...buttons,...navButtons].find(b=>b.object3D===hit);
   if(target)target.emit('click',{source:'quest-controller'});
  });
 }
