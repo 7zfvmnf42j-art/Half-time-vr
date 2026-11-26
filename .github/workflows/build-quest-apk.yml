@@ -1,0 +1,160 @@
+name: Build HALFTIME VR Quest APK
+on:
+  workflow_run:
+    workflows: ["Deploy HALFTIME VR to GitHub Pages"]
+    types: [completed]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: halftime-quest-apk
+  cancel-in-progress: false
+jobs:
+  build:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest game
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+      - name: Restore persistent signing key
+        uses: actions/cache@v4
+        with:
+          path: .halftime-signing
+          key: halftime-vr-quest-signing-key-v1
+      - name: Create or reuse signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .halftime-signing
+          if [ ! -f .halftime-signing/android.keystore ]; then
+            openssl rand -hex 24 > .halftime-signing/password
+            PW="$(cat .halftime-signing/password)"
+            "$JAVA_HOME/bin/keytool" -genkeypair -v \
+              -keystore "$GITHUB_WORKSPACE/.halftime-signing/android.keystore" \
+              -alias android -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$PW" -keypass "$PW" \
+              -dname "CN=HALFTIME VR, O=HALFTIME VR, C=GB"
+          fi
+      - name: Check hosted PWA and icons
+        run: |
+          set -e
+          BASE="https://7zfvmnf42j-art.github.io/Half-time-vr"
+          for path in "/" "/manifest.webmanifest" "/icons/icon-512.png" "/icons/icon-512-maskable.png"; do
+            code="$(curl -L -s -o /dev/null -w '%{http_code}' "$BASE$path")"
+            echo "$path -> $code"
+            test "$code" = "200"
+          done
+      - name: Configure Bubblewrap
+        run: |
+          npm install --global @meta-quest/bubblewrap-cli@1.24.1
+          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_HOME"
+      - name: Create Meta Quest packaging manifest
+        shell: bash
+        run: |
+          cat > twa-manifest.json <<'JSON'
+          {
+            "packageId": "com.halftimevr.game",
+            "applicationId": "0",
+            "host": "7zfvmnf42j-art.github.io",
+            "name": "HALFTIME VR",
+            "launcherName": "HALFTIME VR",
+            "display": "standalone",
+            "orientation": "landscape",
+            "themeColor": "#101827",
+            "themeColorDark": "#101827",
+            "navigationColor": "#101827",
+            "navigationColorDark": "#101827",
+            "backgroundColor": "#101827",
+            "startUrl": "/Half-time-vr/",
+            "iconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/icons/icon-512.png",
+            "maskableIconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/icons/icon-512-maskable.png",
+            "webManifestUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/manifest.webmanifest",
+            "signingKey": {
+              "path": ".halftime-signing/android.keystore",
+              "alias": "android"
+            },
+            "appVersion": "1",
+            "appVersionCode": 1,
+            "fallbackType": "customtabs",
+            "features": {},
+            "isMetaQuest": true,
+            "horizonOSAppMode": "immersive",
+            "fingerprints": [],
+            "minSdkVersion": 23,
+            "enableNotifications": false,
+            "enableMicrophone": false,
+            "enableXRScene": false
+          }
+          JSON
+      - name: Build signed Quest APK
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.SIGNING_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ env.SIGNING_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export BUBBLEWRAP_KEYSTORE_PASSWORD="$(cat .halftime-signing/password)"
+          export BUBBLEWRAP_KEY_PASSWORD="$BUBBLEWRAP_KEYSTORE_PASSWORD"
+          bubblewrap update
+          bubblewrap build --manifest="$GITHUB_WORKSPACE/twa-manifest.json" \
+            --signingKeyPath="$GITHUB_WORKSPACE/.halftime-signing/android.keystore" \
+            --signingKeyAlias=android
+          test -s app-release-signed.apk
+          BT="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          "$BT/apksigner" verify --verbose app-release-signed.apk
+      - name: Publish Digital Asset Links
+        shell: bash
+        run: |
+          set -euo pipefail
+          PW="$(cat .halftime-signing/password)"
+          SHA="$("$JAVA_HOME/bin/keytool" -list -v -keystore .halftime-signing/android.keystore -alias android -storepass "$PW" | awk -F'SHA256: ' '/SHA256:/{print $2; exit}')"
+          test -n "$SHA"
+          mkdir -p .well-known
+          cat > .well-known/assetlinks.json <<JSON
+          [
+            {
+              "relation": ["delegate_permission/common.handle_all_urls"],
+              "target": {
+                "namespace": "android_app",
+                "package_name": "com.halftimevr.game",
+                "sha256_cert_fingerprints": ["$SHA"]
+              }
+            }
+          ]
+          JSON
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .well-known/assetlinks.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add Quest app verification link"
+            git push
+          fi
+      - name: Prepare signing backup
+        run: |
+          mkdir -p release-backup
+          cp .halftime-signing/android.keystore release-backup/
+          cp .halftime-signing/password release-backup/
+          cp twa-manifest.json release-backup/
+      - name: Upload APK and signing backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: HALFTIME-VR-Quest-APK
+          path: |
+            app-release-signed.apk
+            release-backup/
+          retention-days: 90
