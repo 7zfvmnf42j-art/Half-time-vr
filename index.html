@@ -3,6 +3,9 @@ AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){i
 window.halftimeBallPhysics={airDrag:.012,rollResistance:.82,bounce:.48,bounceGrip:.94,gravity:9.81,magnus:.00105,spinDecay:.58,touchAssist:.22,kickPower:1.5,maxSpeed:39,contactRestitution:.8,juggleLift:.38};
 window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.8,smoothing:26,velocityCap:28};
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
+// Feet start locked to the pitch. Press B on the right Quest controller to toggle free movement.
+window.halftimeFeetLocked=true;
+window.halftimeToggleFeetLock=()=>{window.halftimeFeetLocked=!window.halftimeFeetLocked;window.halfFeetLockNotice?.(window.halftimeFeetLocked?'FEET LOCKED TO GROUND':'FEET UNLOCKED');return window.halftimeFeetLocked;};
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 AFRAME.registerComponent('halftime-leg-renderer',{
   // Run after controller tracking and all child components have updated this frame.
@@ -33,7 +36,9 @@ AFRAME.registerComponent('halftime-leg-renderer',{
       // Boot geometry reaches 0.215m below the virtual foot pivot.
       const bootBottomOffset=.215;
       const neutralHandDrop=.78;
-      target.y=floorY+bootBottomOffset+Math.max(0,target.y-(head.y-neutralHandDrop));
+      target.y=window.halftimeFeetLocked
+        ? floorY+bootBottomOffset
+        : floorY+bootBottomOffset+Math.max(0,target.y-(head.y-neutralHandDrop));
       state.mesh.visible=true;state.legGroup.visible=true;
       state.mesh.frustumCulled=false;state.legGroup.frustumCulled=false;
       state.smooth=state.smooth||target.clone();
@@ -92,6 +97,13 @@ const frameMove=state.smooth.distanceTo(raw);
 const smoothRate=THREE.MathUtils.clamp((lf.smoothing||26)+(frameMove>.12?10:0),18,40);
 state.smooth.lerp(raw,THREE.MathUtils.clamp(d*smoothRate,0,1));
 const p=state.smooth.clone();
+if(window.halftimeFeetLocked){
+  const ground=document.getElementById('worldGround');
+  if(ground)ground.object3D.updateWorldMatrix(true,false);
+  const careerMode=this.mode==='career';
+  const floorY=careerMode?.008:(ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035);
+  p.y=floorY+.215;
+}
 state.lastFootPos=state.lastFootPos||p.clone();
 const stepSpeed=p.distanceTo(state.lastFootPos)/Math.max(d,.001);
 state.lastStepSpeed=stepSpeed;
@@ -545,6 +557,7 @@ for(const id of ['left','right']){
   legGroup.visible=false;
 
   const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,kneeCap,bent:false};
+  if(id==='right')e.addEventListener('bbuttondown',()=>window.halftimeToggleFeetLock?.());
   e.addEventListener('triggerdown',()=>state.bent=true);
   e.addEventListener('triggerup',()=>state.bent=false);
   scene.addEventListener('enter-vr',()=>{state.smooth=null;state.lastFootPos=null;mesh.visible=true;legGroup.visible=true;mesh.frustumCulled=false;legGroup.frustumCulled=false;});
