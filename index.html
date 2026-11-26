@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
-window.halftimeBallPhysics={airDrag:.018,rollResistance:1.15,bounce:.42,bounceGrip:.91,gravity:9.81,magnus:.00075,spinDecay:.72,touchAssist:.22,kickPower:1.42,maxSpeed:37,contactRestitution:.78,juggleLift:.32};
+window.halftimeBallPhysics={airDrag:.012,rollResistance:.82,bounce:.48,bounceGrip:.94,gravity:9.81,magnus:.00105,spinDecay:.58,touchAssist:.22,kickPower:1.5,maxSpeed:39,contactRestitution:.8,juggleLift:.38};
 window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:.92,smoothing:16,velocityCap:18};
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
@@ -495,9 +495,9 @@ for(const id of ['left','right']){
 
   // Full visible leg: upper leg + lower leg stretch between hip, knee and foot.
   // Slim stick-style legs. Keep the boot and foot meshes above completely unchanged.
-  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.026,.031,1,10),mat(sockColor));
-  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.021,.026,1,10),mat(sockColor));
-  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.026,10,8),mat(sockColor));
+  const thigh=new THREE.Mesh(new THREE.CylinderGeometry(.038,.043,1,12),mat(sockColor));
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(.032,.038,1,12),mat(sockColor));
+  const kneeCap=new THREE.Mesh(new THREE.SphereGeometry(.038,12,10),mat(sockColor));
   legGroup.add(thigh,lower,kneeCap);
 
   for(const root of [mesh,legGroup])root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
@@ -509,8 +509,10 @@ for(const id of ['left','right']){
   const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,kneeCap,bent:false};
   e.addEventListener('triggerdown',()=>state.bent=true);
   e.addEventListener('triggerup',()=>state.bent=false);
-  scene.addEventListener('enter-vr',()=>{state.smooth=null;mesh.visible=true;legGroup.visible=true;});
+  scene.addEventListener('enter-vr',()=>{state.smooth=null;state.lastFootPos=null;mesh.visible=true;legGroup.visible=true;mesh.frustumCulled=false;legGroup.frustumCulled=false;});
   scene.addEventListener('exit-vr',()=>{mesh.visible=false;legGroup.visible=false;state.bent=false;});
+  // Re-show and reset tracking whenever Quest reconnects a controller mid-session.
+  e.addEventListener('controllerconnected',()=>{state.smooth=null;state.lastFootPos=null;if(scene.is('vr-mode')){mesh.visible=true;legGroup.visible=true;}});
 }
 })();
 
