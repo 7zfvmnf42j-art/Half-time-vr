@@ -77,6 +77,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          test -n "$SDKMANAGER"
+          mkdir -p "$ANDROID_HOME/build-tools"
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+          test -x "$ANDROID_HOME/build-tools/34.0.0/apksigner"
           npm install --global @meta-quest/bubblewrap-cli@1.24.1
           mkdir -p "$HOME/.bubblewrap"
           printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
