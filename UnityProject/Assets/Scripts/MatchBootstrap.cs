@@ -145,7 +145,6 @@ public class MatchBootstrap : MonoBehaviour
     {
         var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         ball.name = "Match Ball";
-        ball.tag = "MatchBall";
         ball.transform.position = new Vector3(0, 0.35f, 0);
         ball.transform.localScale = Vector3.one * 0.22f;
         Apply(ball, ballMaterial, Color.white);
