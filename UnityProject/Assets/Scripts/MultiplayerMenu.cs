@@ -1,14 +1,16 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Builds the first host/join panel for the HALFTIME VR menu.</summary>
+/// <summary>Builds the HALFTIME VR online room panel.</summary>
 public class MultiplayerMenu : MonoBehaviour
 {
     Text status;
-    InputField addressInput;
+    InputField codeInput;
+    System.Action<string> report;
 
-    public GameObject Build(Transform parent, System.Action<string> report)
+    public GameObject Build(Transform parent, System.Action<string> reportStatus)
     {
+        report = reportStatus;
         var panel = new GameObject("Multiplayer Panel", typeof(RectTransform), typeof(Image));
         panel.transform.SetParent(parent, false);
         var rect = panel.GetComponent<RectTransform>();
@@ -17,47 +19,46 @@ public class MultiplayerMenu : MonoBehaviour
         panel.GetComponent<Image>().color = new Color(0.025f, 0.045f, 0.09f);
 
         AddLabel(panel.transform, "ONLINE PLAY", 34, new Vector2(0, 145), new Vector2(700, 55));
-        AddLabel(panel.transform, "HOST A SESSION OR JOIN A FRIEND ON THE SAME NETWORK", 17,
+        AddLabel(panel.transform, "CREATE A PRIVATE ROOM OR ENTER A FRIEND'S CODE", 17,
             new Vector2(0, 95), new Vector2(700, 40));
 
-        var inputObject = new GameObject("Host Address", typeof(RectTransform), typeof(Image), typeof(InputField));
+        var inputObject = new GameObject("Room Code Input", typeof(RectTransform), typeof(Image), typeof(InputField));
         inputObject.transform.SetParent(panel.transform, false);
         var inputRect = inputObject.GetComponent<RectTransform>();
         inputRect.sizeDelta = new Vector2(570, 58);
         inputRect.anchoredPosition = new Vector2(0, 35);
         inputObject.GetComponent<Image>().color = new Color(0.10f, 0.15f, 0.22f);
-        addressInput = inputObject.GetComponent<InputField>();
-        var text = AddLabel(inputObject.transform, "127.0.0.1", 22, Vector2.zero, new Vector2(530, 50));
-        text.alignment = TextAnchor.MiddleLeft;
-        addressInput.textComponent = text;
-        addressInput.text = "127.0.0.1";
-        var placeholder = AddLabel(inputObject.transform, "Friend's local IP address", 18,
+        codeInput = inputObject.GetComponent<InputField>();
+        var inputText = AddLabel(inputObject.transform, "", 25, Vector2.zero, new Vector2(530, 50));
+        inputText.alignment = TextAnchor.MiddleCenter;
+        codeInput.textComponent = inputText;
+        codeInput.characterLimit = 12;
+        codeInput.contentType = InputField.ContentType.Standard;
+        var placeholder = AddLabel(inputObject.transform, "ENTER ROOM CODE", 18,
             Vector2.zero, new Vector2(530, 50));
         placeholder.color = new Color(0.55f, 0.60f, 0.68f);
-        addressInput.placeholder = placeholder;
+        codeInput.placeholder = placeholder;
 
-        AddButton(panel.transform, "HOST", new Vector2(-170, -45), () =>
+        AddButton(panel.transform, "CREATE ROOM", new Vector2(-170, -45), () =>
         {
             var session = GetSession();
-            bool started = session != null && session.StartHosting();
-            report(started ? "Host started. Share your local IP with a friend on the same network." :
-                "Could not start host. Check whether a session is already running.");
+            if (session == null) { report("Online service isn't ready."); return; }
+            session.CreateRoom();
         });
-        AddButton(panel.transform, "JOIN", new Vector2(170, -45), () =>
+        AddButton(panel.transform, "JOIN ROOM", new Vector2(170, -45), () =>
         {
             var session = GetSession();
-            bool started = session != null && session.JoinHost(addressInput.text);
-            report(started ? "Connecting to host..." : "Could not start connection. Check the address and session.");
+            if (session == null) { report("Online service isn't ready."); return; }
+            session.JoinRoom(codeInput.text);
         });
         AddButton(panel.transform, "DISCONNECT", new Vector2(0, -125), () =>
         {
             var session = GetSession();
             if (session != null) session.Disconnect();
-            report("Disconnected from the session.");
+            else report("No active room.");
         });
 
-        AddLabel(panel.transform,
-            "First networking test: direct local-network connection only.", 16,
+        AddLabel(panel.transform, "ROOM CODES CONNECT PLAYERS OVER THE INTERNET", 16,
             new Vector2(0, -180), new Vector2(720, 38));
         return panel;
     }
