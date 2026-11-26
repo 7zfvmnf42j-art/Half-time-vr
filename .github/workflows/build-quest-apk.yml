@@ -84,7 +84,16 @@ jobs:
           test -x "$ANDROID_HOME/build-tools/34.0.0/apksigner"
           npm install --global @meta-quest/bubblewrap-cli@1.24.1
           mkdir -p "$HOME/.bubblewrap"
+          echo "Android SDK root: $ANDROID_HOME"
+          echo "SDK root contents:"
+          ls -la "$ANDROID_HOME"
+          echo "Build-tools contents:"
+          ls -la "$ANDROID_HOME/build-tools"
+          test -d "$ANDROID_HOME/build-tools"
+          test -d "$ANDROID_HOME/build-tools/34.0.0"
+          test -x "$ANDROID_HOME/build-tools/34.0.0/apksigner"
           printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
+          cat "$HOME/.bubblewrap/config.json"
           bubblewrap doctor
       - name: Create Meta Quest packaging manifest
         shell: bash
