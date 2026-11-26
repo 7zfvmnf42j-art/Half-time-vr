@@ -24,11 +24,21 @@ AFRAME.registerComponent('halftime-leg-renderer',{
       scene.object3D.updateMatrixWorld(true);
       const q=controller.object3D.getWorldQuaternion(new THREE.Quaternion());
       const target=controller.object3D.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,-.015,-.12).applyQuaternion(q));
+      // Map the controller's normal waist-height position to a boot resting on the pitch.
+      // Raising the controller still lifts the virtual foot for kicks and volleys.
+      const ground=document.getElementById('worldGround');
+      if(ground){ground.object3D.updateWorldMatrix(true,false);}
+      const floorY=ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035;
+      const bootBottomOffset=.215;
+      const neutralHandDrop=.78;
+      target.y=floorY+bootBottomOffset+Math.max(0,target.y-(head.y-neutralHandDrop));
       state.mesh.visible=true;state.legGroup.visible=true;
       state.mesh.frustumCulled=false;state.legGroup.frustumCulled=false;
       state.smooth=state.smooth||target.clone();
       state.smooth.lerp(target,THREE.MathUtils.clamp(d*34,0,1));
       const foot=state.smooth.clone();
+      // Keep the sole on the floor even while smoothing controller movement.
+      foot.y=Math.max(floorY+bootBottomOffset,foot.y);
       state.mesh.position.copy(foot);
       state.mesh.quaternion.slerp(q,THREE.MathUtils.clamp(d*32,0,1));
       const hip=head.clone();hip.y-=THREE.MathUtils.clamp(window.halftimePlayerHeight||1.72,1.25,2.15)*.43;
