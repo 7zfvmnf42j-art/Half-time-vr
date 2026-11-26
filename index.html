@@ -29,18 +29,12 @@ state.mesh.visible=true;state.legGroup.visible=true;
 state.mesh.frustumCulled=false;state.legGroup.frustumCulled=false;
 const lf=window.halftimeLegFreedom||{};
 const floorY=-.035;
-// Build the avatar legs from the headset pose, not the hand-controller pose.
-// Quest controllers are hand trackers, so treating them as feet can place the legs
-// at the hands or under the pitch. Keep the virtual feet below the player's body.
-const camForFeet=document.getElementById('cam').object3D;
-const headForFeet=camForFeet.getWorldQuaternion(new THREE.Quaternion());
-const raw=camForFeet.getWorldPosition(new THREE.Vector3());
-const rightForFeet=new THREE.Vector3(1,0,0).applyQuaternion(headForFeet);rightForFeet.y=0;if(rightForFeet.lengthSq()>.001)rightForFeet.normalize();
-const forwardForFeet=new THREE.Vector3(0,0,-1).applyQuaternion(headForFeet);forwardForFeet.y=0;if(forwardForFeet.lengthSq()>.001)forwardForFeet.normalize();
-raw.addScaledVector(rightForFeet,id==='left'?-.14:.14);
-raw.addScaledVector(forwardForFeet,.10);
-// The boot model extends below its origin, so place that origin above the floor.
-raw.y=floorY+.20+(state.bent?.012:0);
+// The Quest controllers ARE the feet: each virtual boot follows its matching
+// controller's tracked world position. Hold the controllers low to move the feet.
+const controllerQ=e.object3D.getWorldQuaternion(new THREE.Quaternion());
+const raw=e.object3D.getWorldPosition(new THREE.Vector3());
+const controllerOffset=new THREE.Vector3(0,-.035,-.08).applyQuaternion(controllerQ);
+raw.add(controllerOffset);
 
 // Smooth controller noise while retaining responsive movement. Adapt smoothing to movement speed.
 state.smooth=state.smooth||raw.clone();
