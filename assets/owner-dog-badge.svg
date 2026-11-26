@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="286" viewBox="0 0 256 286">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a6"/><stop offset=".48" stop-color="#d6a83e"/><stop offset="1" stop-color="#805313"/></linearGradient><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72513b"/><stop offset=".55" stop-color="#30241f"/><stop offset="1" stop-color="#100f12"/></linearGradient></defs>
+<path d="M128 4 145 20 169 13 181 35 207 39 211 64 235 80 228 105 247 128 228 151 234 177 211 193 207 219 181 223 169 245 145 238 128 256 111 238 87 245 75 223 49 219 45 193 22 177 28 151 9 128 28 105 21 80 45 64 49 39 75 35 87 13 111 20Z" fill="#111827" stroke="url(#g)" stroke-width="8"/>
+<circle cx="128" cy="119" r="85" fill="#0b1220" stroke="url(#g)" stroke-width="5"/>
+<path d="M65 86Q37 42 53 43Q87 42 101 78Q128 57 155 78Q170 42 203 43Q220 48 191 103L185 160Q177 204 128 207Q79 204 71 160Z" fill="url(#fur)" stroke="#c59a50" stroke-width="3"/>
+<path d="M65 82 89 69 80 103 60 123M190 79 166 68 177 105 198 123M94 76 111 66 101 104M144 72 157 88 146 109M77 137 97 125 91 154M164 133 183 121 174 157" fill="none" stroke="#a17a50" stroke-width="5" opacity=".6" stroke-linecap="round"/>
+<ellipse cx="99" cy="126" rx="10" ry="13" fill="#09090b"/><ellipse cx="157" cy="126" rx="10" ry="13" fill="#09090b"/><circle cx="101" cy="123" r="3" fill="#fff"/><circle cx="159" cy="123" r="3" fill="#fff"/>
+<path d="M90 161Q128 137 166 161Q161 193 128 195Q95 193 90 161Z" fill="#241b19"/><ellipse cx="128" cy="158" rx="19" ry="12" fill="#08090c"/><path d="M128 169V181M128 181Q115 193 106 181M128 181Q141 193 150 181" fill="none" stroke="#9b7963" stroke-width="3" stroke-linecap="round"/>
+<path d="M103 25 128 8 153 25 145 40 111 40Z" fill="url(#g)" stroke="#fff0a6" stroke-width="2"/><path d="M111 24 117 33 128 20 139 33 145 24" fill="none" stroke="#6b4512" stroke-width="3"/>
+<path d="M31 218Q128 242 225 218L218 270Q128 291 38 270Z" fill="url(#g)" stroke="#fff0a6" stroke-width="3"/>
+<text x="128" y="258" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" font-weight="900" letter-spacing="2" fill="#171717">OWNER</text>
+<text x="128" y="281" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="2" fill="#f7e7b5">HALFTIME VR</text>
+</svg>
