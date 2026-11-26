@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.halftimevr.game",
+      "sha256_cert_fingerprints": ["03:DE:81:37:58:AC:88:39:54:58:BA:58:27:B2:6B:73:D7:F3:54:72:2E:3F:BD:81:12:49:E6:08:A8:C3:6C:A6"]
+    }
+  }
+]
