@@ -28,8 +28,10 @@ AFRAME.registerComponent('halftime-leg-renderer',{
       // Raising the controller still lifts the virtual foot for kicks and volleys.
       const ground=document.getElementById('worldGround');
       if(ground){ground.object3D.updateWorldMatrix(true,false);}
-      const floorY=ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035;
-      const bootBottomOffset=.056;
+      const careerMode=document.getElementById('ball')?.components?.football?.mode==='career';
+      const floorY=careerMode?.008:(ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035);
+      // Boot geometry reaches 0.215m below the virtual foot pivot.
+      const bootBottomOffset=.215;
       const neutralHandDrop=.78;
       target.y=floorY+bootBottomOffset+Math.max(0,target.y-(head.y-neutralHandDrop));
       state.mesh.visible=true;state.legGroup.visible=true;
@@ -398,7 +400,7 @@ function syncWorldMode(){
   for(const el of [...scene.children]){
    const id=el.id||'';
    const tag=el.tagName?.toLowerCase()||'';
-   if(keep.has(id)||tag==='a-light'||tag==='a-sky')continue;
+   if(keep.has(id)||tag==='a-light'||tag==='a-sky'||el.hasAttribute('light'))continue;
    if(!el.__halftimeWorldOriginal){
     el.__halftimeWorldOriginal={
      visible:el.getAttribute('visible')!==false,
@@ -666,6 +668,15 @@ const groundThemes=[['#7a263a','#8bd3f7'],['#168bff','#f8fafc'],['#16a34a','#fac
 function groundFor(team,country){let hash=0;for(const ch of team)hash=(hash*31+ch.charCodeAt(0))>>>0;const theme=groundThemes[hash%groundThemes.length],suffix=groundWords[(hash>>>4)%groundWords.length];const short=team.replace(/\\b(FC|United|City|Athletic|Town|Stars|Calcio|CF|04|11)\\b/g,'').trim().split(/\\s+/)[0]||team;return {name:short+' '+suffix,capacity:12000+(hash%9)*4500,primary:theme[0],secondary:theme[1],roof:(hash%3===0?'Full roof':hash%3===1?'Open corners':'Covered stands'),style:hash%4};}
 const groundControl=document.createElement('label');groundControl.id='careerVenueControl';groundControl.style.cssText='display:block;margin:8px 0;padding:8px;background:#142238;border-radius:8px;color:#fff';groundControl.append(document.createTextNode('Career venue '));const groundSelect=document.createElement('select');groundSelect.id='careerVenue';groundSelect.style.cssText='margin-left:8px;padding:7px;max-width:170px';[['auto','Auto (alternate)'],['home','Home'],['away','Away']].forEach(([v,n])=>groundSelect.add(new Option(n,v)));groundSelect.value=profile.careerVenue||'auto';groundSelect.onchange=()=>{profile.careerVenue=groundSelect.value;save();};groundControl.append(groundSelect);$('mode').after(groundControl);const groundInfo=document.createElement('p');groundInfo.id='careerGroundInfo';groundInfo.style.cssText='margin:5px 0;color:#b8f34b;font-size:13px';groundControl.after(groundInfo);
 const groundEntity=document.createElement('a-entity');groundEntity.id='careerStadiumEnvironment';groundEntity.setAttribute('visible',false);scene.appendChild(groundEntity);
+ // Keep dedicated stadium lighting inside the stadium root so Career Mode
+ // visibility isolation cannot switch the pitch lights off.
+ const careerAmbient=document.createElement('a-entity');
+ careerAmbient.setAttribute('light','type:ambient; intensity:0.9; color:#ffffff');
+ groundEntity.appendChild(careerAmbient);
+ const careerSun=document.createElement('a-entity');
+ careerSun.setAttribute('position','-12 32 8');
+ careerSun.setAttribute('light','type:directional; intensity:1.35; color:#fff7e8; castShadow:true');
+ groundEntity.appendChild(careerSun);
 function showCareerGround(home){const host=home?names[0]:opponent(),g=groundFor(host,profile.careerCountry);groundEntity.replaceChildren();groundEntity.setAttribute('visible',true);const add=(tag,attrs)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);groundEntity.appendChild(e);};
  // Dedicated career pitch: separate from the training pitch and city.
  add('plane',{rotation:'-90 0 0',position:'0 .008 0',width:68,height:105,material:'color:#237d43;roughness:.9'});
