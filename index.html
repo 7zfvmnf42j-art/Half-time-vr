@@ -591,16 +591,17 @@ make('plane',{width:.055,height:2.78,position:'-1.89 0 .012',color:cyan,material
 make('text',{value:'HALFTIME  /  VR',position:'-1.72 1.13 .025',align:'left',width:3.2,color:lime});
 make('text',{value:'MATCH HUB',position:'-1.72 .83 .025',align:'left',width:5.4,color:'#ffffff'});
 make('text',{value:'YOUR GAME. YOUR CLUB. YOUR CAREER.',position:'-1.7 .65 .025',align:'left',width:4.2,color:'#9fb2c9'});
-const detail=make('text',{value:'Choose an option • Point and press trigger • B goes back',position:'0 -1.28 .03',align:'center',width:5.8,color:'#d8e5f2'});detail.id='vrMenuText';
+const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-1.7 .43 .025',align:'left',width:5.1,color:lime});
+const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO SELECT  •  B TO CLOSE',position:'0 -1.28 .03',align:'center',width:5.8,color:'#d8e5f2'});detail.id='vrMenuText';
 make('plane',{width:3.55,height:.018,position:'0 -1.12 .02',color:'#38516d',material:'shader:flat'});
 const buttons=[];let page='Home';
 function draw(items,page=0){
  for(const b of buttons)b.remove();buttons.length=0;
- const paged=items.length>6,content=paged?items.slice(page*4,page*4+4):items;
+ const paged=items.length>6,content=paged?items.slice(page*6,page*6+6):items;
  const shown=[...content];
- if(paged){if(page>0)shown.push(['PREVIOUS',()=>draw(items,page-1)]);if((page+1)*4<items.length)shown.push(['MORE',()=>draw(items,page+1)]);}
+ if(paged){if(page>0)shown.push(['PREVIOUS',()=>draw(items,page-1)]);if((page+1)*6<items.length)shown.push(['MORE',()=>draw(items,page+1)]);}
  shown.forEach(([label,fn],i)=>{
-  const col=i%2,row=Math.floor(i/2),x=col===0?-.91:.91,y=.34-row*.39;
+  const col=i%2,row=Math.floor(i/2),x=col===0?-.91:.91,y=.12-row*.43;
   const b=make('plane',{width:1.72,height:.315,position:x+' '+y+' .035',color:'#223650',class:'halfVRButton',material:'shader:flat'});
   make('plane',{width:1.72,height:.025,position:'0 -.145 .012',color:i%2?cyan:lime,material:'shader:flat'},b);
   if(page==='Store'&&label.startsWith('HALFTIME BOOT')){const icon=make('entity',{position:'-.56 0 .035',scale:'.22 .22 .22'},b);make('box',{width:1.15,height:.24,depth:.38,position:'0 -.12 0',color:'#f8fafc',rotation:'0 0 -8'},icon);make('box',{width:'.64',height:'.34',depth:'.39',position:'-.12 .12 0',color:label.includes('0001')?'#7a263a':'#38bdf8',rotation:'0 0 -15'},icon);make('box',{width:1.2,height:'.07',depth:'.42',position:'.02 -.27 0',color:'#d1d5db'},icon);make('text',{value:label.replace('HALFTIME BOOT ','BOOT '),align:'center',width:2.3,position:'.34 0 .02',color:'#ffffff'},b);}else make('text',{value:label,align:'center',width:2.9,position:'0 0 .02',color:'#ffffff'},b);
@@ -613,7 +614,7 @@ function draw(items,page=0){
  });
 }
 function matchReport(){let r=window.halftimeLastMatchReport;try{r=r||JSON.parse(localStorage.getItem('halftime-last-match')||'null');}catch(e){}if(!r){info('NO MATCH REPORT YET  •  Play a match to create your first report');return;}detail.setAttribute('value',`LAST MATCH  •  ${r.result}  •  ${r.score} - ${r.opponent}  •  SHOTS ${r.shotsHome} - ${r.shotsAway}`);draw([['PLAY AGAIN',()=>start(r.mode==='career'?'career':'match')],['BACK',home]]);}
-const home=()=>{page='Home';detail.setAttribute('value','HALFTIME VR  •  MEGA UPDATE');draw([['PLAY',play],['CAREER',careerMenu],['ONLINE',onlineMenu],['PROFILE',profileMenu],['MATCH REPORT',matchReport],['EQUIPMENT',equipment],['STORE',()=>store(0)],['CLUBS',clubMenu],['SETTINGS',settings]]);};
+const home=()=>{page='Home';playerLine.setAttribute('value','PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'));detail.setAttribute('value','HALFTIME VR  •  SELECT A MODE OR OPEN YOUR PLAYER HUB');draw([['PLAY',play],['CAREER',careerMenu],['ONLINE',onlineMenu],['PROFILE',profileMenu],['MATCH REPORT',matchReport],['EQUIPMENT',equipment],['STORE',()=>store(0)],['CLUBS',clubMenu],['SETTINGS',settings]]);};
 function careerMenu(){detail.setAttribute('value',(window.careerSummary?.()||'Career mode')+' | Choose an action');draw([['NEXT MATCH',()=>start('career')],['TRANSFERS',transfers],['COUNTRY',careerCountryMenu],['INTERNATIONAL',internationalMenu],['BACK',home]]);}
 function careerCountryMenu(){const countries=window.careerCountries||[];detail.setAttribute('value','Choose your Career Mode country');draw([...countries.map(c=>[c.toUpperCase(),()=>{const ok=window.setCareerCountry?.(c);detail.setAttribute('value',ok?'Career country set to '+c:(c+' could not be selected'));careerMenu();}]),['BACK',careerMenu]]);}
 function internationalMenu(){detail.setAttribute('value',window.internationalSummary?.()||'International career');draw([['PLAY IF CALLED',()=>{window.startInternational?.();if(window.internationalActive&&vrMenuOpen)toggleVRMenu();}],['BACK',careerMenu]]);}
