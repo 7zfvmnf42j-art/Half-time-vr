@@ -29,7 +29,7 @@ AFRAME.registerComponent('halftime-leg-renderer',{
       const ground=document.getElementById('worldGround');
       if(ground){ground.object3D.updateWorldMatrix(true,false);}
       const careerMode=document.getElementById('ball')?.components?.football?.mode==='career';
-      const floorY=careerMode?.008:(ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035);
+      const floorY=careerMode ? .008 :(ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035);
       // Boot geometry reaches 0.215m below the virtual foot pivot.
       const bootBottomOffset=.215;
       const neutralHandDrop=.78;
