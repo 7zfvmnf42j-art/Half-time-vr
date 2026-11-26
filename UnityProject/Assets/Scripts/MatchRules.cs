@@ -148,7 +148,7 @@ public class GoalSensor : MonoBehaviour
     public bool homeTeamScores;
     void OnTriggerEnter(Collider other)
     {
-        if (other.attachedRigidbody == null || !other.attachedRigidbody.CompareTag("MatchBall")) return;
+        if (other.attachedRigidbody == null || other.attachedRigidbody.gameObject.name != "Match Ball") return;
         if (MatchRules.Instance != null) MatchRules.Instance.RegisterGoal(homeTeamScores);
     }
 }
