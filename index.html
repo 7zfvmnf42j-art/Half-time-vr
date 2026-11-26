@@ -560,7 +560,21 @@ function showCareerGround(home){const host=home?names[0]:opponent(),g=groundFor(
  line(0,.025,0,68,.025,.12);line(0,.025,-52.4,68,.025,.12);line(0,.025,52.4,68,.025,.12);line(-33.9,.025,0,.12,.025,105);line(33.9,.025,0,.12,.025,105);
  add('ring',{rotation:'-90 0 0',position:'0 .03 0',radiusInner:9.05,radiusOuter:9.18,color:'#f8fafc'});
  for(const z of [-52.4,52.4]){add('box',{position:'0 1 '+z,width:7.32,height:2.44,depth:.18,color:'#f8fafc'});add('plane',{position:'0 1 '+(z+(z<0?1.5:-1.5)),width:7.2,height:2.3,material:'color:#dbeafe;transparent:true;opacity:.12;side:double'});}
- for(const side of [-1,1]){add('box',{position:side*39.4+' 2.4 0',width:3.2,height:4.8,depth:108,color:g.primary});add('box',{position:side*39.4+' 4.9 0',width:3.35,height:.28,depth:108,color:g.secondary});for(let tier=0;tier<4;tier++)for(let row=0;row<36;row++)add('box',{position:(side*(36.8+tier*.72))+' '+(1.1+tier*.62)+' '+(-51+row*2.9),width:.58,height:.28,depth:2.2,color:(row+tier)%4===0?g.secondary:g.primary});for(const z of [-49,49]){add('box',{position:side*41.8+' 5 '+z,width:.28,height:10,depth:.28,color:'#cbd5e1'});add('box',{position:side*41.8+' 10 '+z,width:2.5,height:.5,depth:.5,color:'#fff3c4',material:'emissive:#fff3c4;emissiveIntensity:.65'});}}add('box',{position:'0 8 -54',width:12,height:2.3,depth:.55,color:'#111827'});add('text',{value:g.name.toUpperCase(),position:'0 8.15 -16.68',align:'center',width:10,color:g.secondary});add('text',{value:host+' • '+g.capacity.toLocaleString('en-GB')+' SEATS',position:'0 6.9 -16.65',align:'center',width:9,color:'#ffffff'});groundInfo.textContent=(home?'HOME':'AWAY')+' • '+host+' • '+g.name+' • '+g.capacity.toLocaleString('en-GB')+' seats';profile.currentCareerGround={team:host,country:profile.careerCountry,...g,venue:home?'home':'away'};save();}
+ for(const side of [-1,1]){add('box',{position:side*39.4+' 2.4 0',width:3.2,height:4.8,depth:108,color:g.primary});add('box',{position:side*39.4+' 4.9 0',width:3.35,height:.28,depth:108,color:g.secondary});for(let tier=0;tier<4;tier++)for(let row=0;row<36;row++)add('box',{position:(side*(36.8+tier*.72))+' '+(1.1+tier*.62)+' '+(-51+row*2.9),width:.58,height:.28,depth:2.2,color:(row+tier)%4===0?g.secondary:g.primary});for(const z of [-49,49]){add('box',{position:side*41.8+' 5 '+z,width:.28,height:10,depth:.28,color:'#cbd5e1'});add('box',{position:side*41.8+' 10 '+z,width:2.5,height:.5,depth:.5,color:'#fff3c4',material:'emissive:#fff3c4;emissiveIntensity:.65'});}}
+ // Fill both long stands with supporters. Each fan is a simple low-poly
+ // seated figure, using a varied home/away crowd palette for VR performance.
+ const fanColours=['#e11d48','#2563eb','#f8fafc','#f59e0b','#16a34a','#7c3aed','#0f172a','#fb7185'];
+ for(const side of [-1,1]){
+  for(let tier=0;tier<4;tier++){
+   for(let row=0;row<36;row++){
+    const x=side*(36.8+tier*.72),y=1.43+tier*.62,z=-50+row*2.9;
+    const colour=fanColours[(row*7+tier*3+(side===1?2:0))%fanColours.length];
+    add('box',{position:x+' '+y+' '+z,width:.34,height:.42,depth:.34,color:colour});
+    add('sphere',{position:x+' '+(y+.29)+' '+z,radius:.15,color:['#d6a477','#8d5524','#f1c27d','#c68642'][(row+tier)%4]});
+   }
+  }
+ }
+ add('box',{position:'0 8 -54',width:12,height:2.3,depth:.55,color:'#111827'});add('text',{value:g.name.toUpperCase(),position:'0 8.15 -16.68',align:'center',width:10,color:g.secondary});add('text',{value:host+' • '+g.capacity.toLocaleString('en-GB')+' SEATS',position:'0 6.9 -16.65',align:'center',width:9,color:'#ffffff'});groundInfo.textContent=(home?'HOME':'AWAY')+' • '+host+' • '+g.name+' • '+g.capacity.toLocaleString('en-GB')+' seats';profile.currentCareerGround={team:host,country:profile.careerCountry,...g,venue:home?'home':'away'};save();}
 window.careerStadiumFor=(team,country=profile.careerCountry)=>({team,country,...groundFor(team,country)});
 window.prepareCareerVenue=()=>{const pick=groundSelect.value;const home=pick==='home'?true:pick==='away'?false:(season.round%2===0);showCareerGround(home);};
 profile.careerCountry=profile.careerCountry||'England';
