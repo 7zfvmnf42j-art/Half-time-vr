@@ -14,6 +14,7 @@ public class HalftimeMainMenu : MonoBehaviour
     Text status;
     GameObject contentPanel;
     GameObject lockerBadgePanel;
+    GameObject multiplayerPanel;
     Text badgePreview;
     string selectedBadge = "CC CREATOR";
 
@@ -41,11 +42,11 @@ public class HalftimeMainMenu : MonoBehaviour
         Label(header.transform, "THE BEAUTIFUL GAME. IN YOUR HANDS.", 20, Muted, new Vector2(310,8), new Vector2(520,60), TextAnchor.MiddleRight, FontStyle.Normal);
 
         var nav = PanelObject("Navigation", root.transform, Panel, new Vector2(300,680), new Vector2(-565,-45));
-        string[] names = {"PLAY", "TRAINING", "CAREER", "CLUBS", "LOCKER ROOM", "SETTINGS"};
+        string[] names = {"PLAY", "TRAINING", "CAREER", "CLUBS", "MULTIPLAYER", "LOCKER ROOM", "SETTINGS"};
         for (int i=0;i<names.Length;i++)
         {
             string key = names[i];
-            MakeButton(nav.transform, key, new Vector2(0, 270-i*94), new Vector2(260,72), () => ShowPage(key));
+            MakeButton(nav.transform, key, new Vector2(0, 270-i*85), new Vector2(260,72), () => ShowPage(key));
         }
 
         contentPanel = PanelObject("Content", root.transform, Panel, new Vector2(850,680), new Vector2(145,-45));
@@ -57,6 +58,9 @@ public class HalftimeMainMenu : MonoBehaviour
         status = Label(contentPanel.transform, "HALFTIME VR  •  PRE-SEASON BUILD", 18, Muted, new Vector2(0,-260), new Vector2(760,45), TextAnchor.MiddleCenter, FontStyle.Normal);
 
         BuildLockerBadges();
+        var multiplayerUI = contentPanel.AddComponent<MultiplayerMenu>();
+        multiplayerPanel = multiplayerUI.Build(contentPanel.transform, SetStatus);
+        multiplayerPanel.SetActive(false);
 
         var footer = PanelObject("Footer", root.transform, Navy, new Vector2(1450,48), new Vector2(0,-420));
         Label(footer.transform, "HOME   /   MATCH CENTRE", 17, Muted, new Vector2(-520,0), new Vector2(500,40), TextAnchor.MiddleLeft, FontStyle.Normal);
@@ -68,6 +72,7 @@ public class HalftimeMainMenu : MonoBehaviour
     {
         pageTitle.text = page == "PLAY" ? "MATCH DAY" : page;
         if (lockerBadgePanel != null) lockerBadgePanel.SetActive(page == "LOCKER ROOM");
+        if (multiplayerPanel != null) multiplayerPanel.SetActive(page == "MULTIPLAYER");
         switch (page)
         {
             case "PLAY": pageBody.text = "Choose a match and take to the pitch. Full match setup is coming online."; break;
@@ -75,6 +80,7 @@ public class HalftimeMainMenu : MonoBehaviour
             case "CAREER": pageBody.text = "Build your player, develop your club and chase silverware."; break;
             case "CLUBS": pageBody.text = "Create your club identity and prepare your squad."; break;
             case "LOCKER ROOM": pageBody.text = "Make your player yours with boots, kits and accessories."; break;
+            case "MULTIPLAYER": pageBody.text = "Connect with friends. Online rooms and full match syncing are being built."; break;
             default: pageBody.text = "Adjust your game preferences and comfort settings."; break;
         }
         SetStatus(page + " selected");
