@@ -197,3 +197,17 @@ jobs:
             app-release-signed.apk
             release-backup/
           retention-days: 90
+
+      - name: Publish public Quest APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v0.1.0-beta"
+          NOTES="HALFTIME VR Quest beta APK. Built from the latest main branch by GitHub Actions. Install on a compatible Meta Quest headset using a trusted APK installation method. This is a beta build."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" app-release-signed.apk --clobber
+          else
+            gh release create "$TAG" app-release-signed.apk --title "HALFTIME VR Beta" --notes "$NOTES"
+          fi
