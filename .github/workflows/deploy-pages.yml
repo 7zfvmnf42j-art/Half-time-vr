@@ -23,6 +23,11 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Generate installable PNG icons
+        run: |
+          npm install --no-save sharp
+          mkdir -p icons
+          node -e "const sharp=require('sharp'); Promise.all([sharp('icon.svg').resize(512,512).png().toFile('icons/icon-512.png'),sharp('icon.svg').resize(512,512).png().toFile('icons/icon-512-maskable.png')]).catch(e=>{console.error(e);process.exit(1)})"
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
