@@ -319,8 +319,24 @@ AFRAME.registerComponent('halftime-world-visibility',{
   }
   const venue=document.getElementById('careerStadiumEnvironment');
   if(venue){venue.setAttribute('visible',true);if(venue.object3D)venue.object3D.visible=true;}
-  const city=document.getElementById('cityHub');
-  if(city){city.setAttribute('visible',false);if(city.object3D)city.object3D.visible=false;}
+  // Career mode must never inherit the city interior or training environment.
+  // The city room is an exempt scene root for normal hub navigation, so hide it
+  // explicitly here as well as the exterior hub.
+  for(const id of ['cityHub','cityInterior','trainingChallenge','worldGround','trainingPitch']){
+   const el=document.getElementById(id);
+   if(el){
+    el.setAttribute('visible',false);
+    if(el.object3D)el.object3D.visible=false;
+   }
+  }
+  const venue=document.getElementById('careerStadiumEnvironment');
+  if(venue){venue.setAttribute('visible',true);if(venue.object3D)venue.object3D.visible=true;}
+  const squad=document.getElementById('careerPlayersContainer');
+  if(squad){
+   squad.setAttribute('visible',true);
+   if(squad.object3D)squad.object3D.visible=true;
+   if(!window.careerPlayersSpawned)window.spawnCareerPlayers?.();
+  }
  }
 });
 scene.setAttribute('halftime-world-visibility','');
