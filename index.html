@@ -112,10 +112,23 @@ if(old){
       // Video-style boot contact: immediate response, no sticky "magnet" dribble.
       const bp=window.halftimeBallPhysics||{};
       const ps=window.halftimePlaystyle||'Power Shot';
-      if(footVel.length()<3.8 && dist<.255){
-        const carry=footVel.clone().multiplyScalar(ps==='Playmaker'?.44:.36);
-        this.v.addScaledVector(carry,.34);
-        this.lastTouch=1;
+      if(dist<.29){
+        const cam=document.getElementById('cam').object3D;
+        const facing=new THREE.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
+        facing.y=0;
+        if(facing.lengthSq()>.001)facing.normalize();
+        const moving=footVel.clone();moving.y=0;
+        // Controlled close touches: guide the ball in the direction of movement,
+        // or gently ahead of the player when walking slowly.
+        if(footVel.length()<5.2 && dist<.285){
+          const carry=moving.length()>.18?moving.clone().clampLength(0,2.8):facing.clone().multiplyScalar(.85);
+          const touchStrength=ps==='Playmaker'?.62:.48;
+          this.v.x=this.v.x*.72+carry.x*touchStrength;
+          this.v.z=this.v.z*.72+carry.z*touchStrength;
+          this.v.y=Math.max(0,this.v.y*.55);
+          this.v.clampLength(0,ps==='Playmaker'?7.2:6.2);
+          this.lastTouch=1;
+        }
       }
 
       // Real collision-style kick: keep existing ball momentum and add the boot impulse.
