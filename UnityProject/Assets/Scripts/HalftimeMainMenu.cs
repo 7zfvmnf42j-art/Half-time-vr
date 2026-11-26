@@ -13,6 +13,9 @@ public class HalftimeMainMenu : MonoBehaviour
     Text pageBody;
     Text status;
     GameObject contentPanel;
+    GameObject lockerBadgePanel;
+    Text badgePreview;
+    string selectedBadge = "CC CREATOR";
 
     void Start()
     {
@@ -53,6 +56,8 @@ public class HalftimeMainMenu : MonoBehaviour
         MakeButton(contentPanel.transform, "PRACTICE", new Vector2(205,-105), new Vector2(340,88), () => ShowPage("TRAINING"));
         status = Label(contentPanel.transform, "HALFTIME VR  •  PRE-SEASON BUILD", 18, Muted, new Vector2(0,-260), new Vector2(760,45), TextAnchor.MiddleCenter, FontStyle.Normal);
 
+        BuildLockerBadges();
+
         var footer = PanelObject("Footer", root.transform, Navy, new Vector2(1450,48), new Vector2(0,-420));
         Label(footer.transform, "HOME   /   MATCH CENTRE", 17, Muted, new Vector2(-520,0), new Vector2(500,40), TextAnchor.MiddleLeft, FontStyle.Normal);
         Label(footer.transform, "QUEST EDITION", 17, Lime, new Vector2(520,0), new Vector2(400,40), TextAnchor.MiddleRight, FontStyle.Bold);
@@ -62,6 +67,7 @@ public class HalftimeMainMenu : MonoBehaviour
     void ShowPage(string page)
     {
         pageTitle.text = page == "PLAY" ? "MATCH DAY" : page;
+        if (lockerBadgePanel != null) lockerBadgePanel.SetActive(page == "LOCKER ROOM");
         switch (page)
         {
             case "PLAY": pageBody.text = "Choose a match and take to the pitch. Full match setup is coming online."; break;
@@ -72,6 +78,40 @@ public class HalftimeMainMenu : MonoBehaviour
             default: pageBody.text = "Adjust your game preferences and comfort settings."; break;
         }
         SetStatus(page + " selected");
+    }
+
+    void BuildLockerBadges()
+    {
+        lockerBadgePanel = PanelObject("Locker Badge Collection", contentPanel.transform, Navy,
+            new Vector2(810, 450), new Vector2(0, -95));
+        badgePreview = Label(lockerBadgePanel.transform, "", 30, Lime,
+            new Vector2(0, 145), new Vector2(720, 65), TextAnchor.MiddleCenter, FontStyle.Bold);
+
+        string[] badges = {
+            "CC CREATOR", "PRO", "CAPTAIN",
+            "LEGEND", "DEV TESTER", "OWNER"
+        };
+
+        for (int i = 0; i < badges.Length; i++)
+        {
+            string badge = badges[i];
+            int column = i % 3;
+            int row = i / 3;
+            Vector2 position = new Vector2(-235 + column * 235, 45 - row * 105);
+            MakeButton(lockerBadgePanel.transform, badge,
+                position, new Vector2(210, 76), () => SelectBadge(badge));
+        }
+
+        SelectBadge(selectedBadge);
+        lockerBadgePanel.SetActive(false);
+    }
+
+    void SelectBadge(string badge)
+    {
+        selectedBadge = badge;
+        if (badgePreview != null)
+            badgePreview.text = "★  " + badge + " BADGE  ★";
+        SetStatus(badge + " badge selected (cosmetic preview)");
     }
 
     void SetStatus(string message)
