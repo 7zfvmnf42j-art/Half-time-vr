@@ -496,7 +496,7 @@ function setMap(map){
 $('mapChoice').value=profile.map||'training';$('mapChoice').onchange=()=>{setMap($('mapChoice').value);window.applyHalftimeBallLayout?.();};setMap($('mapChoice').value);const mirrorTag=document.createElement('a-text');mirrorTag.setAttribute('position','0 1.92 .08');mirrorTag.setAttribute('align','center');mirrorTag.setAttribute('width','2.5');mirrorTag.setAttribute('color','#ffffff');$('mirror').appendChild(mirrorTag);function updateBadgeTag(){
  const b=profile.demoBadges?.includes(profile.equippedBadge)?profile.equippedBadge:'';
  const tag=$('playerTag');tag.replaceChildren();
- const initials=String(profile.pfpInitials||profile.nick||'Player').trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+ const initials=String(profile.nick||'Player').trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
  const pfpColours={CLARET:'#7a263a',BLUE:'#168bff',PURPLE:'#7c3aed',BLACK:'#111827',GOLD:'#d4a017',GREEN:'#16834a'};
  const avatar=document.createElement('div');avatar.textContent=initials||'P';
  avatar.style.cssText='width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;background:'+ (pfpColours[profile.pfpStyle||'CLARET']||'#7a263a') +';border:2px solid #d7e8f7;color:white;font-size:17px;font-weight:950;box-shadow:0 3px 12px #0007';
