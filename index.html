@@ -5,7 +5,9 @@ window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.8,smoothing:
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 AFRAME.registerComponent('halftime-leg-renderer',{
-  tick(t,ms){
+  // Run after controller tracking and all child components have updated this frame.
+  // A scene-level tick runs too early on Quest and can read the previous controller pose.
+  tock(t,ms){
     if(!this.el.is('vr-mode'))return;
     const scene=this.el,cam=document.getElementById('cam');
     if(!cam)return;
@@ -18,7 +20,8 @@ AFRAME.registerComponent('halftime-leg-renderer',{
     for(const id of ['left','right']){
       const controller=document.getElementById(id),state=window.halfFeet?.[id];
       if(!controller||!state)continue;
-      controller.object3D.updateWorldMatrix(true,false);
+      controller.object3D.updateMatrixWorld(true);
+      scene.object3D.updateMatrixWorld(true);
       const q=controller.object3D.getWorldQuaternion(new THREE.Quaternion());
       const target=controller.object3D.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,-.015,-.12).applyQuaternion(q));
       state.mesh.visible=true;state.legGroup.visible=true;
