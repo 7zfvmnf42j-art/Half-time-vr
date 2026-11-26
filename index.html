@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
 window.halftimeBallPhysics={airDrag:.012,rollResistance:.82,bounce:.48,bounceGrip:.94,gravity:9.81,magnus:.00105,spinDecay:.58,touchAssist:.22,kickPower:1.5,maxSpeed:39,contactRestitution:.8,juggleLift:.38};
-window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:.92,smoothing:16,velocityCap:18};
+window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.8,smoothing:26,velocityCap:28};
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
 window.halftimePlaceLegSegment=(mesh,a,b)=>{
@@ -28,35 +28,28 @@ const state=window.halfFeet?.[id];if(!state)continue;
 state.mesh.visible=true;state.legGroup.visible=true;
 state.mesh.frustumCulled=false;state.legGroup.frustumCulled=false;
 const lf=window.halftimeLegFreedom||{};
-const floorY=-.035;
-// The Quest controllers ARE the feet: each virtual boot follows its matching
-// controller's tracked world position. Hold the controllers low to move the feet.
+// Full 3D controller tracking: feet can rise above the waist, swing behind
+// the player and rotate freely for volleys and bicycle-kick poses.
 const controllerQ=e.object3D.getWorldQuaternion(new THREE.Quaternion());
 const raw=e.object3D.getWorldPosition(new THREE.Vector3());
-const controllerOffset=new THREE.Vector3(0,-.035,-.08).applyQuaternion(controllerQ);
+const controllerOffset=new THREE.Vector3(0,-.015,-.12).applyQuaternion(controllerQ);
 raw.add(controllerOffset);
 
-// Smooth controller noise while retaining responsive movement. Adapt smoothing to movement speed.
+// Keep tracking responsive without clamping vertical movement to the floor.
 state.smooth=state.smooth||raw.clone();
 const frameMove=state.smooth.distanceTo(raw);
-const smoothRate=THREE.MathUtils.clamp((lf.smoothing||16)+(frameMove> .12?8:0),10,25);
+const smoothRate=THREE.MathUtils.clamp((lf.smoothing||26)+(frameMove>.12?10:0),18,40);
 state.smooth.lerp(raw,THREE.MathUtils.clamp(d*smoothRate,0,1));
 const p=state.smooth.clone();
-// Small natural step lift from controller motion; never lets the sole drop below the floor.
 state.lastFootPos=state.lastFootPos||p.clone();
 const stepSpeed=p.distanceTo(state.lastFootPos)/Math.max(d,.001);
-const stepLift=THREE.MathUtils.clamp((stepSpeed-0.35)*.009,0,.045);
-p.y=Math.max(floorY+.08,p.y+stepLift);
+state.lastStepSpeed=stepSpeed;
 state.lastFootPos.copy(p);
 
 state.mesh.position.copy(p);
-
-// Keep both boots flat and pointing where the player is facing, not wherever the wrists turn.
-const camForFeet=document.getElementById('cam').object3D;
-const headForFeet=camForFeet.getWorldQuaternion(new THREE.Quaternion());
-const headYaw=new THREE.Euler().setFromQuaternion(headForFeet,'YXZ').y;
-const footTargetQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(state.bent?-.12:0,headYaw,0,'YXZ'));
-state.mesh.quaternion.slerp(footTargetQ,THREE.MathUtils.clamp(d*30,0,1));
+// Follow controller pitch, roll and yaw so the boot can point up for volleys
+// and rotate naturally when the player swings a leg overhead.
+state.mesh.quaternion.slerp(controllerQ,THREE.MathUtils.clamp(d*32,0,1));
 
 // Simple two-segment visual leg IK. Hip follows the headset/body, knee bends naturally toward the foot.
 if(state.thigh&&state.lower){
@@ -73,14 +66,14 @@ if(state.thigh&&state.lower){
 
   const foot=p.clone().add(new THREE.Vector3(0,.035,0));
   const horizontalReach=new THREE.Vector3(foot.x-hip.x,0,foot.z-hip.z);
-  const maxReach=lf.maxReach||.95;
+  // Let the knee/leg extend through a full kicking arc instead of
+  // snapping the boot back toward the hip when it moves far away.
+  const maxReach=lf.maxReach||1.8;
   if(horizontalReach.length()>maxReach){
     horizontalReach.setLength(maxReach);
-    p.x=hip.x+horizontalReach.x;
-    p.z=hip.z+horizontalReach.z;
-    state.mesh.position.copy(p);
-    foot.x=p.x;
-    foot.z=p.z;
+    const reachScale=maxReach/Math.max(horizontalReach.length(),.0001);
+    foot.x=hip.x+horizontalReach.x;
+    foot.z=hip.z+horizontalReach.z;
   }
   const stride=THREE.MathUtils.clamp((state.lastStepSpeed||0)/3,0,1);
   state.lastStepSpeed=stepSpeed;
