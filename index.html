@@ -307,7 +307,7 @@ function syncWorldMode(){
  // Isolate every static scene root while preserving the player, ball, HUD,
  // lighting, sky, city roots, and the dedicated Career stadium.
  if(scene){
-  const keep=new Set(['rig','ball','score','trainingChallenge','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer']);
+  const keep=new Set(['rig','ball','score','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer']);
   for(const el of [...scene.children]){
    const id=el.id||'';
    const tag=el.tagName?.toLowerCase()||'';
