@@ -101,7 +101,7 @@ if(window.halftimeFeetLocked){
   const ground=document.getElementById('worldGround');
   if(ground)ground.object3D.updateWorldMatrix(true,false);
   const careerMode=this.mode==='career';
-  const floorY=careerMode?.008:(ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035);
+  const floorY=careerMode ? .008 : (ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035);
   p.y=floorY+.215;
 }
 state.lastFootPos=state.lastFootPos||p.clone();
