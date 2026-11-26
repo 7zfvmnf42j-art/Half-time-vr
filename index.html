@@ -288,8 +288,22 @@ AFRAME.registerComponent('halftime-world-visibility',{
     }
    }
   }
+  // Hard isolate the Career scene every frame. Some training props are nested
+  // under grouped scene roots, so hiding only named pitch objects is insufficient.
+  const sc=document.querySelector('a-scene');
+  if(sc){
+   const keep=new Set(['rig','ball','score','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer']);
+   for(const root of [...sc.children]){
+    const id=root.id||'',tag=root.tagName?.toLowerCase()||'';
+    if(keep.has(id)||tag==='a-light'||tag==='a-sky')continue;
+    root.setAttribute('visible',false);
+    if(root.object3D)root.object3D.visible=false;
+   }
+  }
   const venue=document.getElementById('careerStadiumEnvironment');
   if(venue){venue.setAttribute('visible',true);if(venue.object3D)venue.object3D.visible=true;}
+  const city=document.getElementById('cityHub');
+  if(city){city.setAttribute('visible',false);if(city.object3D)city.object3D.visible=false;}
  }
 });
 scene.setAttribute('halftime-world-visibility','');
