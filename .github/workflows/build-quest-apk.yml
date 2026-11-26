@@ -102,9 +102,6 @@ jobs:
           }
           JSON
       - name: Build signed Quest APK
-        env:
-          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.SIGNING_PASSWORD }}
-          BUBBLEWRAP_KEY_PASSWORD: ${{ env.SIGNING_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
