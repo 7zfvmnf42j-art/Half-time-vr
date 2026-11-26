@@ -354,7 +354,7 @@ AFRAME.registerComponent('halftime-world-visibility',{
    const keep=new Set(['rig','ball','score','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer']);
    for(const root of [...sc.children]){
     const id=root.id||'',tag=root.tagName?.toLowerCase()||'';
-    if(keep.has(id)||tag==='a-light'||tag==='a-sky')continue;
+    if(keep.has(id)||tag==='a-light'||tag==='a-sky'||root.hasAttribute('light'))continue;
     root.setAttribute('visible',false);
     if(root.object3D)root.object3D.visible=false;
    }
