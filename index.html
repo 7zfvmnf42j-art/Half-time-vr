@@ -781,7 +781,7 @@ function addCoyiDetail(){
 }
 if(coyiBoot)addCoyiDetail();
 }
-const boots=$('boots');if(boots){boots.value=profile.boots||'#182334';boots.addEventListener('change',()=>{profile.boots=boots.value;for(const state of Object.values(window.halfFeet||{})){if(boots.value==='coyi'){state.bootMaterial?.color.set('#087a35');if(!state.mesh.userData.coyiApplied){state.mesh.userData.coyiApplied=true;const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;const ctx=canvas.getContext('2d');ctx.fillStyle='#087a35';ctx.fillRect(0,0,512,256);ctx.fillStyle='#f4fff5';ctx.font='bold italic 104px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('COYI',256,128);ctx.strokeStyle='#fff';ctx.lineWidth=13;ctx.beginPath();ctx.moveTo(35,205);ctx.lineTo(477,205);ctx.stroke();const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;const mat=new THREE.MeshStandardMaterial({map:tex,roughness:.6,side:THREE.DoubleSide});for(const side of [-1,1]){const decal=new THREE.Mesh(new THREE.PlaneGeometry(.145,.075),mat);decal.position.set(side*.071,.028,-.015);decal.rotation.y=side*Math.PI/2;decal.rotation.z=-.12;state.mesh.add(decal);}}}else{state.bootMaterial?.color.set(boots.value);state.mesh.children.filter(x=>x.userData.coyiDecal).forEach(x=>x.parent.remove(x));state.mesh.userData.coyiApplied=false;}}save();});}
+const boots=$('boots');if(boots){boots.value=profile.boots||'#182334';boots.addEventListener('change',()=>{profile.boots=boots.value;for(const state of Object.values(window.halfFeet||{})){if(boots.value==='coyi'){state.bootMaterial?.color.set('#087a35');if(!state.mesh.userData.coyiApplied){state.mesh.userData.coyiApplied=true;const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;const ctx=canvas.getContext('2d');ctx.fillStyle='#087a35';ctx.fillRect(0,0,512,256);ctx.fillStyle='#f4fff5';ctx.font='bold italic 104px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('COYI',256,128);ctx.strokeStyle='#fff';ctx.lineWidth=13;ctx.beginPath();ctx.moveTo(35,205);ctx.lineTo(477,205);ctx.stroke();const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;const mat=new THREE.MeshStandardMaterial({map:tex,roughness:.6,side:THREE.DoubleSide});for(const side of [-1,1]){const decal=new THREE.Mesh(new THREE.PlaneGeometry(.145,.075),mat);decal.position.set(side*.071,.028,-.015);decal.rotation.y=side*Math.PI/2;decal.rotation.z=-.12;state.mesh.add(decal);}}}else{state.bootMaterial?.color.set(boots.value);state.mesh.children.filter(x=>x.userData.coyiDecal).forEach(x=>x.parent.remove(x));state.mesh.userData.coyiApplied=false;}}save();window.refreshPersonalBootSignature?.();});}
 })();
 
 (function(){
@@ -2646,7 +2646,7 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  let down=false,ink=false,last=null;
  const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};};
  canvas.addEventListener('pointerdown',e=>{down=true;last=point(e);canvas.setPointerCapture(e.pointerId);ctx.fillStyle=wrap.querySelector('#personalBootSignColour').value;ctx.beginPath();ctx.arc(last.x,last.y,Number(wrap.querySelector('#personalBootSignSize').value)/2,0,Math.PI*2);ctx.fill();ink=true;});
- canvas.addEventListener('pointermove',e=>{if(!down)return;const p=point(e);ctx.strokeStyle=wrap.querySelector('#personalBootSignColour').value;ctx.lineWidth=Number(wrap.querySelector('#personalBootSignSize').value);ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;ink=true;});
+ canvas.addEventListener('pointermove',e=>{if(!down)return;const p=point(e);ctx.strokeStyle=wrap.querySelector('#personalBootSignColour').value;ctx.lineWidth=Number(wrap.querySelector('#personalBootSignSize').value)*(e.pressure>0?Math.max(.65,e.pressure):1);ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;ink=true;});
  const stop=()=>{down=false;last=null;};canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);canvas.addEventListener('lostpointercapture',stop);
  wrap.querySelector('#personalBootSignClear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ink=false;status.textContent='Signature cleared. Draw a new one before saving.';};
  function apply(){
@@ -2663,6 +2663,8 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   }
  }
  window.refreshPersonalBootSignature=apply;
+ // Keep the saved signature attached if the player changes boot colours or re-enters VR.
+ document.querySelector('a-scene')?.addEventListener('enter-vr',()=>requestAnimationFrame(apply));
  wrap.querySelector('#personalBootSignSave').onclick=()=>{
   if(!ink){status.textContent='Draw your signature first.';return;}
   profile.bootSignature=canvas.toDataURL('image/png');
