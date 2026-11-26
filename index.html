@@ -350,7 +350,7 @@ const trainingWorldObjects=[];
 AFRAME.registerComponent('halftime-world-visibility',{
  tick(){
   const ball=document.getElementById('ball');
-  const career=ball?.components?.football?.mode==='career'||document.getElementById('mode')?.value==='career';
+  const career=ball?.components?.football?.mode==='career'||document.getElementById('mode')?.value==='career'||!!window.onlineCareerActive||!!window.onlineCareerGuest;
   if(!career)return;
   for(const id of ['worldGround','trainingPitch','trainingGoalLeftPost','trainingGoalRightPost','trainingGoalCrossbar','trainingGoalNetFar','trainingGoalNearLeftPost','trainingGoalNearRightPost','trainingGoalNearCrossbar','trainingGoalNearNet','trainingChallenge']){
    const el=document.getElementById(id);
@@ -398,7 +398,7 @@ AFRAME.registerComponent('halftime-world-visibility',{
 scene.setAttribute('halftime-world-visibility','');
 function syncWorldMode(){
  const mode=document.getElementById('mode')?.value||'training';
- const career=mode==='career';
+ const career=mode==='career'||!!window.onlineCareerActive||!!window.onlineCareerGuest;
  const scene=document.querySelector('a-scene');
  const setVisible=(el,on)=>{if(!el)return;el.setAttribute('visible',on);if(el.object3D)el.object3D.visible=on;};
  setVisible(document.getElementById('trainingChallenge'),!career && mode==='training');
@@ -447,6 +447,7 @@ function syncWorldMode(){
  };
  requestAnimationFrame(()=>requestAnimationFrame(apply));
 }
+window.syncHalftimeWorldMode=syncWorldMode;
 document.getElementById('mode')?.addEventListener('change',syncWorldMode);
 syncWorldMode();
 const tiers=['Copper','Bronze','Silver','Gold','Platinum','Diamond','Ruby','Emerald','Elite','Master','Legendary','Icon'], views=[500,1000,5000,15000,30000,50000,75000,100000,150000,250000,500000,1000000], leagues=['Academy','Division 5','Division 4','Division 3','Division 2','Division 1','Championship','Premier','Elite','World League'];$('catalog').onclick=()=>{$('badges').hidden=!$('badges').hidden};const colors=['#b87333','#cd7f32','#cbd5e1','#facc15','#5eead4','#38bdf8','#fb405e','#4ade80','#c084fc','#818cf8','#fb923c','#ffd700'];
@@ -1102,6 +1103,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
       desiredMode=payload.mode;
       window.onlineCareerActive=desiredMode==='career';
       window.onlineCareerGuest=window.onlineCareerActive;
+      window.syncHalftimeWorldMode?.();
       const f=document.getElementById('ball')?.components?.football;
       if(f)f.start(desiredMode);
       if(window.onlineCareerActive)status.textContent='ONLINE CAREER • Room '+room;
@@ -1153,6 +1155,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
         window.onlineCareerActive=desiredMode==='career';
         window.onlineCareerGuest=window.onlineCareerActive&&!host;
         const f=document.getElementById('ball')?.components?.football; if(f) f.start(desiredMode);
+        window.syncHalftimeWorldMode?.();
         if(desiredMode==='career'){
           const r=document.getElementById('rig')?.object3D;
           if(r)r.position.set(host?-2:2,0,6);
