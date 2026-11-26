@@ -92,6 +92,10 @@ jobs:
           test -d "$ANDROID_HOME/build-tools"
           test -d "$ANDROID_HOME/build-tools/34.0.0"
           test -x "$ANDROID_HOME/build-tools/34.0.0/apksigner"
+          # Meta's Bubblewrap doctor currently checks for an SDK child named "build".
+          # Keep the standard build-tools directory available under that expected name too.
+          ln -sfn "$ANDROID_HOME/build-tools" "$ANDROID_HOME/build"
+          test -d "$ANDROID_HOME/build"
           printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
           cat "$HOME/.bubblewrap/config.json"
           bubblewrap doctor
