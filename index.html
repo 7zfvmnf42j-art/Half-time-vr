@@ -718,6 +718,7 @@ const arms=[];for(const side of [-1,1]){const arm=new THREE.Group();arm.position
 e.setObject3D('careerBody',body);e.careerLegs=legs;e.careerArms=arms;e.careerBodyMesh=body;careerPlayersContainer.appendChild(e);const rating=35+((j*17+(team===1?13:29))%57);const tag=document.createElement('a-text');tag.setAttribute('value',String(rating));tag.setAttribute('position','0 2 0');tag.setAttribute('align','center');tag.setAttribute('width','2');e.append(tag);if(j===0){for(const side of [-1,1]){const arm=document.createElement('a-box');arm.setAttribute('position',side*.42+' 1.1 0');arm.setAttribute('width','.48');arm.setAttribute('height','.16');arm.setAttribute('depth','.18');arm.setAttribute('color','#facc15');e.append(arm);const glove=document.createElement('a-box');glove.setAttribute('position',side*.7+' 1.1 0');glove.setAttribute('width','.22');glove.setAttribute('height','.18');glove.setAttribute('depth','.13');glove.setAttribute('color','#ffffff');e.append(glove);}}players.push({e,team,j,cd:0,rating,dive:null});}
 window.hideCareer=()=>{
  careerPlayersSpawned=false;
+ window.careerPlayersSpawned=false;
  careerPlayersContainer.setAttribute("visible",false);
  careerPlayersContainer.object3D.visible=false;
  players.forEach(a=>{a.e.setAttribute("visible",false);a.e.object3D.visible=false;});
