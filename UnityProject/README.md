@@ -17,5 +17,11 @@ This is the native Unity project track. The existing browser build remains at th
 3. In Unity, choose **HALFTIME VR → Build Starter Match Scene**.
 4. Open `Assets/Scenes/HalftimeMatch.unity` and press Play.
 
+## Multiplayer foundation
+- Host and join controls are added to the in-game Multiplayer page.
+- Uses Netcode for GameObjects and Unity Transport.
+- This first pass supports direct local-network connection testing only; both devices must be on the same network and the host must share their local IP address.
+- Private room codes, internet-wide relay, replicated player avatars, synced ball physics and match state are not implemented yet.
+
 ## Quest setup still required
 Configure Android Build Support, OpenXR, the Meta Quest feature group, and the Android player settings in Unity before building an APK. The starter scene and scripts have not yet been built or tested on a physical Quest headset. This is the first playable foundation, not a finished 11v11 game.
