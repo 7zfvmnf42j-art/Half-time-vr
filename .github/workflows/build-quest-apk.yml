@@ -121,6 +121,7 @@ jobs:
             "navigationColor": "#101827",
             "navigationColorDark": "#101827",
             "backgroundColor": "#101827",
+            "splashScreenFadeOutDuration": 300,
             "startUrl": "/Half-time-vr/",
             "iconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/icons/icon-512.png",
             "maskableIconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/icons/icon-512-maskable.png",
