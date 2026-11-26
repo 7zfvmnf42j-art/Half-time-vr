@@ -586,15 +586,15 @@ tabs.push([b,p]);b.onclick=()=>{for(const [button,page] of tabs){page.hidden=but
 (function(){
 const panel=$('vrMenu');panel.replaceChildren();
 const make=(tag,attrs,parent=panel)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e;};
-const lime='#ffb45f',cyan='#cbd5e1',ink='#101522';
-make('plane',{width:5.6,height:3.2,color:'#111827',opacity:1,material:'shader:flat; transparent:false'});
-make('plane',{width:5.54,height:3.12,position:'0 0 -.012',color:'#171d2c',opacity:1,material:'shader:flat'});
-make('plane',{width:5.5,height:.025,position:'0 1.57 .012',color:'#ffb45f',material:'shader:flat'});
-make('plane',{width:1.58,height:3.1,position:'-1.97 0 .012',color:'#141b2a',material:'shader:flat'});
+const lime='#b8f34b',cyan='#65d8ff',ink='#101522';
+make('plane',{width:5.72,height:3.28,color:'#0b1422',opacity:1,material:'shader:flat; transparent:false'});
+make('plane',{width:5.66,height:3.22,position:'0 0 -.012',color:'#142238',opacity:1,material:'shader:flat'});
+make('plane',{width:5.64,height:.035,position:'0 1.61 .012',color:'#b8f34b',material:'shader:flat'});
+make('plane',{width:1.58,height:3.18,position:'-2.03 0 .012',color:'#101d30',material:'shader:flat'});
 make('text',{value:'HALFTIME VR',position:'-2.62 1.31 .025',align:'left',width:2.1,color:'#ffffff'});
 make('text',{value:'YOUR FOOTBALL WORLD',position:'-2.60 1.08 .025',align:'left',width:2.1,color:'#aab5c8'});
 make('text',{value:'YOUR GAME. YOUR CLUB. YOUR CAREER.',position:'-.92 .95 .025',align:'left',width:3.4,color:'#cbd5e1'});
-const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-.92 1.31 .025',align:'left',width:3.4,color:'#ffb45f'});
+const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-.92 1.31 .025',align:'left',width:3.4,color:'#b8f34b'});
 const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO SELECT  •  B TO CLOSE',position:'.68 -1.43 .03',align:'center',width:4.1,color:'#d8deea'});detail.id='vrMenuText';
 make('plane',{width:3.48,height:.018,position:'.70 .99 .025',color:'#39445a',material:'shader:flat'});
 const buttons=[],navButtons=[];let page='Home';
@@ -614,7 +614,7 @@ function draw(items,page=0){
   make('text',{value:String(i+1).padStart(2,'0'),align:'right',width:.24,position:'.88 0 .02',color:'#9fb4ca',shader:'msdf'},b);
   const outline=make('plane',{width:2.04,height:.40,position:'0 0 -.008',color:lime,visible:false,material:'shader:flat'},b);
   const hovering=new Set();
-  b.addEventListener('raycaster-intersected',ev=>{hovering.add(ev.detail.el);outline.setAttribute('visible',true);b.setAttribute('color','#385a56');});
+  b.addEventListener('raycaster-intersected',ev=>{hovering.add(ev.detail.el);outline.setAttribute('visible',true);b.setAttribute('color','#304b2b');});
   b.addEventListener('raycaster-intersected-cleared',ev=>{hovering.delete(ev.detail.el);if(!hovering.size){outline.setAttribute('visible',false);b.setAttribute('color','#223650');}});
   b.addEventListener('click',()=>{if(vrMenuOpen){window.halfSound?.('menu');fn();}});
   buttons.push(b);
