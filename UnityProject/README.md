@@ -11,17 +11,23 @@ This is the native Unity project track. The existing browser build remains at th
 - 11 players per side, including a goalkeeper for each team
 - Basic controller-trigger ball interaction and player positioning
 
-## Open the starter scene
-1. Open this folder in Unity Hub using Unity 6.0.
-2. Let Package Manager finish resolving packages.
-3. In Unity, choose **HALFTIME VR → Build Starter Match Scene**.
-4. Open `Assets/Scenes/HalftimeMatch.unity` and press Play.
+## Online rooms
+- Uses Unity Authentication for anonymous player sign-in.
+- Uses Unity Lobby to create private rooms and issue shareable room codes.
+- Uses Unity Relay with DTLS to connect players over the internet without asking them to share IP addresses or configure port forwarding.
+- Current room capacity is 8 players.
+- The multiplayer panel has CREATE ROOM, JOIN ROOM and DISCONNECT controls.
+- Host room codes are displayed in the menu status text and can be shared with friends.
+- This is the connection/session layer only. Networked player avatars, synced ball physics, team assignment, match clock and score replication still need implementing.
 
-## Multiplayer foundation
-- Host and join controls are added to the in-game Multiplayer page.
-- Uses Netcode for GameObjects and Unity Transport.
-- This first pass supports direct local-network connection testing only; both devices must be on the same network and the host must share their local IP address.
-- Private room codes, internet-wide relay, replicated player avatars, synced ball physics and match state are not implemented yet.
+## Unity Gaming Services setup required
+1. Open the project in Unity 6 and sign in to a Unity account.
+2. Link the project to a Unity Cloud project in Project Settings → Services.
+3. Enable Authentication, Lobby and Relay for that Cloud project.
+4. Resolve packages in Package Manager and check the Console for compile errors.
+5. Build and test with two clients before distributing a Quest APK.
+
+The code uses anonymous authentication for the initial prototype. A production release should add account recovery, moderation and privacy controls.
 
 ## Quest setup still required
-Configure Android Build Support, OpenXR, the Meta Quest feature group, and the Android player settings in Unity before building an APK. The starter scene and scripts have not yet been built or tested on a physical Quest headset. This is the first playable foundation, not a finished 11v11 game.
+Configure Android Build Support, OpenXR, the Meta Quest feature group, and Android player settings in Unity before building an APK. The starter scene and scripts have not yet been built or tested on a physical Quest headset. This is a multiplayer connection foundation, not a finished 11v11 game.
