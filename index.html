@@ -3218,4 +3218,56 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   else scene.addEventListener('renderstart', enterImmersive, { once: true });
 })();
 </script>
+
+<script>
+/* HALFTIME VR — INTERACTIVE STARTER TUTORIAL */
+(function(){
+  const nav=document.getElementById('halfNav'),pages=document.getElementById('halfPages');
+  if(!nav||!pages||document.getElementById('halfTutorialTab'))return;
+  const steps=[
+    {tag:'01 / GET READY',title:'Set up your play space',body:'Use your Quest boundary and clear the area around you. You can play seated or standing. Recalibrate your height if your feet or the pitch look out of place.',tip:'Safety first: keep your play area clear and take a break if you feel uncomfortable.',action:'Open the game settings and check your height.'},
+    {tag:'02 / LEARN THE CONTROLS',title:'Move around the pitch',body:'In VR, use your tracked feet and body movement to move naturally. Press the RIGHT THUMBSTICK to switch between feet locked to the ground and feet unlocked. Press B to open the VR menu.',tip:'Start slowly. You do not need to run or make big movements.',action:'Try the right-thumbstick feet-lock toggle, then press B to see the menu.'},
+    {tag:'03 / BALL CONTROL',title:'Make your first touch',body:'Walk up to the ball and make a gentle, controlled foot movement towards it. The ball reacts to contact, direction and power. Try small touches before attempting a shot.',tip:'If the ball gets away, use Reset Ball from the menu.',action:'Take three gentle touches, keeping the ball close.'},
+    {tag:'04 / PASS & SHOOT',title:'Use the football actions',body:'On the touch interface, use Pass for a grounded pass, Shoot for a stronger attempt and Lob for an aerial ball. In VR, use your tracked feet to kick naturally. JUMP is available where the mode supports it.',tip:'A controlled pass is easier than trying to smash every ball.',action:'Try a pass, then aim a shot towards the goal.'},
+    {tag:'05 / PICK A GAME MODE',title:'Choose how to play',body:'Free Training is for practising. 1v1 vs AI is a quick match. Career League 11v11 is the full-team career mode. Goalkeeper Challenge lets you practise saving shots. You can also choose a map before starting.',tip:'Start with Free Training until the controls feel comfortable.',action:'Choose Free Training and press Start Game.'},
+    {tag:'06 / MAKE YOUR PLAYER',title:'Build your look',body:'Set your nickname and kit, then visit the Dressing Room to customise your boots, gloves, ball, headwear, hair, skin and badge. Your profile and progression are saved on this device.',tip:'Some items and badges are local beta features, not official VRFS awards.',action:'Open Dressing Room and equip an item.'},
+    {tag:'07 / CREATE A CLUB',title:'Give your team an identity',body:'Create a club, choose its name, badge style, symbol and home and away colours. The Ultimate Matchday career area also lets you save a club, choose a home ground and play through a fictional league season and cup.',tip:'Your local club save is separate from an official online club identity.',action:'Create a club and save your colours.'},
+    {tag:'08 / PLAY WITH OTHERS',title:'Online rooms & tournaments',body:'The Online area includes public matchmaking, private room codes and co-op career. The clubs area includes club invites and friend tournaments. These features depend on the online service being available and other players being connected.',tip:'Never share personal information in a room code or player name.',action:'Open Online and look at the room options.'},
+    {tag:'09 / CAREER & REWARDS',title:'Build your career',body:'Play career matches to build your record. The Season Hub tracks results, wins, goals, XP and trophies. Training goals also contribute to player progression.',tip:'Progress is currently stored locally on this device unless a mode says otherwise.',action:'Open Season Hub to see your record.'},
+    {tag:'10 / READY TO PLAY',title:'You are ready for kick-off',body:'You know how to set up, move, control the ball, choose a mode, customise your player and explore clubs and online play. Start in training, then move into matches when you are ready.',tip:'If something does not work, open BETA TESTER and download a test report.',action:'Start a match and enjoy HALFTIME VR.'}
+  ];
+  let current=0;
+  try{current=Math.max(0,Math.min(steps.length-1,Number(localStorage.getItem('halftime-tutorial-step-v1'))||0));}catch(e){}
+  const tab=document.createElement('button');tab.id='halfTutorialTab';tab.textContent='Tutorial';
+  const page=document.createElement('section');page.id='halfTutorialPage';page.className='halfPage';page.hidden=true;
+  page.innerHTML='<div style="max-width:720px;margin:auto;background:linear-gradient(145deg,#101c30,#192d45);border:1px solid #42617e;border-radius:16px;padding:18px;color:#eef6ff"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span id="htTag" style="font-weight:900;color:#b8f34b;letter-spacing:1px"></span><span id="htCount" style="color:#b4c7da;font-size:12px"></span></div><div style="height:6px;background:#091321;border-radius:8px;margin:12px 0;overflow:hidden"><div id="htProgress" style="height:100%;width:10%;background:linear-gradient(90deg,#65d8ff,#b8f34b);transition:width .2s"></div></div><h2 id="htTitle" style="color:#fff;margin:12px 0 8px"></h2><p id="htBody" style="line-height:1.6"></p><div style="background:#0b1727;border-left:3px solid #65d8ff;padding:10px 12px;border-radius:8px;margin:12px 0"><b style="color:#65d8ff">TIP</b><p id="htTip" style="margin:5px 0 0"></p></div><div style="background:#20344a;padding:10px 12px;border-radius:8px;margin:12px 0"><b style="color:#b8f34b">TRY THIS</b><p id="htAction" style="margin:5px 0 0"></p></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button id="htPrev" type="button">BACK</button><button id="htNext" type="button">NEXT STEP</button><button id="htRestart" type="button">RESTART TUTORIAL</button><span id="htDone" style="align-self:center;color:#b8f34b;font-weight:800"></span></div></div>';
+  pages.append(page);nav.append(tab);
+  const $=id=>document.getElementById(id);
+  function showStep(){
+    const x=steps[current];
+    $('htTag').textContent=x.tag;$('htCount').textContent='STEP '+(current+1)+' OF '+steps.length;
+    $('htTitle').textContent=x.title;$('htBody').textContent=x.body;$('htTip').textContent=x.tip;$('htAction').textContent=x.action;
+    $('htProgress').style.width=((current+1)/steps.length*100)+'%';
+    $('htPrev').disabled=current===0;
+    $('htNext').textContent=current===steps.length-1?'FINISH TUTORIAL':'NEXT STEP';
+    $('htDone').textContent=current===steps.length-1?'✓ ALL STEPS COMPLETE':'';
+    try{localStorage.setItem('halftime-tutorial-step-v1',String(current));}catch(e){}
+  }
+  function openPage(){
+    for(const p of pages.children)p.hidden=p!==page;
+    for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));
+    showStep();
+  }
+  tab.addEventListener('click',openPage);
+  $('htPrev').addEventListener('click',()=>{current=Math.max(0,current-1);showStep();});
+  $('htNext').addEventListener('click',()=>{
+    if(current<steps.length-1){current++;showStep();}
+    else{$('htDone').textContent='✓ TUTORIAL COMPLETED';try{localStorage.setItem('halftime-tutorial-complete-v1','yes');}catch(e){}}
+  });
+  $('htRestart').addEventListener('click',()=>{current=0;try{localStorage.removeItem('halftime-tutorial-complete-v1');}catch(e){}showStep();});
+  const style=document.createElement('style');
+  style.textContent='#halfTutorialPage button{background:#b8f34b;color:#14210d;border:0;border-radius:9px;padding:10px 13px;font-weight:900}#halfTutorialPage button:disabled{opacity:.4}#halfTutorialPage{padding:8px}';
+  document.head.appendChild(style);showStep();
+})();
+</script>
 </body></html>
