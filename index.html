@@ -3,7 +3,7 @@ AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){i
 window.halftimeBallPhysics={airDrag:.012,rollResistance:.82,bounce:.48,bounceGrip:.94,gravity:9.81,magnus:.00105,spinDecay:.58,touchAssist:.22,kickPower:1.5,maxSpeed:39,contactRestitution:.8,juggleLift:.38};
 window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.8,smoothing:26,velocityCap:28};
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
-// Feet start locked to the pitch. Press B on the right Quest controller to toggle free movement.
+// Feet start locked to the pitch. Press the RIGHT THUMBSTICK in to toggle free movement; B remains the menu button.
 window.halftimeFeetLocked=true;
 window.halftimeToggleFeetLock=()=>{window.halftimeFeetLocked=!window.halftimeFeetLocked;window.halfFeetLockNotice?.(window.halftimeFeetLocked?'FEET LOCKED TO GROUND':'FEET UNLOCKED');return window.halftimeFeetLocked;};
 window.halftimeLegDebug=()=>({...(window.halftimeLegFreedom||{})});
@@ -557,7 +557,7 @@ for(const id of ['left','right']){
   legGroup.visible=false;
 
   const state=window.halfFeet[id]={mesh,legGroup,thigh,lower,kneeCap,bent:false};
-  if(id==='right')e.addEventListener('bbuttondown',()=>window.halftimeToggleFeetLock?.());
+  if(id==='right')e.addEventListener('thumbstickdown',()=>window.halftimeToggleFeetLock?.());
   e.addEventListener('triggerdown',()=>state.bent=true);
   e.addEventListener('triggerup',()=>state.bent=false);
   scene.addEventListener('enter-vr',()=>{state.smooth=null;state.lastFootPos=null;mesh.visible=true;legGroup.visible=true;mesh.frustumCulled=false;legGroup.frustumCulled=false;});
