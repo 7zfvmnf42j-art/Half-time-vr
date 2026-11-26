@@ -363,17 +363,12 @@ AFRAME.registerComponent('halftime-world-visibility',{
     }
    }
   }
-  // Hard isolate the Career scene every frame. Some training props are nested
-  // under grouped scene roots, so hiding only named pitch objects is insufficient.
-  const sc=document.querySelector('a-scene');
-  if(sc){
-   const keep=new Set(['rig','ball','score','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer','careerArena']);
-   for(const root of [...sc.children]){
-    const id=root.id||'',tag=root.tagName?.toLowerCase()||'';
-    if(keep.has(id)||tag==='a-light'||tag==='a-sky'||root.hasAttribute('light'))continue;
-    root.setAttribute('visible',false);
-    if(root.object3D)root.object3D.visible=false;
-   }
+  // Never hide every unknown scene root here: the career venue and other
+  // match scenery may be added dynamically after the first frame. Hide only
+  // the known hub/training roots and leave the dedicated career stadium intact.
+  for(const id of ['cityHub','cityInterior','worldGround','trainingPitch','trainingChallenge']){
+   const root=document.getElementById(id);
+   if(root){root.setAttribute('visible',false);if(root.object3D)root.object3D.visible=false;}
   }
   const venue=document.getElementById('careerStadiumEnvironment');
   if(venue){venue.setAttribute('visible',true);if(venue.object3D)venue.object3D.visible=true;}
@@ -405,29 +400,12 @@ function syncWorldMode(){
  setVisible(document.getElementById('cityHub'),!career);
  setVisible(document.getElementById('cityInterior'),!career && !!window.inCityRoom);
  setVisible(document.getElementById('careerStadiumEnvironment'),career);
- // The old filter only moved top-level planes/boxes. Training goal frames and
- // other grouped props are a-entities, so they could leak into Career Mode.
- // Isolate every static scene root while preserving the player, ball, HUD,
- // lighting, sky, city roots, and the dedicated Career stadium.
- if(scene){
-  const keep=new Set(['rig','ball','score','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer','careerArena']);
-  for(const el of [...scene.children]){
-   const id=el.id||'';
-   const tag=el.tagName?.toLowerCase()||'';
-   if(keep.has(id)||tag==='a-light'||tag==='a-sky'||el.hasAttribute('light'))continue;
-   if(!el.__halftimeWorldOriginal){
-    el.__halftimeWorldOriginal={
-     visible:el.getAttribute('visible')!==false,
-     position:el.object3D?el.object3D.position.clone():null
-    };
-   }
-   if(career){
-    setVisible(el,false);
-    if(el.object3D)el.object3D.position.set(20000,0,0);
-   }else{
-    if(el.object3D&&el.__halftimeWorldOriginal.position)el.object3D.position.copy(el.__halftimeWorldOriginal.position);
-    setVisible(el,el.__halftimeWorldOriginal.visible);
-   }
+ // Career mode hides only known training/city objects. Do not blanket-hide
+ // scene roots: dynamically-created stadium scenery must remain renderable.
+ if(career){
+  for(const id of ['worldGround','trainingPitch','trainingChallenge','trainingGoalLeftPost','trainingGoalRightPost','trainingGoalCrossbar','trainingGoalNetFar','trainingGoalNearLeftPost','trainingGoalNearRightPost','trainingGoalNearCrossbar','trainingGoalNearNet']){
+   const el=document.getElementById(id);
+   if(el)setVisible(el,false);
   }
  }
  const bot=document.getElementById('bot');
@@ -763,7 +741,7 @@ const groundEntity=document.createElement('a-entity');groundEntity.id='careerSta
  careerSun.setAttribute('position','-12 32 8');
  careerSun.setAttribute('light','type:directional; intensity:1.0; color:#fff7e8; castShadow:false');
  groundEntity.appendChild(careerSun);
-function showCareerGround(home){const host=home?names[0]:opponent(),g=groundFor(host,profile.careerCountry);groundEntity.replaceChildren();groundEntity.setAttribute('visible',true);const add=(tag,attrs)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);groundEntity.appendChild(e);};
+function showCareerGround(home){const host=home?names[0]:opponent(),g=groundFor(host,profile.careerCountry);groundEntity.replaceChildren();groundEntity.setAttribute('visible',true);const ambient=document.createElement('a-entity');ambient.setAttribute('light','type:ambient; intensity:0.9; color:#ffffff');groundEntity.appendChild(ambient);const sun=document.createElement('a-entity');sun.setAttribute('position','-12 32 8');sun.setAttribute('light','type:directional; intensity:1.0; color:#fff7e8; castShadow:false');groundEntity.appendChild(sun);const add=(tag,attrs)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);groundEntity.appendChild(e);};
  // Dedicated career pitch: separate from the training pitch and city.
  add('plane',{rotation:'-90 0 0',position:'0 .008 0',width:68,height:105,material:'color:#237d43;roughness:.9'});
  for(let stripe=0;stripe<10;stripe++)add('plane',{rotation:'-90 0 0',position:(-30.6+stripe*6.8)+' .012 0',width:3.4,height:105,material:'color:'+(stripe%2?'#268548':'#20763d'),opacity:.35});
