@@ -3047,11 +3047,12 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
 })();
 </script>
 
-<!-- One-tap headset entry: WebXR requires a user gesture, so the player taps once to enter immersive VR. -->
+<!-- Quest immersive PWA launch follows Meta's WebXR PWA startup flow. Browser users keep the manual ENTER VR button. -->
 <script>
 (function(){
   const scene=document.querySelector('a-scene');
   if(!scene)return;
+  const questPWA=window.getDigitalGoodsService!==undefined;
   const enter=document.createElement('button');
   enter.id='halfEnterVR';
   enter.type='button';
@@ -3059,16 +3060,39 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   enter.setAttribute('aria-label','Enter HALFTIME VR');
   enter.style.cssText='position:fixed;z-index:99999;left:50%;top:50%;transform:translate(-50%,-50%);padding:20px 34px;border:2px solid #d2ff75;border-radius:18px;background:#b8f34b;color:#14210d;font:900 22px system-ui;letter-spacing:2px;box-shadow:0 12px 50px #0009;cursor:pointer;';
   document.body.appendChild(enter);
+  let launching=false;
   const hide=()=>{enter.style.display='none';};
   scene.addEventListener('enter-vr',hide);
-  scene.addEventListener('exit-vr',()=>{enter.style.display='block';});
+  scene.addEventListener('exit-vr',()=>{enter.style.display='block';enter.textContent='ENTER VR';});
+  async function launchImmersive(){
+    if(!questPWA||launching||scene.is('vr-mode'))return;
+    launching=true;
+    enter.textContent='STARTING VR…';
+    try{
+      if(!navigator.xr||!navigator.xr.isSessionSupported||!(await navigator.xr.isSessionSupported('immersive-vr'))){
+        enter.textContent='VR NOT AVAILABLE';
+        launching=false;
+        return;
+      }
+      await scene.enterVR();
+    }catch(err){
+      enter.textContent='TAP TO ENTER VR';
+      launching=false;
+    }
+  }
+  // Meta treats launching the installed immersive PWA as the user activation.
+  if(questPWA){
+    if(scene.hasLoaded)launchImmersive();
+    else scene.addEventListener('renderstart',launchImmersive,{once:true});
+  }
   enter.addEventListener('click',async()=>{
     enter.textContent='CONNECTING…';
     try{
-      if(!scene.is('loaded'))await new Promise(resolve=>scene.addEventListener('loaded',resolve,{once:true}));
+      if(!scene.hasLoaded)await new Promise(resolve=>scene.addEventListener('renderstart',resolve,{once:true}));
       if(!navigator.xr){enter.textContent='OPEN IN QUEST BROWSER';return;}
+      launching=true;
       await scene.enterVR();
-    }catch(err){enter.textContent='TAP TO ENTER VR';}
+    }catch(err){enter.textContent='TAP TO ENTER VR';launching=false;}
   });
   if(scene.is('vr-mode'))hide();
 })();
