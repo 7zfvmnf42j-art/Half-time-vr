@@ -34,6 +34,7 @@ public static class SetupHalftimeScene
 
         var match = new GameObject("Match Bootstrap");
         match.AddComponent<MatchBootstrap>();
+        match.AddComponent<HalftimeMainMenu>();
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/HalftimeMatch.unity");
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene("Assets/Scenes/HalftimeMatch.unity", true) };
