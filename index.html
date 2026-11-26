@@ -274,10 +274,19 @@ const trainingWorldObjects=[];
 // Final per-frame guard: training pitch props must never leak into Career Mode.
 AFRAME.registerComponent('halftime-world-visibility',{
  tick(){
-  if(document.getElementById('mode')?.value!=='career')return;
+  const ball=document.getElementById('ball');
+  const career=ball?.components?.football?.mode==='career'||document.getElementById('mode')?.value==='career';
+  if(!career)return;
   for(const id of ['worldGround','trainingPitch','trainingGoalLeftPost','trainingGoalRightPost','trainingGoalCrossbar','trainingGoalNetFar','trainingGoalNearLeftPost','trainingGoalNearRightPost','trainingGoalNearCrossbar','trainingGoalNearNet','trainingChallenge']){
    const el=document.getElementById(id);
-   if(el){el.setAttribute('visible',false);if(el.object3D)el.object3D.visible=false;}
+   if(el){
+    el.setAttribute('visible',false);
+    if(el.object3D)el.object3D.visible=false;
+    if(id==='trainingChallenge'){
+     el.setAttribute('value','');
+     if(el.object3D)el.object3D.position.set(0,-10000,0);
+    }
+   }
   }
   const venue=document.getElementById('careerStadiumEnvironment');
   if(venue){venue.setAttribute('visible',true);if(venue.object3D)venue.object3D.visible=true;}
