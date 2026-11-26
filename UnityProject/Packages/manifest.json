@@ -4,6 +4,8 @@
     "com.unity.xr.openxr": "1.14.3",
     "com.unity.inputsystem": "1.11.2",
     "com.unity.ugui": "2.0.0",
-    "com.unity.xr.core-utils": "2.5.2"
+    "com.unity.xr.core-utils": "2.5.2",
+    "com.unity.netcode.gameobjects": "2.2.0",
+    "com.unity.transport": "2.2.1"
   }
 }
