@@ -63,7 +63,7 @@ jobs:
           BASE="https://7zfvmnf42j-art.github.io/Half-time-vr"
           for attempt in $(seq 1 30); do
             all_ready=1
-            for path in "/" "/manifest.webmanifest" "/icons/icon-512.png" "/icons/icon-512-maskable.png"; do
+            for path in "/" "/manifest.webmanifest" "/apple-touch-icon.png" "/apple-touch-icon.png"; do
               code="$(curl -L -s -o /dev/null -w '%{http_code}' "$BASE$path")"
               echo "Attempt $attempt: $path -> $code"
               if [ "$code" != "200" ]; then all_ready=0; fi
@@ -123,8 +123,8 @@ jobs:
             "backgroundColor": "#101827",
             "splashScreenFadeOutDuration": 300,
             "startUrl": "/Half-time-vr/",
-            "iconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/icons/icon-512.png",
-            "maskableIconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/icons/icon-512-maskable.png",
+            "iconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/apple-touch-icon.png",
+            "maskableIconUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/apple-touch-icon.png",
             "webManifestUrl": "https://7zfvmnf42j-art.github.io/Half-time-vr/manifest.webmanifest",
             "signingKey": {
               "path": ".halftime-signing/android.keystore",
