@@ -608,7 +608,8 @@ function draw(items,page=0){
   make('plane',{width:1.72,height:.025,position:'0 -.145 .012',color:i%2?cyan:lime,material:'shader:flat'},b);
   make('plane',{width:1.98,height:.36,position:'0 0 -.012',color:'#304966',opacity:.42,material:'shader:flat'},b);
   make('plane',{width:.045,height:.27,position:'-.91 0 .018',color:i%2?cyan:lime,material:'shader:flat'},b);
-  make('text',{value:label,align:'left',width:1.62,position:'-.78 0 .02',color:'#ffffff',shader:'msdf'},b);\n  make('text',{value:String(i+1).padStart(2,'0'),align:'right',width:.24,position:'.88 0 .02',color:'#9fb4ca',shader:'msdf'},b);
+  make('text',{value:label,align:'left',width:1.62,position:'-.78 0 .02',color:'#ffffff',shader:'msdf'},b);
+  make('text',{value:String(i+1).padStart(2,'0'),align:'right',width:.24,position:'.88 0 .02',color:'#9fb4ca',shader:'msdf'},b);
   const outline=make('plane',{width:2.04,height:.40,position:'0 0 -.008',color:lime,visible:false,material:'shader:flat'},b);
   const hovering=new Set();
   b.addEventListener('raycaster-intersected',ev=>{hovering.add(ev.detail.el);outline.setAttribute('visible',true);b.setAttribute('color','#385a56');});
