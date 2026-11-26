@@ -26,6 +26,12 @@ This is the native Unity project track. The existing browser build remains at th
 
 The code uses anonymous authentication for the prototype. A production release should add account recovery, moderation, reporting and privacy controls.
 
+## Match gameplay foundation
+- Local five-minute match clock and headset-facing score display.
+- Goal sensors inside both goal frames, score updates and kickoff resets.
+- The ball is tagged for goal detection and uses a continuous dynamic Rigidbody.
+- This is still a gameplay prototype: no full referee/offside/foul system, player locomotion, passing/possession AI, or network score/ball synchronisation.
+
 ## Remaining multiplayer work
 Networked player avatars, synced ball physics, team assignment, match clock, score replication, room moderation and reconnect handling are not implemented yet.
 
