@@ -570,9 +570,39 @@ function store(offset=0){const items=window.shopItems||[];detail.setAttribute('v
 function equipment(){detail.setAttribute('value','EQUIPMENT  •  Choose your kit colour');draw([['CLARET',()=>kit('#7a263a')],['BLUE',()=>kit('#168bff')],['RED',()=>kit('#ef4444')],['WHITE',()=>kit('#ffffff')],['PURPLE',()=>kit('#a855f7')],['GREEN',()=>kit('#16a34a')],['BLACK',()=>kit('#111827')],['YELLOW',()=>kit('#facc15')],['BACK',home]]);}
 function kit(c){$('kit').value=c;$('kit').onchange();detail.setAttribute('value','Kit equipped');}
 function settings(){detail.setAttribute('value','SETTINGS  •  Match tools and VR controls');draw([['RESET BALL',()=>{football()?.reset();detail.setAttribute('value','Ball reset');}],['SPAWN BALL',()=>{window.spawnHalftimeBall?.();detail.setAttribute('value','Ball spawn requested');}],['CLEAR BALLS',()=>{window.clearHalftimeBalls?.();detail.setAttribute('value','Extra balls cleared');}],['GLOVES',()=>{window.toggleHalftimeGloves?.();detail.setAttribute('value','Glove setting toggled');}],['RECALIBRATE',()=>{window.recalibrateHalftimeVR?.();detail.setAttribute('value','VR recalibration requested');}],['OWNER SANDBOX',()=>{$('ownerToggle')?.click();detail.setAttribute('value','Owner sandbox toggled');}],['BACK',home]]);}
-home();for(const id of ['left','right']){const e=$(id);e.setAttribute('raycaster','objects: .halfVRButton; enabled: false; far: 5; showLine: false; lineColor: '+lime+'; lineOpacity: 0.95');e.setAttribute('cursor','rayOrigin: entity; fuse: false; downEvents: triggerdown; upEvents: triggerup');}
-$('right').addEventListener('bbuttondown',()=>{if(vrMenuOpen)home();for(const id of ['left','right']){$(id).setAttribute('raycaster','enabled',vrMenuOpen);$(id).setAttribute('raycaster','showLine',vrMenuOpen);}});
-scene.addEventListener('exit-vr',()=>{for(const id of ['left','right'])$(id).setAttribute('raycaster','enabled',false);});
+home();
+const vrButtonRay=new THREE.Raycaster();
+for(const id of ['left','right']){
+ const controller=$(id);
+ controller.setAttribute('raycaster','objects: .halfVRButton; enabled: false; far: 5; showLine: true; lineColor: '+lime+'; lineOpacity: 0.95');
+ // Quest controller trigger is handled directly as well as by A-Frame's raycaster.
+ // This avoids missed synthetic cursor-click events on model:false Touch controllers.
+ controller.addEventListener('triggerdown',()=>{
+  if(!vrMenuOpen||!scene.is('vr-mode'))return;
+  scene.object3D.updateMatrixWorld(true);
+  controller.object3D.updateMatrixWorld(true);
+  const origin=controller.object3D.getWorldPosition(new THREE.Vector3());
+  const direction=new THREE.Vector3(0,0,-1).applyQuaternion(controller.object3D.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  vrButtonRay.set(origin,direction);
+  const hits=vrButtonRay.intersectObjects(buttons.filter(b=>b.object3D&&b.object3D.visible).map(b=>b.object3D),true);
+  if(!hits.length)return;
+  let hit=hits[0].object;
+  while(hit&& !buttons.some(b=>b.object3D===hit))hit=hit.parent;
+  const target=buttons.find(b=>b.object3D===hit);
+  if(target)target.emit('click',{source:'quest-controller'});
+ });
+}
+$('right').addEventListener('bbuttondown',()=>{
+ if(vrMenuOpen)home();
+ for(const id of ['left','right']){
+  const enabled=vrMenuOpen;
+  $(id).setAttribute('raycaster','enabled',enabled);
+  $(id).setAttribute('raycaster','showLine',enabled);
+ }
+});
+scene.addEventListener('exit-vr',()=>{
+ for(const id of ['left','right'])$(id).setAttribute('raycaster','enabled',false);
+});
 })();
 
 (function(){
