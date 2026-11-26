@@ -29,7 +29,7 @@ AFRAME.registerComponent('halftime-leg-renderer',{
       const ground=document.getElementById('worldGround');
       if(ground){ground.object3D.updateWorldMatrix(true,false);}
       const floorY=ground?ground.object3D.getWorldPosition(new THREE.Vector3()).y:-.035;
-      const bootBottomOffset=.215;
+      const bootBottomOffset=.056;
       const neutralHandDrop=.78;
       target.y=floorY+bootBottomOffset+Math.max(0,target.y-(head.y-neutralHandDrop));
       state.mesh.visible=true;state.legGroup.visible=true;
