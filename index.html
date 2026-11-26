@@ -597,6 +597,7 @@ const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO 
 make('plane',{width:3.55,height:.018,position:'0 -1.12 .02',color:'#38516d',material:'shader:flat'});
 const buttons=[];let page='Home';
 function draw(items,page=0){
+ clearBootPreview?.();
  for(const b of buttons)b.remove();buttons.length=0;
  const paged=items.length>6,content=paged?items.slice(page*6,page*6+6):items;
  const shown=[...content];
@@ -605,7 +606,8 @@ function draw(items,page=0){
   const col=i%2,row=Math.floor(i/2),x=col===0?-.91:.91,y=.12-row*.43;
   const b=make('plane',{width:1.72,height:.315,position:x+' '+y+' .035',color:'#223650',class:'halfVRButton',material:'shader:flat'});
   make('plane',{width:1.72,height:.025,position:'0 -.145 .012',color:i%2?cyan:lime,material:'shader:flat'},b);
-  if(page==='Store'&&label.startsWith('HALFTIME BOOT')){const icon=make('entity',{position:'-.56 0 .035',scale:'.22 .22 .22'},b);make('box',{width:1.15,height:.24,depth:.38,position:'0 -.12 0',color:'#f8fafc',rotation:'0 0 -8'},icon);make('box',{width:'.64',height:'.34',depth:'.39',position:'-.12 .12 0',color:label.includes('0001')?'#7a263a':'#38bdf8',rotation:'0 0 -15'},icon);make('box',{width:1.2,height:'.07',depth:'.42',position:'.02 -.27 0',color:'#d1d5db'},icon);make('text',{value:label.replace('HALFTIME BOOT ','BOOT '),align:'center',width:2.3,position:'.34 0 .02',color:'#ffffff'},b);}else make('text',{value:label,align:'center',width:2.9,position:'0 0 .02',color:'#ffffff'},b);
+  make('plane',{width:1.72,height:.315,position:'0 0 -.012',color:'#304966',opacity:.42,material:'shader:flat'},b);
+  make('text',{value:label,align:'center',width:2.9,position:'0 0 .02',color:'#ffffff',shader:'msdf'},b);
   const outline=make('plane',{width:1.78,height:.35,position:'0 0 -.008',color:lime,visible:false,material:'shader:flat'},b);
   const hovering=new Set();
   b.addEventListener('raycaster-intersected',ev=>{hovering.add(ev.detail.el);outline.setAttribute('visible',true);b.setAttribute('color','#385a56');});
@@ -637,7 +639,25 @@ function info(t){detail.setAttribute('value',t);draw([['BACK',home]]);}
 function play(){detail.setAttribute('value','Choose your match type');draw([['TRAINING',()=>start('training')],['VS AI',()=>start('match')],['PENALTIES',()=>start('penalty')],['CAREER',()=>{detail.setAttribute('value',window.careerSummary());draw([['NEXT MATCH',()=>start('career')],['TRANSFERS',transfers],['BACK',play]]);}],['BACK',home]]);}
 function transfers(){const c=window.transferState?.();if(!c?.offer){detail.setAttribute('value','No offers | '+(c?.club||'Your club'));draw([['REQUEST OFFER',()=>{window.requestTransfer?.();transfers();}],['BACK',play]]);return;}detail.setAttribute('value',c.offer.club+' | £'+c.offer.wage+'/week | 3 seasons');draw([['ACCEPT',()=>{window.resolveTransfer(true);transfers();}],['REJECT',()=>{window.resolveTransfer(false);transfers();}],['BACK',play]]);}
 function start(mode){$('mode').value=mode;$('play').click();if(vrMenuOpen)toggleVRMenu();for(const id of ['left','right']){$(id).setAttribute('raycaster','enabled',false);$(id).setAttribute('raycaster','showLine',false);}}
-function store(offset=0){page='Store';const items=window.shopItems||[];detail.setAttribute('value','BOOT SHOP  •  '+(window.shopSummary?.()||'Store loading')+'  •  '+(offset+1)+'–'+Math.min(offset+4,items.length)+' of '+items.length);const rows=items.slice(offset,offset+4).map(item=>[item.name+'  '+(window.shopOwned(item.id)?'EQUIP':'1 TOKEN'),()=>{window.shopBuy(item.id);store(offset);}]);draw([...rows,['NEXT',()=>store(items.length?(offset+4)%items.length:0)],['BACK',home]]);}
+let bootPreviewNodes=[];
+function clearBootPreview(){for(const node of bootPreviewNodes)node.remove();bootPreviewNodes=[];}
+function showBootPreview(item,offset){
+ clearBootPreview();
+ draw([['BUY / EQUIP',()=>{const ok=window.shopBuy?.(item.id);detail.setAttribute('value',ok?'BOOT EQUIPPED  •  '+item.name:'NOT ENOUGH TOKENS  •  Win a Career match for a token');store(offset);}],['BACK TO BOOTS',()=>store(offset)]]);
+ const image=make('plane',{width:1.72,height:1.02,position:'0 .43 .045',material:'shader:flat; transparent:true; side:double'});
+ image.setAttribute('material',{shader:'flat',src:window.shopBootPreview?.(item.id)||'',transparent:true,side:'double'});
+ const name=make('text',{value:item.name,position:'0 -.28 .05',align:'center',width:3.2,color:'#ffffff',shader:'msdf'});
+ const colours=make('text',{value:'COLOUR  '+item.color.toUpperCase()+'   •   DETAIL  '+(item.accent||item.color).toUpperCase(),position:'0 -.52 .05',align:'center',width:4.2,color:'#b8f34b',shader:'msdf'});
+ const status=make('text',{value:window.shopOwned?.(item.id)?'OWNED  •  READY TO EQUIP':'PRICE  •  1 TOKEN',position:'0 -.75 .05',align:'center',width:3.2,color:'#d8e5f2',shader:'msdf'});
+ bootPreviewNodes.push(image,name,colours,status);
+}
+function store(offset=0){
+ page='Store';
+ const items=window.shopItems||[];
+ detail.setAttribute('value','BOOT LAB  •  PREVIEW EVERY DESIGN BEFORE BUYING  •  '+(window.shopSummary?.()||'Store loading'));
+ const rows=items.slice(offset,offset+4).map(item=>[item.name+'  '+(window.shopOwned?.(item.id)?'OWNED':'VIEW'),()=>showBootPreview(item,offset)]);
+ draw([...rows,['NEXT DESIGNS',()=>store(items.length?(offset+4)%items.length:0)],['BACK',home]]);
+}
 function equipment(){detail.setAttribute('value','EQUIPMENT  •  Choose your kit colour');draw([['CLARET',()=>kit('#7a263a')],['BLUE',()=>kit('#168bff')],['RED',()=>kit('#ef4444')],['WHITE',()=>kit('#ffffff')],['PURPLE',()=>kit('#a855f7')],['GREEN',()=>kit('#16a34a')],['BLACK',()=>kit('#111827')],['YELLOW',()=>kit('#facc15')],['BACK',home]]);}
 function kit(c){$('kit').value=c;$('kit').onchange();detail.setAttribute('value','Kit equipped');}
 function settings(){detail.setAttribute('value','SETTINGS  •  Match tools and VR controls');draw([['RESET BALL',()=>{football()?.reset();detail.setAttribute('value','Ball reset');}],['SPAWN BALL',()=>{window.spawnHalftimeBall?.();detail.setAttribute('value','Ball spawn requested');}],['CLEAR BALLS',()=>{window.clearHalftimeBalls?.();detail.setAttribute('value','Extra balls cleared');}],['GLOVES',()=>{window.toggleHalftimeGloves?.();detail.setAttribute('value','Glove setting toggled');}],['RECALIBRATE',()=>{window.recalibrateHalftimeVR?.();detail.setAttribute('value','VR recalibration requested');}],['OWNER SANDBOX',()=>{$('ownerToggle')?.click();detail.setAttribute('value','Owner sandbox toggled');}],['BACK',home]]);}
@@ -862,6 +882,7 @@ function equip(item){const id={Boots:'boots',Gloves:'lockerGloves',Kits:'lockerK
 function render(){balance.textContent='Free item tokens: '+shop.credits+' | Owned: '+shop.owned.length+' / '+items.length+' + Founder badge';list.replaceChildren();if(collection.value==='Starter pack'){const note=document.createElement('p');note.textContent='Founder badge — free, equip in Profile / Badges';list.append(note);}for(const item of (collection.value==='Special edition boots'?items.filter(x=>x.id>=500):collection.value==='Vintage Store'?vintage:collection.value==='Starter pack'?items.filter(x=>starter.includes(x.id)):items).filter(x=>(collection.value==='Starter pack'||collection.value==='Special edition boots'||x.type===filter.value)&&(!ownedOnly.checked||shop.owned.includes(x.id)))){const b=document.createElement('button');b.onmouseenter=()=>showShopPreview(item);b.onfocus=()=>showShopPreview(item);b.style.cssText='background:#23334b;color:white;min-height:125px;white-space:normal;text-align:center';if(item.type==='Boots'){const img=document.createElement('img');img.src=bootImage(item);img.alt=item.name+' boot';img.style.cssText='display:block;width:100%;height:70px;object-fit:contain;margin:0 auto 4px';b.append(img);}const sw=document.createElement('span');sw.style.cssText='display:block;height:22px;border-radius:5px;background:'+item.color;const owned=shop.owned.includes(item.id);const equipped=shop.equipped?.[item.type]===item.id;sw.style.height='36px';if(item.accent)sw.style.background='linear-gradient(120deg,'+item.color+' 65%,'+item.accent+' 65%)';b.append(sw,document.createTextNode(item.name+' • '+(equipped?'Equipped':owned?'Equip':'1 token')));b.disabled=equipped||(!owned&&shop.credits<1);b.onclick=()=>{showShopPreview(item);if(!shop.owned.includes(item.id)){if(shop.credits<1)return;shop.credits--;shop.owned.push(item.id);}equip(item);render();showShopPreview(item);};list.append(b);}}
 filter.onchange=render;ownedOnly.onchange=render;tab.onclick=()=>{for(const p of $('halfPages').children)p.hidden=p!==page;for(const b of nav.children)b.setAttribute('aria-selected',String(b===tab));render();};for(const b of nav.children)if(b!==tab)b.addEventListener('click',()=>{page.hidden=true;tab.setAttribute('aria-selected','false');});
 const old=window.finishCareer;window.finishCareer=(x,y)=>{old(x,y);if(x>y){shop.credits++;save();}render();};window.shopItems=items.filter(x=>x.type==='Boots');
+window.shopBootPreview=id=>{const item=items.find(x=>x.id===id&&x.type==='Boots');return item?bootImage(item):''};
 window.grantLeagueChampionBoot=country=>{
   const ids={England:600,Spain:601,France:602,Germany:603,Italy:604,Portugal:605,Brazil:606,Argentina:607,Netherlands:608,USA:609,Japan:610,Mexico:611};
   const id=ids[country]||600;
