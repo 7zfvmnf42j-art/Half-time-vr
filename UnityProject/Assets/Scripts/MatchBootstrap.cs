@@ -92,7 +92,7 @@ public class MatchBootstrap : MonoBehaviour
         go.transform.position = p + Vector3.up;
         go.transform.localScale = new Vector3(0.7f, 1f, 0.7f);
         Apply(go, mat, team == "Home" ? new Color(0.45f,0.04f,0.12f) : new Color(0.05f,0.18f,0.55f));
-        go.AddComponent<FootballerAI>();
+        go.AddComponent<FootballerController>();
     }
 
     void SpawnKeeper(string label, Vector3 p, Material mat, int end)
@@ -102,7 +102,7 @@ public class MatchBootstrap : MonoBehaviour
         go.transform.position = p + Vector3.up;
         go.transform.localScale = new Vector3(0.85f, 1.05f, 0.85f);
         Apply(go, mat, new Color(0.9f,0.72f,0.08f));
-        var keeper = go.AddComponent<FootballerAI>();
+        var keeper = go.AddComponent<FootballerController>();
         keeper.isGoalkeeper = true;
         keeper.goalEnd = end;
     }
