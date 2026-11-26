@@ -278,40 +278,49 @@ function syncWorldMode(){
  const setVisible=(el,on)=>{if(!el)return;el.setAttribute('visible',on);if(el.object3D)el.object3D.visible=on;};
  setVisible(document.getElementById('trainingChallenge'),!career && mode==='training');
  setVisible(document.getElementById('cityHub'),!career);
- setVisible(document.getElementById('cityInterior'),!career);
+ setVisible(document.getElementById('cityInterior'),!career && !!window.inCityRoom);
  setVisible(document.getElementById('careerStadiumEnvironment'),career);
+ // The old filter only moved top-level planes/boxes. Training goal frames and
+ // other grouped props are a-entities, so they could leak into Career Mode.
+ // Isolate every static scene root while preserving the player, ball, HUD,
+ // lighting, sky, city roots, and the dedicated Career stadium.
  if(scene){
+  const keep=new Set(['rig','ball','score','trainingChallenge','bot','vrMenu','mirror','cityHub','cityInterior','careerStadiumEnvironment','careerPlayersContainer']);
   for(const el of [...scene.children]){
-   const tag=el.tagName?.toLowerCase();
-   if(!['a-plane','a-box','a-ring'].includes(tag))continue;
-   if(!el.__trainingOriginalPosition)el.__trainingOriginalPosition=el.object3D.position.clone();
+   const id=el.id||'';
+   const tag=el.tagName?.toLowerCase()||'';
+   if(keep.has(id)||tag==='a-light'||tag==='a-sky')continue;
+   if(!el.__halftimeWorldOriginal){
+    el.__halftimeWorldOriginal={
+     visible:el.getAttribute('visible')!==false,
+     position:el.object3D?el.object3D.position.clone():null
+    };
+   }
    if(career){
-    el.object3D.position.set(20000,0,0);
     setVisible(el,false);
+    if(el.object3D)el.object3D.position.set(20000,0,0);
    }else{
-    el.object3D.position.copy(el.__trainingOriginalPosition);
-    setVisible(el,true);
+    if(el.object3D&&el.__halftimeWorldOriginal.position)el.object3D.position.copy(el.__halftimeWorldOriginal.position);
+    setVisible(el,el.__halftimeWorldOriginal.visible);
    }
   }
  }
  const bot=document.getElementById('bot');
  setVisible(bot,!career && mode!=='training');
- if(window.requestAnimationFrame){
-  requestAnimationFrame(()=>{
-   if(document.getElementById('mode')?.value!==mode)return;
-   setVisible(document.getElementById('cityHub'),!career);
-   setVisible(document.getElementById('cityInterior'),!career);
-   setVisible(document.getElementById('careerStadiumEnvironment'),career);
-   if(scene)for(const el of [...scene.children]){
-    const tag=el.tagName?.toLowerCase();
-    if(!['a-plane','a-box','a-ring'].includes(tag))continue;
-    if(career){el.object3D.position.set(20000,0,0);setVisible(el,false);}
-    else{el.object3D.position.copy(el.__trainingOriginalPosition);setVisible(el,true);}
-   }
-   setVisible(document.getElementById('careerPlayersContainer'),career);
-   if(!career)window.hideCareer?.();
-  });
- }
+ const apply=()=>{
+  if(document.getElementById('mode')?.value!==mode)return;
+  setVisible(document.getElementById('trainingChallenge'),!career && mode==='training');
+  setVisible(document.getElementById('cityHub'),!career);
+  setVisible(document.getElementById('cityInterior'),!career && !!window.inCityRoom);
+  setVisible(document.getElementById('careerStadiumEnvironment'),career);
+  setVisible(document.getElementById('careerPlayersContainer'),career);
+  if(career){
+   const ground=document.getElementById('careerStadiumEnvironment');
+   if(ground?.object3D)ground.object3D.visible=true;
+   if(!window.careerPlayersSpawned)window.spawnCareerPlayers?.();
+  }else window.hideCareer?.();
+ };
+ requestAnimationFrame(()=>requestAnimationFrame(apply));
 }
 document.getElementById('mode')?.addEventListener('change',syncWorldMode);
 syncWorldMode();
