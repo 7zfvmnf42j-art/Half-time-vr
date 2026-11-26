@@ -3176,4 +3176,20 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   window.halftimeBetaErrors=errors;
 })();
 </script>
+
+<script>
+// Meta Quest immersive PWA launch: the app-icon launch counts as user activation.
+(() => {
+  if (!('getDigitalGoodsService' in window)) return;
+  const scene = document.querySelector('a-scene');
+  if (!scene) return;
+  const enterImmersive = () => {
+    if (!scene.is('vr-mode') && typeof scene.enterVR === 'function') {
+      scene.enterVR().catch?.(() => {});
+    }
+  };
+  if (scene.hasLoaded) enterImmersive();
+  else scene.addEventListener('renderstart', enterImmersive, { once: true });
+})();
+</script>
 </body></html>
