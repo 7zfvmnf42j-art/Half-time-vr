@@ -585,16 +585,16 @@ tabs.push([b,p]);b.onclick=()=>{for(const [button,page] of tabs){page.hidden=but
 const panel=$('vrMenu');panel.replaceChildren();
 const make=(tag,attrs,parent=panel)=>{const e=document.createElement('a-'+tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e;};
 const lime='#b8f34b',cyan='#55d6ff',ink='#0a1424';
-make('plane',{width:3.95,height:2.95,color:ink,opacity:1,material:'shader:flat; transparent:false'});
-make('plane',{width:3.84,height:2.84,position:'0 0 -.012',color:'#14243a',opacity:1,material:'shader:flat'});
-make('plane',{width:3.84,height:.055,position:'0 1.395 .012',color:lime,material:'shader:flat'});
-make('plane',{width:.055,height:2.78,position:'-1.89 0 .012',color:cyan,material:'shader:flat'});
-make('text',{value:'HALFTIME  /  VR',position:'-1.72 1.13 .025',align:'left',width:3.2,color:lime});
-make('text',{value:'MATCH HUB',position:'-1.72 .83 .025',align:'left',width:5.4,color:'#ffffff'});
-make('text',{value:'YOUR GAME. YOUR CLUB. YOUR CAREER.',position:'-1.7 .65 .025',align:'left',width:4.2,color:'#9fb2c9'});
-const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-1.7 .43 .025',align:'left',width:5.1,color:lime});
-const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO SELECT  •  B TO CLOSE',position:'0 -1.28 .03',align:'center',width:5.8,color:'#d8e5f2'});detail.id='vrMenuText';
-make('plane',{width:3.55,height:.018,position:'0 -1.12 .02',color:'#38516d',material:'shader:flat'});
+make('plane',{width:4.5,height:3.15,color:ink,opacity:1,material:'shader:flat; transparent:false'});
+make('plane',{width:4.4,height:3.05,position:'0 0 -.012',color:'#14243a',opacity:1,material:'shader:flat'});
+make('plane',{width:4.4,height:.06,position:'0 1.48 .012',color:lime,material:'shader:flat'});
+make('plane',{width:.06,height:2.9,position:'-2.17 0 .012',color:cyan,material:'shader:flat'});
+make('text',{value:'HALFTIME  /  VR',position:'-2.0 1.22 .025',align:'left',width:3.2,color:lime});
+make('text',{value:'MATCH HUB',position:'-2.0 .88 .025',align:'left',width:5.4,color:'#ffffff'});
+make('text',{value:'YOUR GAME. YOUR CLUB. YOUR CAREER.',position:'-1.98 .68 .025',align:'left',width:4.2,color:'#9fb2c9'});
+const playerLine=make('text',{value:'PLAYER  •  '+(profile.nick||'Player')+'     BADGE  •  '+(profile.equippedBadge||'UNRANKED'),position:'-1.98 .45 .025',align:'left',width:5.1,color:lime});
+const detail=make('text',{value:'POINT WITH A CONTROLLER  •  PRESS TRIGGER TO SELECT  •  B TO CLOSE',position:'0 -1.42 .03',align:'center',width:5.8,color:'#d8e5f2'});detail.id='vrMenuText';
+make('plane',{width:4.05,height:.018,position:'0 -1.24 .02',color:'#38516d',material:'shader:flat'});
 const buttons=[];let page='Home';
 function draw(items,page=0){
  clearBootPreview?.();
@@ -603,12 +603,12 @@ function draw(items,page=0){
  const shown=[...content];
  if(paged){if(page>0)shown.push(['PREVIOUS',()=>draw(items,page-1)]);if((page+1)*6<items.length)shown.push(['MORE',()=>draw(items,page+1)]);}
  shown.forEach(([label,fn],i)=>{
-  const col=i%2,row=Math.floor(i/2),x=col===0?-.91:.91,y=.12-row*.43;
-  const b=make('plane',{width:1.72,height:.315,position:x+' '+y+' .035',color:'#223650',class:'halfVRButton',material:'shader:flat'});
+  const col=i%2,row=Math.floor(i/2),x=col===0?-1.05:1.05,y=.06-row*.43;
+  const b=make('plane',{width:1.98,height:.36,position:x+' '+y+' .035',color:'#223650',class:'halfVRButton',material:'shader:flat'});
   make('plane',{width:1.72,height:.025,position:'0 -.145 .012',color:i%2?cyan:lime,material:'shader:flat'},b);
-  make('plane',{width:1.72,height:.315,position:'0 0 -.012',color:'#304966',opacity:.42,material:'shader:flat'},b);
-  make('text',{value:label,align:'center',width:2.9,position:'0 0 .02',color:'#ffffff',shader:'msdf'},b);
-  const outline=make('plane',{width:1.78,height:.35,position:'0 0 -.008',color:lime,visible:false,material:'shader:flat'},b);
+  make('plane',{width:1.98,height:.36,position:'0 0 -.012',color:'#304966',opacity:.42,material:'shader:flat'},b);
+  make('plane',{width:.045,height:.27,position:'-.91 0 .018',color:i%2?cyan:lime,material:'shader:flat'},b);\n  make('text',{value:label,align:'left',width:1.62,position:'-.78 0 .02',color:'#ffffff',shader:'msdf'},b);\n  make('text',{value:String(i+1).padStart(2,'0'),align:'right',width:.24,position:'.88 0 .02',color:'#9fb4ca',shader:'msdf'},b);
+  const outline=make('plane',{width:2.04,height:.40,position:'0 0 -.008',color:lime,visible:false,material:'shader:flat'},b);
   const hovering=new Set();
   b.addEventListener('raycaster-intersected',ev=>{hovering.add(ev.detail.el);outline.setAttribute('visible',true);b.setAttribute('color','#385a56');});
   b.addEventListener('raycaster-intersected-cleared',ev=>{hovering.delete(ev.detail.el);if(!hovering.size){outline.setAttribute('visible',false);b.setAttribute('color','#223650');}});
