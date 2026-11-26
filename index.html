@@ -3185,7 +3185,8 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
   if (!scene) return;
   const enterImmersive = () => {
     if (!scene.is('vr-mode') && typeof scene.enterVR === 'function') {
-      scene.enterVR().catch?.(() => {});
+      const result = scene.enterVR();
+      if (result && typeof result.catch === 'function') result.catch(() => {});
     }
   };
   if (scene.hasLoaded) enterImmersive();
