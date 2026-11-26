@@ -7,7 +7,7 @@ public class MultiplayerMenu : MonoBehaviour
     Text status;
     InputField addressInput;
 
-    public void Build(Transform parent, System.Action<string> report)
+    public GameObject Build(Transform parent, System.Action<string> report)
     {
         var panel = new GameObject("Multiplayer Panel", typeof(RectTransform), typeof(Image));
         panel.transform.SetParent(parent, false);
@@ -56,9 +56,10 @@ public class MultiplayerMenu : MonoBehaviour
             report("Disconnected from the session.");
         });
 
-        status = AddLabel(panel.transform,
+        AddLabel(panel.transform,
             "First networking test: direct local-network connection only.", 16,
             new Vector2(0, -180), new Vector2(720, 38));
+        return panel;
     }
 
     MultiplayerSession GetSession()
