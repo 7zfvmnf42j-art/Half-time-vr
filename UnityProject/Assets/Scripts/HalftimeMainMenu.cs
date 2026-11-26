@@ -89,7 +89,7 @@ public class HalftimeMainMenu : MonoBehaviour
 
         string[] badges = {
             "CC CREATOR", "PRO", "CAPTAIN",
-            "LEGEND", "DEV TESTER", "OWNER"
+            "LEGEND", "DEV TESTER"
         };
 
         for (int i = 0; i < badges.Length; i++)
@@ -101,6 +101,11 @@ public class HalftimeMainMenu : MonoBehaviour
             MakeButton(lockerBadgePanel.transform, badge,
                 position, new Vector2(210, 76), () => SelectBadge(badge));
         }
+
+        var ownerCard = PanelObject("Reserved Owner Badge", lockerBadgePanel.transform,
+            new Color(0.12f, 0.17f, 0.24f), new Vector2(690, 62), new Vector2(0, -175));
+        Label(ownerCard.transform, "★  OWNER BADGE  ★   RESERVED FOR THE GAME OWNER",
+            21, Lime, Vector2.zero, new Vector2(660, 52), TextAnchor.MiddleCenter, FontStyle.Bold);
 
         SelectBadge(selectedBadge);
         lockerBadgePanel.SetActive(false);
