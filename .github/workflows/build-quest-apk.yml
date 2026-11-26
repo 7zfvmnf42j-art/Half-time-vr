@@ -1,8 +1,10 @@
 name: Build HALFTIME VR Quest APK
 on:
-  workflow_run:
-    workflows: ["Deploy HALFTIME VR to GitHub Pages"]
-    types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-quest-apk.yml"
+  workflow_dispatch:
 permissions:
   contents: write
   actions: read
@@ -11,7 +13,6 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout latest game
@@ -54,11 +55,18 @@ jobs:
         run: |
           set -e
           BASE="https://7zfvmnf42j-art.github.io/Half-time-vr"
-          for path in "/" "/manifest.webmanifest" "/icons/icon-512.png" "/icons/icon-512-maskable.png"; do
-            code="$(curl -L -s -o /dev/null -w '%{http_code}' "$BASE$path")"
-            echo "$path -> $code"
-            test "$code" = "200"
+          for attempt in $(seq 1 30); do
+            all_ready=1
+            for path in "/" "/manifest.webmanifest" "/icons/icon-512.png" "/icons/icon-512-maskable.png"; do
+              code="$(curl -L -s -o /dev/null -w '%{http_code}' "$BASE$path")"
+              echo "Attempt $attempt: $path -> $code"
+              if [ "$code" != "200" ]; then all_ready=0; fi
+            done
+            if [ "$all_ready" = "1" ]; then exit 0; fi
+            sleep 10
           done
+          echo "Hosted PWA did not become ready in time"
+          exit 1
       - name: Configure Bubblewrap
         run: |
           npm install --global @meta-quest/bubblewrap-cli@1.24.1
