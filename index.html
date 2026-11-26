@@ -3052,6 +3052,7 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
 (function(){
   const scene=document.querySelector('a-scene');
   if(!scene)return;
+  // Installed Quest PWAs auto-enter immersive mode; regular Browser sessions retain the button.
   const questPWA=window.getDigitalGoodsService!==undefined;
   const enter=document.createElement('button');
   enter.id='halfEnterVR';
