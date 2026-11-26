@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HALFTIME VR</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><script>
 AFRAME.registerComponent('boot-follow',{schema:{hand:{type:'selector'}},tick(){if(!this.data.hand)return;let p=this.data.hand.object3D.getWorldPosition(new THREE.Vector3());this.el.object3D.position.copy(p);}});
-window.halftimeBallPhysics={airDrag:.012,rollResistance:.82,bounce:.48,bounceGrip:.94,gravity:9.81,magnus:.00105,spinDecay:.58,touchAssist:.22,kickPower:1.5,maxSpeed:39,contactRestitution:.8,juggleLift:.38};
+window.halftimeBallPhysics={airDrag:.012,rollResistance:2.15,bounce:.42,bounceGrip:.92,gravity:9.81,magnus:.00075,spinDecay:.72,touchAssist:.22,kickPower:1.18,maxSpeed:34,contactRestitution:.58,juggleLift:.30};
 window.halftimeLegFreedom={enabled:true,verticalOffset:0,maxReach:1.8,smoothing:26,velocityCap:28};
 window.halftimePlayerHeight=Number(localStorage.getItem('halftimePlayerHeight')||1.72);
 // Feet start locked to the pitch. Press the RIGHT THUMBSTICK in to toggle free movement; B remains the menu button.
@@ -76,6 +76,8 @@ reset(){this.p.set(0,.11,0);this.v.set(0,0,0);this.prev={};this.goalAt=0;this.re
 restart(label,x,z,team,t){this.p.set(x,.11,z);this.v.set(0,0,0);this.spin?.set(0,0,0);this.restartAt=t+1600;this.restartTeam=team;this.lastTouch=team;this.notice=label+' — '+(team===1?'Your team':'Opposition');this.noticeUntil=t+3500;},hud(){document.getElementById('score')?.setAttribute('value',`HALFTIME | ${this.score} - ${this.ai} | ${this.mode==='training'?'TRAINING':this.ended?'FULL TIME':Math.floor(this.time/60)+':'+String(Math.floor(this.time%60)).padStart(2,'0')}`);const challenge=document.getElementById('trainingChallenge');if(challenge){const n=this.trainingGoals||0;challenge.setAttribute('visible',this.mode==='training');challenge.setAttribute('value',`TRAINING CHALLENGE  |  ${Math.min(n,5)}/5 GOALS${n>=5?'  •  COMPLETE':''}`);}const vrScore=document.getElementById('vrMatchScore');if(vrScore){const clock=this.mode==='training'?'TRAINING':this.ended?'FULL TIME':Math.floor(this.time/60)+':'+String(Math.floor(this.time%60)).padStart(2,'0');vrScore.setAttribute('value',`HALFTIME VR   ${this.score} - ${this.ai}   ${clock}`);}},
 tick(t,ms){let d=Math.min(ms/1000,.04);if(this.goalAt){if(t>=this.goalAt){if(this.mode==='career'){this.goalAt=0;this.restart('Kick-off',0,0,this.kickoffTeam,t);}else this.reset();}else{this.el.object3D.position.copy(this.p);return;}}if(this.restartAt){if(t<this.restartAt){this.el.object3D.position.copy(this.p);return;}this.restartAt=0;if(this.restartTeam===-1){const targetZ=this.notice?.startsWith('Penalty')?52.5:Math.min(50,this.p.z+12);const dir=new THREE.Vector3(-this.p.x*.3,0,targetZ-this.p.z).normalize();this.v.copy(dir.multiplyScalar(this.notice?.startsWith('Penalty')?15:8));this.v.y=this.notice?.startsWith('Throw-in')?2.8:.6;this.lastTouch=-1;}}if(!d||this.ended||window.matchPaused?.()||document.getElementById('vrMenu')?.getAttribute('visible'))return;if(window.ownerFrozen?.()){this.v.set(0,0,0);this.el.object3D.position.copy(this.p);return;}
 if(this.mode!=='training'&&!window.onlineCareerGuest){this.time=Math.max(0,this.time-d);if(!this.time){this.ended=true;window.halftimeMatchEvent?.('FULL TIME',`FINAL SCORE  ${this.score} - ${this.ai}`,5000);if(this.mode==='career'&&!window.onlineCareerGuest&&!window.onlineCareerActive)window.finishCareer?.(this.score,this.ai);this.hud();return;}}
+// Career opponents and teammates were being created but their AI update loop was never called.
+if(this.mode==='career')window.careerTick?.(this,t,d);
 for(const id of ['left','right']){
 const e=document.getElementById(id);if(this.mode==='career'&&this.el.sceneEl.is('vr-mode')&&this.p.y>.65&&t>(this.lastHandball||0)+3000&&e.object3D.getWorldPosition(new THREE.Vector3()).distanceTo(this.p)<.19){this.lastHandball=t;const penalty=this.p.z>36&&Math.abs(this.p.x)<20.16;this.restart(penalty?'Penalty — handball':'Free kick — handball',penalty?0:this.p.x,penalty?41.5:this.p.z,-1,t);return;}if(!this.el.sceneEl.is('vr-mode')){delete this.prev[id];continue;}
 // Controller entities use model:false, so A-Frame may mark their render object invisible
@@ -193,12 +195,15 @@ if(old){
         const tangent=relative.clone().addScaledVector(n,-approach);
         const styleMult=ps==='Power Shot'?1.15:ps==='Playmaker'?.93:1;
         const restitution=bp.contactRestitution??.72;
-        const impulse=THREE.MathUtils.clamp(approach*(1+restitution)*(bp.kickPower||1.34)*styleMult,0,25.5);
+        const rawImpulse=approach*(1+restitution)*(bp.kickPower||1.18)*styleMult;
+        // Light brushes stay light; only a firm swing gets close to full power.
+        const touchScale=.35+.65*THREE.MathUtils.clamp(approach/8,0,1);
+        const impulse=THREE.MathUtils.clamp(rawImpulse*touchScale,0,18);
         this.v.addScaledVector(n,impulse).addScaledVector(tangent,.30);
         if(footVel.y>0)this.v.y+=Math.min(7.5,footVel.y*(bp.juggleLift??.32)*1.45);
         // Reliable lift on a clean boot strike: horizontal controller movement must
         // still send the ball airborne, even when the controller has little vertical travel.
-        const strikeLift=THREE.MathUtils.clamp(2.2+impulse*.22+Math.max(0,footVel.y)*.18,2.2,6.5);
+        const strikeLift=THREE.MathUtils.clamp(.35+impulse*.18+Math.max(0,footVel.y)*.12,.35,4.2);
         this.v.y=Math.max(this.v.y,0)+strikeLift;
         if(state.bent)this.v.y+=Math.min(2.2,footVel.length()*.075);
 
@@ -208,7 +213,7 @@ if(old){
 
         this.v.clampLength(0,(bp.maxSpeed||34));
         if(window.onlineCareerGuest)window.onlineCareerSendKick?.(this.v,this.p);
-        this.spin=(this.spin||new THREE.Vector3()).add(n.clone().cross(tangent).multiplyScalar(ps==='Finesse'?-1.7:-1.05)).clampLength(0,26);
+        this.spin=(this.spin||new THREE.Vector3()).add(n.clone().cross(tangent).multiplyScalar(ps==='Finesse'?-1.1:-.65)).clampLength(0,18);
         if(t>(this.lastKickSound||0)+90){window.halfSound?.('kick');this.lastKickSound=t;}
       }
     }
