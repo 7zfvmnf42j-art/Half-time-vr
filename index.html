@@ -3111,4 +3111,56 @@ window.halftimeFootTuning={smoothing:22,contactRadius:.27,maxKickSpeed:30,contro
  }
 })();
 </script>
+
+<script>
+/* HALFTIME VR — FIRST BETA TESTER TOOLS */
+(function(){
+  if(window.halftimeBetaToolsReady)return;
+  window.halftimeBetaToolsReady=true;
+  const errors=[];
+  const started=Date.now();
+  let fps=0,frames=0,last=performance.now(),sampleStart=last;
+  window.addEventListener('error',e=>{
+    errors.push({time:new Date().toISOString(),message:String(e.message||'Unknown error'),file:e.filename||'',line:e.lineno||0});
+    if(errors.length>30)errors.shift();
+  });
+  window.addEventListener('unhandledrejection',e=>{
+    errors.push({time:new Date().toISOString(),message:'Unhandled promise: '+String(e.reason?.message||e.reason||'Unknown rejection')});
+    if(errors.length>30)errors.shift();
+  });
+  function sample(){
+    const now=performance.now();frames++;
+    if(now-sampleStart>=2000){fps=Math.round(frames*1000/(now-sampleStart));frames=0;sampleStart=now;}
+    requestAnimationFrame(sample);
+  }
+  requestAnimationFrame(sample);
+  const style=document.createElement('style');
+  style.textContent='#halfBetaOpen{position:fixed;z-index:100001;right:12px;bottom:12px;background:#b8f34b;color:#14210d;border:2px solid #e4ff9d;border-radius:12px;padding:12px 15px;font:900 13px system-ui;letter-spacing:.5px;box-shadow:0 5px 24px #0008}#halfBetaPanel{display:none;position:fixed;z-index:100002;inset:5% 4%;max-width:620px;margin:auto;overflow:auto;background:#101c30f7;color:#eef6ff;border:1px solid #52718f;border-radius:18px;padding:18px;box-shadow:0 15px 60px #000b;font:14px system-ui}#halfBetaPanel h2{margin:0 0 8px;color:#b8f34b}#halfBetaPanel button{background:#b8f34b;color:#14210d;border:0;border-radius:9px;padding:10px 13px;font-weight:800;margin:5px 5px 5px 0}#halfBetaPanel textarea{box-sizing:border-box;width:100%;min-height:110px;background:#091321;color:white;border:1px solid #52718f;border-radius:9px;padding:10px;font:14px system-ui}#halfBetaPanel .hb-muted{color:#b4c7da;font-size:12px}#halfBetaPanel .hb-status{background:#1b3048;padding:10px;border-radius:9px;margin:8px 0;white-space:pre-wrap}';
+  document.head.appendChild(style);
+  const open=document.createElement('button');open.id='halfBetaOpen';open.textContent='BETA TESTER';
+  const panel=document.createElement('section');panel.id='halfBetaPanel';panel.innerHTML='<h2>HALFTIME VR · BETA TEST</h2><p class="hb-muted">Help us find problems before the first public test. This report stays on your device until you choose to download it.</p><div id="halfBetaStatus" class="hb-status">Checking game…</div><h3>What happened?</h3><textarea id="halfBetaNotes" placeholder="Describe what you were doing, what you expected, and what happened…"></textarea><h3>Quick test checklist</h3><label><input type="checkbox"> Game opens and enters VR</label><br><label><input type="checkbox"> Controllers track both hands</label><br><label><input type="checkbox"> Player movement and turning work</label><br><label><input type="checkbox"> Ball can be kicked and travels through the air</label><br><label><input type="checkbox"> Goals register without crashing</label><br><label><input type="checkbox"> Career match loads players and stadium</label><br><label><input type="checkbox"> Half-time and full-time work</label><br><label><input type="checkbox"> Menus, boots and profile work</label><br><div class="hb-muted">Tick only what you personally tested. Unticked items are not automatically failures.</div><button id="halfBetaDownload">DOWNLOAD TEST REPORT</button><button id="halfBetaRefresh">REFRESH CHECKS</button><button id="halfBetaClose">CLOSE</button>';
+  document.body.append(open,panel);
+  function diagnostics(){
+    const scene=document.querySelector('a-scene'),ball=document.getElementById('ball');
+    const renderer=scene?.renderer;
+    const gl=renderer?.getContext?.();
+    const checklist=[['A-Frame scene loaded',!!scene?.hasLoaded],['WebGL renderer ready',!!renderer],['WebGL context available',!!gl],['Ball entity present',!!ball],['VR controllers present',!!document.getElementById('left')&&!!document.getElementById('right')],['VR mode active',!!scene?.is('vr-mode')],['JavaScript errors recorded',errors.length===0]];
+    return {game:'HALFTIME VR',reportVersion:1,createdAt:new Date().toISOString(),sessionSeconds:Math.round((Date.now()-started)/1000),browser:navigator.userAgent,platform:navigator.platform||'unknown',webxrAvailable:!!navigator.xr,vrMode:!!scene?.is('vr-mode'),sceneLoaded:!!scene?.hasLoaded,rendererReady:!!renderer,webgl:!!gl,fpsEstimate:fps,devicePixelRatio:window.devicePixelRatio||1,canvasSize:renderer?.domElement?{width:renderer.domElement.width,height:renderer.domElement.height}:null,gameMode:ball?.components?.football?.mode||'unknown',score:ball?.components?.football?{home:ball.components.football.score,away:ball.components.football.ai,time:ball.components.football.time}:null,checks:checklist,errors:errors.slice(-20)};
+  }
+  function render(){const d=diagnostics();document.getElementById('halfBetaStatus').textContent=d.checks.map(x=>(x[1]?'✓ ':'• ')+x[0]).join('\n')+'\n\nFPS estimate: '+(d.fpsEstimate||'warming up')+'\nVR available: '+(d.webxrAvailable?'Yes':'No')+' · In VR: '+(d.vrMode?'Yes':'No')+'\nErrors captured: '+d.errors.length;}
+  open.addEventListener('click',()=>{panel.style.display='block';render();});
+  document.getElementById('halfBetaClose').addEventListener('click',()=>panel.style.display='none');
+  document.getElementById('halfBetaRefresh').addEventListener('click',render);
+  document.getElementById('halfBetaDownload').addEventListener('click',()=>{
+    const checks=[...panel.querySelectorAll('input[type=checkbox]')].map(x=>({test:x.parentElement.textContent.trim(),passed:x.checked}));
+    const report={...diagnostics(),testerNotes:document.getElementById('halfBetaNotes').value,manualChecks:checks};
+    const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='halftime-vr-beta-report-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  });
+  window.halftimeBetaDiagnostics=diagnostics;
+  window.halftimeBetaErrors=errors;
+})();
+</script>
 </body></html>
