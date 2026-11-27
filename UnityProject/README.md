@@ -90,6 +90,8 @@ These changes have been committed but have not been compiled in Unity or verifie
 
 ## Match and practice flow
 
+- Starting a fresh match or practice session resets the score, match clock, ball and player kickoff positions.
+- Player movement and kick cooldowns are cleared on the reset so the teams restart cleanly.
 - The match clock remains paused while the main menu is open and starts only when KICK OFF is selected.
 - PRACTICE enters a separate untimed practice state; goal detection and kickoff resets remain available.
 - The match scoreboard shows READY before kickoff and PRACTICE in practice mode.
