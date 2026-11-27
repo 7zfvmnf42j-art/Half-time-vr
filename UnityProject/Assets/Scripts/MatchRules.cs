@@ -13,6 +13,8 @@ public class MatchRules : MonoBehaviour
     int awayScore;
     float remaining;
     bool running = false;
+    bool matchStarted;
+    bool practiceMode;
     bool goalPending;
     Rigidbody ballBody;
     Vector3 ballKickoff;
@@ -50,8 +52,18 @@ public class MatchRules : MonoBehaviour
 
     public void BeginMatch()
     {
+        practiceMode = false;
+        matchStarted = true;
         if (remaining <= 0f) remaining = matchLengthSeconds;
         running = true;
+        UpdateScoreboard();
+    }
+
+    public void BeginPractice()
+    {
+        practiceMode = true;
+        matchStarted = true;
+        running = false;
         UpdateScoreboard();
     }
 
@@ -67,7 +79,7 @@ public class MatchRules : MonoBehaviour
 
     public void RegisterGoal(bool homeTeamScored)
     {
-        if (!running || goalPending) return;
+        if (!matchStarted || goalPending) return;
         if (homeTeamScored) homeScore++; else awayScore++;
         goalPending = true;
         UpdateScoreboard();
@@ -141,6 +153,11 @@ public class MatchRules : MonoBehaviour
     void UpdateClock()
     {
         if (clockText == null) return;
+        if (practiceMode)
+        {
+            clockText.text = "PRACTICE";
+            return;
+        }
         int seconds = Mathf.CeilToInt(remaining);
         clockText.text = (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00") +
             (remaining <= 0f ? "   FULL TIME" : (!running ? "   READY" : ""));
