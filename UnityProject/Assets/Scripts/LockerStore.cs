@@ -66,7 +66,7 @@ public class LockerStore : MonoBehaviour
         {
             if (status != null) status("Store preview only — coins and purchases are not connected yet.");
         });
-        MakeButton(root.transform, "SELFIE  📸", new Vector2(355, -300), new Vector2(190, 54), TakeSelfie);
+        MakeButton(root.transform, "SELFIE  /  SAVE", new Vector2(355, -300), new Vector2(190, 54), TakeSelfie);
         Preview(selectedItem);
         root.SetActive(false);
         return root;
@@ -98,6 +98,7 @@ public class LockerStore : MonoBehaviour
             if (status != null) status("Selfies can be saved when running on your Quest headset.");
             return;
         }
+        if (status != null) status("Capturing your HALFTIME selfie...");
         StartCoroutine(CaptureAndSave());
     }
 
@@ -106,14 +107,27 @@ public class LockerStore : MonoBehaviour
         string fileName = "HALFTIME_Selfie_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
         string path = Path.Combine(Application.persistentDataPath, fileName);
         ScreenCapture.CaptureScreenshot(path);
-        yield return new WaitForSeconds(2f);
-        if (!File.Exists(path))
+        // Give the XR runtime time to finish writing the screenshot before reading it.
+        float timeout = 8f;
+        while (timeout > 0f && (!File.Exists(path) || new FileInfo(path).Length == 0))
+        {
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (!File.Exists(path) || new FileInfo(path).Length == 0)
         {
             if (status != null) status("Selfie capture failed. Please try again.");
             yield break;
         }
 
-        byte[] bytes = File.ReadAllBytes(path);
+        byte[] bytes;
+        try { bytes = File.ReadAllBytes(path); }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Could not read selfie screenshot: " + e.Message);
+            if (status != null) status("Could not read the selfie. Please try again.");
+            yield break;
+        }
         bool saved = false;
 #if UNITY_ANDROID && !UNITY_EDITOR
         try
