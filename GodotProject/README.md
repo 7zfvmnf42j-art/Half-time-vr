@@ -13,3 +13,6 @@ This folder is the new Godot 4 project. The existing Unity project and website f
 This is an early source prototype, not a finished game or a tested Quest APK. It still needs testing on a Quest headset, proper controller input/action maps, goal detection and match rules, player models/animations, menus and locker, multiplayer, performance tuning, Android export templates and a signed Android build.
 
 Open this folder as a project in Godot 4. Use a Godot version with OpenXR support and configure Android export for Meta Quest before creating an APK.
+
+## Android build
+The GitHub Actions workflow builds a debug-signed Android APK for Quest-compatible testing and publishes it as a workflow artifact.
