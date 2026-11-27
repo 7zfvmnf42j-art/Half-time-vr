@@ -26,22 +26,15 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk unzip curl
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
           export PATH="$JAVA_HOME/bin:$PATH"
-          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
-          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
-
           export ANDROID_HOME=/usr/lib/android-sdk
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
           echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
 
           yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
-          sdkmanager --sdk_root="$ANDROID_HOME" \
-            "platform-tools" \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "cmdline-tools;latest" \
-            "cmake;3.10.2.4988404" \
-            "ndk;23.2.8568313"
+          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-34" "build-tools;34.0.0" "cmdline-tools;latest" "cmake;3.10.2.4988404" "ndk;23.2.8568313"
 
           mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
           curl -fL "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" -o /tmp/godot-templates.tpz
@@ -62,9 +55,10 @@ jobs:
           export/android/debug_keystore_pass = "android"
           EOF
 
-      - name: Check Godot and Android export tools
+      - name: Validate Android toolchain
         run: |
           godot --version
+          java -version
           test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
           test -x "$ANDROID_HOME/platform-tools/adb"
           test -d "$ANDROID_HOME/platforms/android-34"
@@ -72,19 +66,33 @@ jobs:
           test -d "$ANDROID_HOME/ndk/23.2.8568313"
           test -d "$ANDROID_HOME/cmake/3.10.2.4988404"
           test -f "$HOME/.android/debug.keystore"
-          java -version
           mkdir -p GodotProject/build
 
       - name: Import project and check scripts
         working-directory: GodotProject
         run: godot --headless --editor --path . --quit
 
-      - name: Export Android APK
+      - name: Export Android APK with explicit signing settings
         working-directory: GodotProject
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /github/home/.android/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
-          godot --headless --verbose --path . --export-debug "Android" build/HALFTIME-VR-Quest.apk
+          godot --headless --verbose --path . --export-debug "Android" build/HALFTIME-VR-Quest.apk 2>&1 | tee ../android-export.log
           test -s build/HALFTIME-VR-Quest.apk
           file build/HALFTIME-VR-Quest.apk
+
+      - name: Upload export diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HALFTIME-VR-Android-Export-Diagnostics
+          path: |
+            android-export.log
+            GodotProject/android-export.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload Quest APK build
         uses: actions/upload-artifact@v4
