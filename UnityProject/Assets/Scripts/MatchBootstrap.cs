@@ -113,32 +113,8 @@ public class MatchBootstrap : MonoBehaviour
 
     void BuildStadiumDetails()
     {
-        // Low-detail stadium structure and roof supports, kept outside the touchlines.
-        for (int side = -1; side <= 1; side += 2)
-        {
-            var stand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            stand.name = side < 0 ? "West Stand" : "East Stand";
-            stand.transform.position = new Vector3(side * 40f, 3.5f, 0);
-            stand.transform.localScale = new Vector3(8f, 7f, 112f);
-            Apply(stand, stadiumDark, Color.white);
-
-            for (int tier = 0; tier < 3; tier++)
-            {
-                var seatBand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                seatBand.name = "Stand Tier " + tier;
-                seatBand.transform.position = new Vector3(side * 35.5f, 1.2f + tier * 1.8f, 0);
-                seatBand.transform.localScale = new Vector3(1.1f, 0.65f, 108f);
-                Apply(seatBand, tier == 1 ? turfB : stadiumDark, Color.white);
-            }
-        }
-        foreach (int end in new[] { -1, 1 })
-        {
-            var stand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            stand.name = end < 0 ? "North Stand" : "South Stand";
-            stand.transform.position = new Vector3(0, 3.5f, end * 59f);
-            stand.transform.localScale = new Vector3(82f, 7f, 8f);
-            Apply(stand, stadiumDark, Color.white);
-        }
+        // Open-air training-ground look from the reference clip: grass, clear horizon and sky.
+        // Deliberately no surrounding stadium bowl.
     }
 
     void BuildBall()
@@ -225,7 +201,34 @@ public class MatchBootstrap : MonoBehaviour
         Apply(go, mat, new Color(0.9f, 0.72f, 0.08f));
         AddPlayerDetails(go, new Color(0.92f, 0.72f, 0.08f));\n        var keeper = go.AddComponent<FootballerController>();
         keeper.isGoalkeeper = true;
+        AddPlayerDetails(go, new Color(0.92f, 0.72f, 0.08f));
         keeper.goalEnd = end;
+    }
+
+    void AddPlayerDetails(GameObject player, Color kit)
+    {
+        Transform root = player.transform;
+        var body = player.GetComponent<Renderer>();
+        if (body != null) body.material.color = kit;
+        AddPart(root, "Head", PrimitiveType.Sphere, new Vector3(0, 0.78f, 0), new Vector3(0.34f, 0.34f, 0.34f), new Color(0.72f, 0.53f, 0.39f));
+        AddPart(root, "Shorts", PrimitiveType.Cube, new Vector3(0, -0.28f, 0), new Vector3(0.78f, 0.34f, 0.48f), new Color(0.055f, 0.065f, 0.085f));
+        AddPart(root, "Left Arm", PrimitiveType.Capsule, new Vector3(-0.48f, 0.15f, 0), new Vector3(0.19f, 0.52f, 0.19f), kit);
+        AddPart(root, "Right Arm", PrimitiveType.Capsule, new Vector3(0.48f, 0.15f, 0), new Vector3(0.19f, 0.52f, 0.19f), kit);
+        AddPart(root, "Left Sock", PrimitiveType.Capsule, new Vector3(-0.20f, -0.82f, 0), new Vector3(0.19f, 0.58f, 0.19f), Color.white);
+        AddPart(root, "Right Sock", PrimitiveType.Capsule, new Vector3(0.20f, -0.82f, 0), new Vector3(0.19f, 0.58f, 0.19f), Color.white);
+    }
+
+    void AddPart(Transform parent, string label, PrimitiveType type, Vector3 localPosition, Vector3 scale, Color colour)
+    {
+        var part = GameObject.CreatePrimitive(type);
+        part.name = label;
+        part.transform.SetParent(parent, false);
+        part.transform.localPosition = localPosition;
+        part.transform.localScale = scale;
+        var renderer = part.GetComponent<Renderer>();
+        if (renderer != null) renderer.material = MakeMaterial(colour, 0.02f);
+        var collider = part.GetComponent<Collider>();
+        if (collider != null) Destroy(collider);
     }
 
     void Spot(string label, Vector3 p)
