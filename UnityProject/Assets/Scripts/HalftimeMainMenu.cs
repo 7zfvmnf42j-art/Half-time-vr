@@ -68,7 +68,7 @@ public class HalftimeMainMenu : MonoBehaviour
         var footer = PanelObject("Footer", root.transform, Navy, new Vector2(1450,48), new Vector2(0,-420));
         Label(footer.transform, "HOME   /   MATCH CENTRE", 17, Muted, new Vector2(-520,0), new Vector2(500,40), TextAnchor.MiddleLeft, FontStyle.Normal);
         Label(footer.transform, "QUEST EDITION", 17, Lime, new Vector2(520,0), new Vector2(400,40), TextAnchor.MiddleRight, FontStyle.Bold);
-        if (FindObjectOfType<EventSystem>() == null) new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+        if (FindObjectOfType<EventSystem>() == null) new GameObject("EventSystem", typeof(EventSystem));
     }
 
     void ShowPage(string page)
@@ -155,7 +155,7 @@ public class HalftimeMainMenu : MonoBehaviour
         rect.anchoredPosition = position;
         var text = go.GetComponent<Text>();
         text.text = value;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = size;
         text.color = colour;
         text.alignment = alignment;
