@@ -90,10 +90,21 @@ public class LockerStore : MonoBehaviour
 
     void EquipSelectedItem()
     {
-        PlayerPrefs.SetString("HALFTIME_EQUIPPED_KIT", selectedItem);
+        bool isKit = selectedItem == "Claret home shirt" ||
+            selectedItem == "Blue away shirt" || selectedItem == "Black kit";
+        if (isKit)
+        {
+            PlayerPrefs.SetString("HALFTIME_EQUIPPED_KIT", selectedItem);
+            if (itemDescription != null) itemDescription.text = "Kit saved for your next match";
+            if (status != null) status(selectedItem + " saved to your locker.");
+        }
+        else
+        {
+            PlayerPrefs.SetString("HALFTIME_LOCKER_ACCESSORY", selectedItem);
+            if (itemDescription != null) itemDescription.text = "Saved in locker; 3D match cosmetics are not ready yet";
+            if (status != null) status(selectedItem + " saved. It is not shown on the 3D match players yet.");
+        }
         PlayerPrefs.Save();
-        if (itemDescription != null) itemDescription.text = "Saved for your next match";
-        if (status != null) status(selectedItem + " saved to your locker.");
     }
 
     void TakeSelfie()
