@@ -2,6 +2,10 @@ name: Request HALFTIME VR Unity Personal Licence
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/request-unity-license.yml"
 
 permissions:
   contents: read
