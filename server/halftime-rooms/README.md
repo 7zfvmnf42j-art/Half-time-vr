@@ -4,11 +4,11 @@ This is the first online room relay for HALFTIME VR. It uses Cloudflare Workers 
 
 ## What it does
 - One room per 4–8 character room code
-- Up to 4 connected players in a room
+- Up to 22 connected players in a room (11 per team)
 - Relays player, ball and match-event messages
 - No game accounts or passwords required for this prototype
 
-This is a networking prototype, not a finished authoritative game server. The server currently relays allowed JSON messages; it does not validate movement, own the ball physics, prevent cheating, or provide matchmaking. Those protections are needed before public competitive play.
+This is a networking prototype, not a finished authoritative game server. It is configured for 22 connections per room, but 22-player gameplay has not yet been tested and requires the Quest client to be connected and team assignment/gameplay synchronization to be implemented. The server currently relays allowed JSON messages; it does not validate movement, own the ball physics, prevent cheating, or provide matchmaking. Those protections are needed before public competitive play.
 
 ## Deploy (free tier, subject to Cloudflare limits)
 1. Create a Cloudflare account and a Workers API token with permission to edit Workers.
