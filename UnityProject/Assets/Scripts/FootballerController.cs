@@ -1,60 +1,156 @@
 using UnityEngine;
 
+// Lightweight football decision-making for the native Quest prototype.
+// Each side presses with its nearest outfielder while teammates keep useful lanes.
 public class FootballerController : MonoBehaviour
 {
     public bool isGoalkeeper;
     public int goalEnd;
-    public float moveSpeed = 4.2f;
-    public float acceleration = 8f;
-    public float turnSpeed = 7f;
+    public float moveSpeed = 4.8f;
+    public float acceleration = 10f;
+    public float turnSpeed = 8f;
+
     Transform ball;
+    Rigidbody ballBody;
     Vector3 homePosition;
-    Vector3 currentVelocity;
+    Vector3 velocity;
+    bool isHome;
+    float nextKickTime;
+    float nextDecisionTime;
+    Transform leftLeg, rightLeg;
 
     void Start()
     {
         homePosition = transform.position;
+        isHome = name.StartsWith("Home");
         var found = GameObject.Find("Match Ball");
-        if (found != null) ball = found.transform;
+        if (found != null)
+        {
+            ball = found.transform;
+            ballBody = found.GetComponent<Rigidbody>();
+        }
+        // Slightly stagger decision updates to keep the headset frame rate stable.
+        nextDecisionTime = Time.time + Random.Range(0f, .25f);
     }
 
     void Update()
     {
-        if (MatchRules.Instance != null && MatchRules.Instance.IsGoalPending)
+        if (ball == null || (MatchRules.Instance != null && MatchRules.Instance.IsGoalPending))
         {
-            currentVelocity = Vector3.zero;
+            velocity = Vector3.zero;
             return;
         }
-        if (ball == null) return;
-        Vector3 target = homePosition;
+
+        float dt = Time.deltaTime;
+        Vector3 ballFlat = Flat(ball.position);
+        Vector3 myFlat = Flat(transform.position);
+        float distanceToBall = Vector3.Distance(myFlat, ballFlat);
+        Vector3 target;
 
         if (isGoalkeeper)
         {
-            float goalZ = goalEnd * 48f;
-            target = new Vector3(Mathf.Clamp(ball.position.x, -3.2f, 3.2f), 1f, goalZ);
-            if (Mathf.Abs(ball.position.z - goalZ) < 18f)
-                target.x = Mathf.Clamp(ball.position.x, -3.4f, 3.4f);
+            float ownGoalZ = goalEnd * 49f;
+            float goalLineX = Mathf.Clamp(ball.position.x * .78f, -3.25f, 3.25f);
+            float depth = Mathf.Clamp(Mathf.Abs(ball.position.z - ownGoalZ) * .12f, 1.0f, 5.5f);
+            target = new Vector3(goalLineX, 1f, ownGoalZ - Mathf.Sign(ownGoalZ) * depth);
+            if (Mathf.Abs(ball.position.z - ownGoalZ) < 12f)
+                target.x = Mathf.Clamp(ball.position.x, -3.55f, 3.55f);
         }
-        else if (Vector3.Distance(ball.position, homePosition) < 13f)
+        else
         {
-            Vector3 support = new Vector3(ball.position.x, 1f, ball.position.z + (homePosition.z < 0 ? 2f : -2f));
-            target = Vector3.Lerp(homePosition, support, 0.72f);
+            bool attackingPositiveZ = isHome;
+            float attack = attackingPositiveZ ? 1f : -1f;
+            FootballerController nearest = NearestTeammateToBall();
+            bool press = nearest == this;
+            float teamDistance = Mathf.Abs(ball.position.z - homePosition.z);
+
+            if (press && distanceToBall < 26f)
+            {
+                // Approach slightly behind the ball so the player can turn towards goal.
+                target = ballFlat + new Vector3(0f, 0f, -attack * 1.15f);
+            }
+            else if (distanceToBall < 17f && press)
+            {
+                target = ballFlat;
+            }
+            else
+            {
+                // Support runners spread into lanes and step forward when their team attacks.
+                float forwardShift = Mathf.Clamp((ball.position.z - homePosition.z) * attack * .22f, -3f, 9f);
+                Vector3 support = homePosition + Vector3.forward * (attack * forwardShift);
+                if (teamDistance < 12f)
+                    support = Vector3.Lerp(support, ballFlat + new Vector3(Mathf.Sign(homePosition.x) * 5f, 0f, -attack * 5f), .35f);
+                target = support;
+            }
+
+            if (distanceToBall < 1.45f && Time.time >= nextKickTime)
+                TryPlayBall(attack);
         }
 
-        target.x = Mathf.Clamp(target.x, -pitchHalfWidth, pitchHalfWidth);
-        target.z = Mathf.Clamp(target.z, -pitchHalfLength, pitchHalfLength);
-        Vector3 desired = target - transform.position;
-        desired.y = 0;
-        Vector3 desiredVelocity = desired.sqrMagnitude > 0.04f ? desired.normalized * moveSpeed : Vector3.zero;
-        currentVelocity = Vector3.MoveTowards(currentVelocity, desiredVelocity, acceleration * Time.deltaTime);
-        transform.position += currentVelocity * Time.deltaTime;
+        target.x = Mathf.Clamp(target.x, -31f, 31f);
+        target.z = Mathf.Clamp(target.z, -49f, 49f);
+        Vector3 delta = target - transform.position;
+        delta.y = 0f;
+        Vector3 desired = delta.sqrMagnitude > .08f ? delta.normalized * moveSpeed : Vector3.zero;
+        velocity = Vector3.MoveTowards(velocity, desired, acceleration * dt);
+        transform.position += velocity * dt;
 
-        Vector3 look = ball.position - transform.position;
-        look.y = 0;
-        if (look.sqrMagnitude > 0.05f)
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look), turnSpeed * Time.deltaTime);
+        Vector3 look = (ball.position - transform.position);
+        look.y = 0f;
+        if (look.sqrMagnitude > .08f)
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look), turnSpeed * dt);
+
+        // Simple running animation on the prototype legs.
+        AnimateLegs();
     }
 
-    const float pitchHalfWidth = 32f;
-    const float pitchHalfLength = 49f;
+    FootballerController NearestTeammateToBall()
+    {
+        var all = FindObjectsOfType<FootballerController>();
+        FootballerController nearest = this;
+        float best = float.MaxValue;
+        foreach (var player in all)
+        {
+            if (player == null || player.isGoalkeeper || player.isHome != isHome) continue;
+            float d = (Flat(player.transform.position) - Flat(ball.position)).sqrMagnitude;
+            if (d < best) { best = d; nearest = player; }
+        }
+        return nearest;
+    }
+
+    void TryPlayBall(float attack)
+    {
+        if (ballBody == null || ballBody.isKinematic) return;
+        Vector3 toGoal = new Vector3(-ball.position.x * .12f, 0f, attack).normalized;
+        float distanceToGoal = Mathf.Abs((isHome ? 52.5f : -52.5f) - ball.position.z);
+        Vector3 playDirection = toGoal;
+        float power = 5.5f;
+
+        // Shoot when close enough; otherwise carry the ball forward with a controlled touch.
+        if (distanceToGoal < 25f && Mathf.Abs(ball.position.x) < 22f)
+        {
+            power = 12.5f;
+            playDirection = (new Vector3(-ball.position.x * .12f, .12f, attack * 52.5f) - ball.position).normalized;
+        }
+        else
+        {
+            playDirection.y = .08f;
+        }
+
+        ballBody.AddForce(playDirection * power, ForceMode.VelocityChange);
+        ballBody.AddTorque(Vector3.up * Random.Range(-1.2f, 1.2f), ForceMode.VelocityChange);
+        nextKickTime = Time.time + Random.Range(1.0f, 1.8f);
+    }
+
+    void AnimateLegs()
+    {
+        if (velocity.sqrMagnitude < .08f) return;
+        // Body remains a stable prototype mesh; movement speed drives a subtle bounce.
+        float bob = Mathf.Abs(Mathf.Sin(Time.time * 10f)) * .035f;
+        var p = transform.position;
+        p.y = 1f + bob;
+        transform.position = p;
+    }
+
+    static Vector3 Flat(Vector3 p) { p.y = 0f; return p; }
 }
