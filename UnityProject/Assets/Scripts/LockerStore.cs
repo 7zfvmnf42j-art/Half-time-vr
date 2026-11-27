@@ -88,6 +88,14 @@ public class LockerStore : MonoBehaviour
         if (status != null) status("Previewing " + item + " — not purchased");
     }
 
+    void EquipSelectedItem()
+    {
+        PlayerPrefs.SetString("HALFTIME_EQUIPPED_KIT", selectedItem);
+        PlayerPrefs.Save();
+        if (itemDescription != null) itemDescription.text = "Saved for your next match";
+        if (status != null) status(selectedItem + " saved to your locker.");
+    }
+
     void TakeSelfie()
     {
         if (!Application.isMobilePlatform)
