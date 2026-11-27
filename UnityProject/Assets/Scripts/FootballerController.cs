@@ -17,7 +17,8 @@ public class FootballerController : MonoBehaviour
     bool isHome;
     float nextKickTime;
     float nextDecisionTime;
-    static FootballerController[] rosterCache;\n    static float nextRosterRefresh;
+    static FootballerController[] rosterCache;
+    static float nextRosterRefresh;
 
     void Start()
     {
