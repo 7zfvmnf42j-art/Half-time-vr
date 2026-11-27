@@ -3,6 +3,7 @@ extends Node3D
 const FIELD_LENGTH := 36.0
 const FIELD_WIDTH := 22.0
 const BALL_RADIUS := 0.22
+const MATCH_LENGTH_SECONDS := 300.0
 
 var xr_interface: XRInterface
 var xr_origin: XROrigin3D
@@ -10,17 +11,33 @@ var left_hand: XRController3D
 var right_hand: XRController3D
 var ball: RigidBody3D
 var score_label: Label3D
+var clock_label: Label3D
 var score_home := 0
 var score_away := 0
+var seconds_left := MATCH_LENGTH_SECONDS
+var match_running := false
 var previous_left := Vector3.ZERO
 var previous_right := Vector3.ZERO
+var menu_layer: CanvasLayer
+var menu_panel: PanelContainer
+var status_label: Label
 
 func _ready() -> void:
 	_build_stadium()
 	_build_vr_rig()
 	_build_ball()
-	_update_scoreboard()
+	_build_scoreboard()
+	_build_menu()
 	_start_openxr()
+
+func _process(delta: float) -> void:
+	if match_running:
+		seconds_left = maxf(0.0, seconds_left - delta)
+		_update_scoreboard()
+		if seconds_left <= 0.0:
+			match_running = false
+			_show_menu("FULL TIME")
+			status_label.text = "FULL TIME  |  Final score: %d - %d" % [score_home, score_away]
 
 func _build_stadium() -> void:
 	var environment := WorldEnvironment.new()
@@ -55,6 +72,8 @@ func _build_stadium() -> void:
 
 	_add_goal(-FIELD_LENGTH / 2.0 + 0.5)
 	_add_goal(FIELD_LENGTH / 2.0 - 0.5)
+	_add_goal_sensor(-FIELD_LENGTH / 2.0 - 0.25, true)
+	_add_goal_sensor(FIELD_LENGTH / 2.0 + 0.25, false)
 
 func _add_goal(z_position: float) -> void:
 	var goal := Node3D.new()
@@ -67,6 +86,18 @@ func _add_goal(z_position: float) -> void:
 	_add_goal_post(goal, Vector3(-3.2, 1.15, depth), Vector3(0.12, 2.3, 0.12))
 	_add_goal_post(goal, Vector3(3.2, 1.15, depth), Vector3(0.12, 2.3, 0.12))
 	_add_goal_post(goal, Vector3(0, 2.3, depth), Vector3(6.4, 0.12, 0.12))
+
+func _add_goal_sensor(z_position: float, home_scores: bool) -> void:
+	var sensor := Area3D.new()
+	sensor.name = "HomeGoalSensor" if home_scores else "AwayGoalSensor"
+	sensor.position = Vector3(0, 1.15, z_position)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(6.0, 2.2, 0.8)
+	collision.shape = shape
+	sensor.add_child(collision)
+	sensor.body_entered.connect(_on_goal_body_entered.bind(home_scores))
+	add_child(sensor)
 
 func _add_goal_post(parent: Node3D, local_position: Vector3, size := Vector3(0.12, 2.3, 0.12)) -> void:
 	var post := MeshInstance3D.new()
@@ -129,6 +160,126 @@ func _build_ball() -> void:
 	ball.add_child(collision)
 	add_child(ball)
 
+func _build_scoreboard() -> void:
+	score_label = Label3D.new()
+	score_label.name = "Scoreboard"
+	score_label.position = Vector3(0, 4.2, -FIELD_LENGTH / 2.0 + 2.0)
+	score_label.font_size = 72
+	score_label.modulate = Color.WHITE
+	add_child(score_label)
+
+	clock_label = Label3D.new()
+	clock_label.name = "MatchClock"
+	clock_label.position = Vector3(0, 3.35, -FIELD_LENGTH / 2.0 + 2.0)
+	clock_label.font_size = 42
+	clock_label.modulate = Color(1.0, 0.85, 0.25)
+	add_child(clock_label)
+	_update_scoreboard()
+
+func _build_menu() -> void:
+	menu_layer = CanvasLayer.new()
+	menu_layer.layer = 5
+	add_child(menu_layer)
+
+	var background := ColorRect.new()
+	background.color = Color(0.015, 0.035, 0.06, 0.88)
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_layer.add_child(background)
+
+	var centre := CenterContainer.new()
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_layer.add_child(centre)
+
+	menu_panel = PanelContainer.new()
+	menu_panel.custom_minimum_size = Vector2(560, 0)
+	centre.add_child(menu_panel)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.09, 0.13, 0.98)
+	style.border_color = Color(0.2, 0.78, 0.48)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(18)
+	style.content_margin_left = 34
+	style.content_margin_right = 34
+	style.content_margin_top = 30
+	style.content_margin_bottom = 30
+	menu_panel.add_theme_stylebox_override("panel", style)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 18)
+	menu_panel.add_child(layout)
+
+	var title := Label.new()
+	title.text = "HALFTIME VR"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", Color(0.3, 1.0, 0.62))
+	layout.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = "STEP ONTO THE PITCH"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 18)
+	layout.add_child(subtitle)
+
+	status_label = Label.new()
+	status_label.text = "Ready for kick-off"
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	layout.add_child(status_label)
+
+	var start_button := Button.new()
+	start_button.text = "KICK OFF"
+	start_button.custom_minimum_size = Vector2(0, 58)
+	start_button.add_theme_font_size_override("font_size", 24)
+	start_button.pressed.connect(_start_match)
+	layout.add_child(start_button)
+
+	var locker_button := Button.new()
+	locker_button.text = "LOCKER ROOM  —  COMING SOON"
+	locker_button.custom_minimum_size = Vector2(0, 48)
+	locker_button.disabled = true
+	layout.add_child(locker_button)
+
+	var note := Label.new()
+	note.text = "Early prototype  •  Local practice match"
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.add_theme_font_size_override("font_size", 14)
+	note.modulate = Color(0.72, 0.78, 0.82)
+	layout.add_child(note)
+
+func _start_match() -> void:
+	score_home = 0
+	score_away = 0
+	seconds_left = MATCH_LENGTH_SECONDS
+	match_running = true
+	_reset_ball()
+	_update_scoreboard()
+	menu_layer.visible = false
+
+func _show_menu(message: String) -> void:
+	menu_layer.visible = true
+	status_label.text = message
+	var start_button := menu_panel.find_child("KickOffButton", true, false)
+	if start_button is Button:
+		start_button.text = "PLAY AGAIN"
+
+func _on_goal_body_entered(body: Node3D, home_scores: bool) -> void:
+	if body != ball or not match_running:
+		return
+	if home_scores:
+		score_home += 1
+	else:
+		score_away += 1
+	_update_scoreboard()
+	_reset_ball()
+
+func _reset_ball() -> void:
+	ball.freeze = true
+	ball.global_position = Vector3(0, BALL_RADIUS + 0.08, 0)
+	ball.linear_velocity = Vector3.ZERO
+	ball.angular_velocity = Vector3.ZERO
+	ball.freeze = false
+
 func _start_openxr() -> void:
 	xr_interface = XRServer.find_interface("OpenXR")
 	if xr_interface and xr_interface.is_initialized():
@@ -142,7 +293,7 @@ func _start_openxr() -> void:
 		push_warning("OpenXR interface is unavailable. This scene can still be previewed without a headset.")
 
 func _physics_process(_delta: float) -> void:
-	if not is_instance_valid(ball):
+	if not is_instance_valid(ball) or not match_running:
 		return
 	_try_hand_touch(left_hand, previous_left)
 	_try_hand_touch(right_hand, previous_right)
@@ -161,14 +312,11 @@ func _try_hand_touch(hand: XRController3D, previous_position: Vector3) -> void:
 			ball.apply_central_impulse(movement * 2.8)
 
 func _update_scoreboard() -> void:
-	if not score_label:
-		score_label = Label3D.new()
-		score_label.name = "Scoreboard"
-		score_label.position = Vector3(0, 4.2, -FIELD_LENGTH / 2.0 + 2.0)
-		score_label.font_size = 72
-		score_label.modulate = Color.WHITE
-		add_child(score_label)
-	score_label.text = "HALFTIME VR   %d - %d" % [score_home, score_away]
+	if score_label:
+		score_label.text = "HOME  %d  -  %d  AWAY" % [score_home, score_away]
+	if clock_label:
+		var total_seconds := int(ceil(seconds_left))
+		clock_label.text = "%02d:%02d" % [total_seconds / 60, total_seconds % 60]
 
 func _add_box(node_name: String, position_3d: Vector3, size: Vector3, colour: Color) -> void:
 	var body := StaticBody3D.new()
