@@ -213,7 +213,8 @@ public class MatchBootstrap : MonoBehaviour
                 else playerRenderer.material.color = new Color(0.45f, 0.04f, 0.12f);
             }
         }
-        AddPlayerDetails(go, team == "Home" ? new Color(0.42f, 0.035f, 0.10f) : new Color(0.04f, 0.20f, 0.72f));\n        go.AddComponent<FootballerController>();
+        AddPlayerDetails(go, team == "Home" ? new Color(0.42f, 0.035f, 0.10f) : new Color(0.04f, 0.20f, 0.72f));
+        go.AddComponent<FootballerController>();
     }
 
     void SpawnKeeper(string label, Vector3 p, Material mat, int end)
@@ -223,7 +224,8 @@ public class MatchBootstrap : MonoBehaviour
         go.transform.position = p + Vector3.up;
         go.transform.localScale = new Vector3(0.85f, 1.05f, 0.85f);
         Apply(go, mat, new Color(0.9f, 0.72f, 0.08f));
-        AddPlayerDetails(go, new Color(0.92f, 0.72f, 0.08f));\n        var keeper = go.AddComponent<FootballerController>();
+        AddPlayerDetails(go, new Color(0.92f, 0.72f, 0.08f));
+        var keeper = go.AddComponent<FootballerController>();
         keeper.isGoalkeeper = true;
         AddPlayerDetails(go, new Color(0.92f, 0.72f, 0.08f));
         keeper.goalEnd = end;
