@@ -34,6 +34,13 @@ public class FootballerController : MonoBehaviour
         nextDecisionTime = Time.time + Random.Range(0f, .25f);
     }
 
+    public void ResetForKickoff()
+    {
+        velocity = Vector3.zero;
+        nextKickTime = Time.time + 0.5f;
+        nextDecisionTime = Time.time + Random.Range(0f, 0.2f);
+    }
+
     void Update()
     {
         if (ball == null || (MatchRules.Instance != null && MatchRules.Instance.IsGoalPending))
