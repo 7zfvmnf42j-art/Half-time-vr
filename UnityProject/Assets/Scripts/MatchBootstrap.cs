@@ -113,8 +113,32 @@ public class MatchBootstrap : MonoBehaviour
 
     void BuildStadiumDetails()
     {
-        // Open-air training-ground look from the reference clip: grass, clear horizon and sky.
-        // Deliberately no surrounding stadium bowl.
+        // Low-detail stadium structure and roof supports, kept outside the touchlines.
+        for (int side = -1; side <= 1; side += 2)
+        {
+            var stand = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stand.name = side < 0 ? "West Stand" : "East Stand";
+            stand.transform.position = new Vector3(side * 40f, 3.5f, 0);
+            stand.transform.localScale = new Vector3(8f, 7f, 112f);
+            Apply(stand, stadiumDark, Color.white);
+
+            for (int tier = 0; tier < 3; tier++)
+            {
+                var seatBand = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                seatBand.name = "Stand Tier " + tier;
+                seatBand.transform.position = new Vector3(side * 35.5f, 1.2f + tier * 1.8f, 0);
+                seatBand.transform.localScale = new Vector3(1.1f, 0.65f, 108f);
+                Apply(seatBand, tier == 1 ? turfB : stadiumDark, Color.white);
+            }
+        }
+        foreach (int end in new[] { -1, 1 })
+        {
+            var stand = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stand.name = end < 0 ? "North Stand" : "South Stand";
+            stand.transform.position = new Vector3(0, 3.5f, end * 59f);
+            stand.transform.localScale = new Vector3(82f, 7f, 8f);
+            Apply(stand, stadiumDark, Color.white);
+        }
     }
 
     void BuildBall()
