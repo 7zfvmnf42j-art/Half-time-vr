@@ -10,40 +10,68 @@ public class BallControl : MonoBehaviour
     public float lift = 0.16f;
     public float maxSpeed = 32f;
     public float spinImpulse = 0.12f;
+    public float kickReach = 1.55f;
 
     Rigidbody body;
     InputDevice rightController;
-    bool previousTrigger;
+    InputDevice leftController;
+    bool rightTriggerWasPressed;
+    bool leftTriggerWasPressed;
 
     void Start()
     {
         body = GetComponent<Rigidbody>();
         body.maxAngularVelocity = 35f;
-        RefreshController();
+        RefreshControllers();
     }
 
-    void RefreshController()
+    void RefreshControllers()
     {
-        var devices = new List<InputDevice>();
-        InputDevices.GetDevicesAtXRNode(XRNode.RightHand, devices);
-        if (devices.Count > 0) rightController = devices[0];
+        rightController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        leftController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
     }
 
     void Update()
     {
-        if (!rightController.isValid) RefreshController();
-        if (rightController.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed))
+        if (!rightController.isValid || !leftController.isValid)
+            RefreshControllers();
+
+        TryKick(rightController, ref rightTriggerWasPressed);
+        TryKick(leftController, ref leftTriggerWasPressed);
+    }
+
+    void TryKick(InputDevice controller, ref bool wasPressed)
+    {
+        if (!controller.isValid)
         {
-            if (pressed && !previousTrigger && Camera.main != null &&
-                Vector3.Distance(Camera.main.transform.position, transform.position) < 2.1f)
+            wasPressed = false;
+            return;
+        }
+
+        if (!controller.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed))
+        {
+            wasPressed = false;
+            return;
+        }
+
+        if (pressed && !wasPressed)
+        {
+            Vector3 handPosition;
+            Quaternion handRotation;
+            bool hasPosition = controller.TryGetFeatureValue(CommonUsages.devicePosition, out handPosition);
+            bool hasRotation = controller.TryGetFeatureValue(CommonUsages.deviceRotation, out handRotation);
+
+            if (hasPosition && Vector3.Distance(handPosition, transform.position) <= kickReach)
             {
-                Vector3 direction = Camera.main.transform.forward;
+                Vector3 direction = hasRotation ? handRotation * Vector3.forward :
+                    (Camera.main != null ? Camera.main.transform.forward : Vector3.forward);
                 direction.y = Mathf.Max(lift, direction.y);
                 body.AddForce(direction.normalized * kickForce, ForceMode.Impulse);
-                body.AddTorque(Camera.main.transform.right * spinImpulse, ForceMode.Impulse);
+                body.AddTorque(Vector3.Cross(Vector3.up, direction.normalized) * spinImpulse, ForceMode.Impulse);
             }
-            previousTrigger = pressed;
         }
+
+        wasPressed = pressed;
     }
 
     void FixedUpdate()
