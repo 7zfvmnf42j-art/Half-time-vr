@@ -18,6 +18,8 @@ var seconds_left := MATCH_LENGTH_SECONDS
 var match_running := false
 var previous_left := Vector3.ZERO
 var previous_right := Vector3.ZERO
+var previous_left_valid := false
+var previous_right_valid := false
 var menu_layer: CanvasLayer
 var menu_panel: PanelContainer
 var status_label: Label
@@ -296,12 +298,17 @@ func _start_openxr() -> void:
 func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(ball) or not match_running:
 		return
-	_try_hand_touch(left_hand, previous_left)
-	_try_hand_touch(right_hand, previous_right)
 	if left_hand and left_hand.get_is_active():
-		previous_left = left_hand.global_position
+		var current_left := left_hand.global_position
+		if previous_left_valid:
+			_try_hand_touch(left_hand, previous_left)
+		previous_left = current_left
+		previous_left_valid = true
 	if right_hand and right_hand.get_is_active():
-		previous_right = right_hand.global_position
+		var current_right := right_hand.global_position
+		if previous_right_valid:
+			_try_hand_touch(right_hand, previous_right)
+		previous_right = current_right
 
 func _try_hand_touch(hand: XRController3D, previous_position: Vector3) -> void:
 	if not hand or not hand.get_is_active():
