@@ -35,6 +35,7 @@ public class XRMenuPointer : MonoBehaviour
         if (eventSystem == null || raycaster == null || pointer == null) return;
 
         pointer.Reset();
+        pointer.button = PointerEventData.InputButton.Left;
         pointer.position = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
         hits.Clear();
         raycaster.Raycast(pointer, hits);
