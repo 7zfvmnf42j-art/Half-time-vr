@@ -20,6 +20,11 @@ public class FootballerController : MonoBehaviour
 
     void Update()
     {
+        if (MatchRules.Instance != null && MatchRules.Instance.IsGoalPending)
+        {
+            currentVelocity = Vector3.zero;
+            return;
+        }
         if (ball == null) return;
         Vector3 target = homePosition;
 
