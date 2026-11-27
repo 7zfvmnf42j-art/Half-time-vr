@@ -17,7 +17,7 @@ public class FootballerController : MonoBehaviour
     bool isHome;
     float nextKickTime;
     float nextDecisionTime;
-    Transform leftLeg, rightLeg;
+    static FootballerController[] rosterCache;\n    static float nextRosterRefresh;
 
     void Start()
     {
@@ -106,10 +106,14 @@ public class FootballerController : MonoBehaviour
 
     FootballerController NearestTeammateToBall()
     {
-        var all = FindObjectsOfType<FootballerController>();
+        if (rosterCache == null || Time.time >= nextRosterRefresh)
+        {
+            rosterCache = FindObjectsOfType<FootballerController>();
+            nextRosterRefresh = Time.time + 0.5f;
+        }
         FootballerController nearest = this;
         float best = float.MaxValue;
-        foreach (var player in all)
+        foreach (var player in rosterCache)
         {
             if (player == null || player.isGoalkeeper || player.isHome != isHome) continue;
             float d = (Flat(player.transform.position) - Flat(ball.position)).sqrMagnitude;
