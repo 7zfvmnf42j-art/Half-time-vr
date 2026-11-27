@@ -15,6 +15,7 @@ public class HalftimeMainMenu : MonoBehaviour
     GameObject contentPanel;
     GameObject lockerBadgePanel;
     GameObject multiplayerPanel;
+    GameObject storePanel;
     Text badgePreview;
     string selectedBadge = "CC CREATOR";
 
@@ -42,7 +43,7 @@ public class HalftimeMainMenu : MonoBehaviour
         Label(header.transform, "THE BEAUTIFUL GAME. IN YOUR HANDS.", 20, Muted, new Vector2(310,8), new Vector2(520,60), TextAnchor.MiddleRight, FontStyle.Normal);
 
         var nav = PanelObject("Navigation", root.transform, Panel, new Vector2(300,680), new Vector2(-565,-45));
-        string[] names = {"PLAY", "TRAINING", "CAREER", "CLUBS", "MULTIPLAYER", "LOCKER ROOM", "SETTINGS"};
+        string[] names = {"PLAY", "TRAINING", "CAREER", "CLUBS", "STORE", "MULTIPLAYER", "LOCKER ROOM", "SETTINGS"};
         for (int i=0;i<names.Length;i++)
         {
             string key = names[i];
@@ -58,6 +59,8 @@ public class HalftimeMainMenu : MonoBehaviour
         status = Label(contentPanel.transform, "HALFTIME VR  •  PRE-SEASON BUILD", 18, Muted, new Vector2(0,-260), new Vector2(760,45), TextAnchor.MiddleCenter, FontStyle.Normal);
 
         BuildLockerBadges();
+        var storeUI = contentPanel.AddComponent<LockerStore>();
+        storePanel = storeUI.Build(contentPanel.transform, SetStatus);
         var multiplayerUI = contentPanel.AddComponent<MultiplayerMenu>();
         multiplayerPanel = multiplayerUI.Build(contentPanel.transform, SetStatus);
         multiplayerPanel.SetActive(false);
@@ -73,6 +76,7 @@ public class HalftimeMainMenu : MonoBehaviour
         pageTitle.text = page == "PLAY" ? "MATCH DAY" : page;
         if (lockerBadgePanel != null) lockerBadgePanel.SetActive(page == "LOCKER ROOM");
         if (multiplayerPanel != null) multiplayerPanel.SetActive(page == "MULTIPLAYER");
+        if (storePanel != null) storePanel.SetActive(page == "STORE");
         switch (page)
         {
             case "PLAY": pageBody.text = "Choose a match and take to the pitch. Full match setup is coming online."; break;
@@ -80,6 +84,7 @@ public class HalftimeMainMenu : MonoBehaviour
             case "CAREER": pageBody.text = "Build your player, develop your club and chase silverware."; break;
             case "CLUBS": pageBody.text = "Create your club identity and prepare your squad."; break;
             case "LOCKER ROOM": pageBody.text = "Make your player yours with boots, kits and accessories."; break;
+            case "STORE": pageBody.text = "Try kits, boots and accessories on your player before buying. Take a selfie in your new look."; break;
             case "MULTIPLAYER": pageBody.text = "Connect with friends. Online rooms and full match syncing are being built."; break;
             default: pageBody.text = "Adjust your game preferences and comfort settings."; break;
         }
