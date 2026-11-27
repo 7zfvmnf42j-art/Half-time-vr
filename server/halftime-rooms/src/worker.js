@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 const ROOM_CODE = /^[A-Z0-9]{4,8}$/;
-const MAX_PLAYERS = 4;
+const MAX_PLAYERS = 22;
 const MAX_MESSAGE_LENGTH = 4096;
 
 export class GameRoom extends DurableObject {
