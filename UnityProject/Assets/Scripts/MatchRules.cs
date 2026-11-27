@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class MatchRules : MonoBehaviour
 {
     public static MatchRules Instance { get; private set; }
+    public bool IsGoalPending { get { return goalPending; } }
     public float matchLengthSeconds = 300f;
     public float goalResetDelay = 2.5f;
     int homeScore;
@@ -114,7 +115,7 @@ public class MatchRules : MonoBehaviour
         rect.sizeDelta = dimensions;
         rect.anchoredPosition = position;
         var text = go.GetComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.text = value;
         text.fontSize = size;
         text.color = Color.white;
