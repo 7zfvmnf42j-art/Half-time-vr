@@ -43,3 +43,10 @@ Configure Android Build Support, OpenXR, the Meta Quest feature group and Androi
 The Locker Room navigation now includes a Store page with a simple player mannequin preview. Selecting a kit, boots or cap updates the preview before the user presses the buy button. The buy button is deliberately a preview-only placeholder until a real currency, inventory and purchase system is implemented.
 
 The Store page includes a selfie capture button. On Android/Quest builds it captures the current game view and attempts to save the PNG to the device media library under `Pictures/HALFTIME VR` using Android MediaStore. The Quest gallery/file-browser behaviour still needs to be tested on a physical headset. In the Unity Editor or other platforms, the button reports that headset saving is only available on Quest/mobile.
+
+
+## APK build status
+
+The existing GitHub Actions workflow named `Build HALFTIME VR Quest APK` packages the hosted browser/PWA edition with Bubblewrap. It does **not** compile the Unity project in `UnityProject/`, so its APK will not contain Unity-only features such as this Store page. A native Unity Quest APK still requires a configured Unity Android build environment and a valid Unity license/build configuration. No native Unity APK is claimed until that build completes successfully and is tested on a headset.
+
+The Store mannequin is currently a 2D in-menu preview. It is not yet wired to a persistent 3D match-player avatar or an inventory. The selfie button captures the current game view and attempts to publish the PNG to the Quest media library; physical Quest gallery verification remains outstanding.
