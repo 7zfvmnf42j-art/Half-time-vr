@@ -56,7 +56,7 @@ public class HalftimeMainMenu : MonoBehaviour
         pageTitle = Label(contentPanel.transform, "MATCH DAY", 54, Color.white, new Vector2(0,125), new Vector2(760,100), TextAnchor.MiddleLeft, FontStyle.Bold);
         pageBody = Label(contentPanel.transform, "Choose your mode and get ready to play.", 26, Muted, new Vector2(0,35), new Vector2(760,110), TextAnchor.MiddleLeft, FontStyle.Normal);
         MakeButton(contentPanel.transform, "KICK OFF", new Vector2(-205,-105), new Vector2(340,88), StartMatch);
-        MakeButton(contentPanel.transform, "PRACTICE", new Vector2(205,-105), new Vector2(340,88), StartMatch);
+        MakeButton(contentPanel.transform, "PRACTICE", new Vector2(205,-105), new Vector2(340,88), StartPractice);
         status = Label(contentPanel.transform, "HALFTIME VR  •  PRE-SEASON BUILD", 18, Muted, new Vector2(0,-260), new Vector2(760,45), TextAnchor.MiddleCenter, FontStyle.Normal);
 
         BuildLockerBadges();
@@ -76,8 +76,20 @@ public class HalftimeMainMenu : MonoBehaviour
     {
         if (MatchRules.Instance != null)
             MatchRules.Instance.BeginMatch();
+        EnterPitch("Match started. Trigger to shoot, A/X to pass, B/Y to lob near the ball.");
+    }
+
+    void StartPractice()
+    {
+        if (MatchRules.Instance != null)
+            MatchRules.Instance.BeginPractice();
+        EnterPitch("Practice started. Work on your shots and passing.");
+    }
+
+    void EnterPitch(string message)
+    {
         if (canvas != null) canvas.gameObject.SetActive(false);
-        SetStatus("Match started. Trigger to shoot, A/X to pass, B/Y to lob near the ball.");
+        SetStatus(message);
     }
 
     void ShowPage(string page)
