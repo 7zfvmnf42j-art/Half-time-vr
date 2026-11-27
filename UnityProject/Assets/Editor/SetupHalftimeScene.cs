@@ -3,7 +3,6 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.XR.CoreUtils;
-using UnityEngine.InputSystem.XR;
 
 public static class SetupHalftimeScene
 {
@@ -20,7 +19,7 @@ public static class SetupHalftimeScene
         cameraObject.transform.SetParent(offset.transform, false);
         var camera = cameraObject.AddComponent<Camera>();
         cameraObject.AddComponent<AudioListener>();
-        cameraObject.AddComponent<TrackedPoseDriver>();
+        cameraObject.AddComponent<XRHeadTracking>();
         cameraObject.AddComponent<XRMenuPointer>();
         origin.Camera = camera;
         origin.CameraFloorOffsetObject = offset;
