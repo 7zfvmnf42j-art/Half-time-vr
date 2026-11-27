@@ -60,6 +60,11 @@ public class BallControl : MonoBehaviour
             Quaternion handRotation;
             bool hasPosition = controller.TryGetFeatureValue(CommonUsages.devicePosition, out handPosition);
             bool hasRotation = controller.TryGetFeatureValue(CommonUsages.deviceRotation, out handRotation);
+            Transform trackingSpace = Camera.main != null ? Camera.main.transform.parent : null;
+            if (hasPosition && trackingSpace != null)
+                handPosition = trackingSpace.TransformPoint(handPosition);
+            if (hasRotation && trackingSpace != null)
+                handRotation = trackingSpace.rotation * handRotation;
 
             if (hasPosition && Vector3.Distance(handPosition, transform.position) <= kickReach)
             {
