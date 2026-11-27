@@ -1,0 +1,25 @@
+name: Deploy HALFTIME VR room server
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "server/halftime-rooms/**"
+      - ".github/workflows/deploy-halftime-server.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          workingDirectory: server/halftime-rooms
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
