@@ -37,3 +37,9 @@ Networked player avatars, synced ball physics, team assignment, match clock, sco
 
 ## Quest setup
 Configure Android Build Support, OpenXR, the Meta Quest feature group and Android player settings in Unity before building an APK. This project has not yet been compiled or tested on a physical Quest headset.
+
+## Store preview and headset selfies
+
+The Locker Room navigation now includes a Store page with a simple player mannequin preview. Selecting a kit, boots or cap updates the preview before the user presses the buy button. The buy button is deliberately a preview-only placeholder until a real currency, inventory and purchase system is implemented.
+
+The Store page includes a selfie capture button. On Android/Quest builds it captures the current game view and attempts to save the PNG to the device media library under `Pictures/HALFTIME VR` using Android MediaStore. The Quest gallery/file-browser behaviour still needs to be tested on a physical headset. In the Unity Editor or other platforms, the button reports that headset saving is only available on Quest/mobile.
