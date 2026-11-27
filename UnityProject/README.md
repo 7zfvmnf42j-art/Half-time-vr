@@ -40,7 +40,7 @@ Configure Android Build Support, OpenXR, the Meta Quest feature group and Androi
 
 ## Store preview and headset selfies
 
-The Locker Room navigation now includes a Store page with a simple player mannequin preview. Selecting a kit, boots or cap updates the preview before the user presses the buy button. The buy button is deliberately a preview-only placeholder until a real currency, inventory and purchase system is implemented.
+The Locker Room navigation now includes a Store page with a simple player mannequin preview. Selecting a kit, boots or cap updates the preview before the user chooses Equip Item. The selected kit is saved locally and applied to the home-side prototype players in the next generated match. The buy button is deliberately a preview-only placeholder until a real currency, inventory and purchase system is implemented.
 
 The Store page includes a selfie capture button. On Android/Quest builds it captures the current game view and attempts to save the PNG to the device media library under `Pictures/HALFTIME VR` using Android MediaStore. The Quest gallery/file-browser behaviour still needs to be tested on a physical headset. In the Unity Editor or other platforms, the button reports that headset saving is only available on Quest/mobile.
 
@@ -50,3 +50,14 @@ The Store page includes a selfie capture button. On Android/Quest builds it capt
 The existing GitHub Actions workflow named `Build HALFTIME VR Quest APK` packages the hosted browser/PWA edition with Bubblewrap. It does **not** compile the Unity project in `UnityProject/`, so its APK will not contain Unity-only features such as this Store page. A native Unity Quest APK still requires a configured Unity Android build environment and a valid Unity license/build configuration. No native Unity APK is claimed until that build completes successfully and is tested on a headset.
 
 The Store mannequin is currently a 2D in-menu preview. It is not yet wired to a persistent 3D match-player avatar or an inventory. The selfie button captures the current game view and attempts to publish the PNG to the Quest media library; physical Quest gallery verification remains outstanding.
+
+
+## Quest menu input and compatibility fixes
+
+- The generated XR camera now has a gaze pointer. Aim the centre of the headset view at a menu button and press the right controller trigger (or primary button) to click it.
+- The EventSystem no longer creates a legacy Standalone Input Module that conflicts with the project's newer XR input path.
+- Runtime UI text now requests Unity's LegacyRuntime built-in font instead of the old Arial resource name.
+- Players pause movement during the goal reset delay so they do not immediately run away from their kickoff positions.
+- The local equipment choice is stored with PlayerPrefs and survives app restarts on the same headset.
+
+These changes have been committed but have not been compiled in Unity or verified on a Quest 3S. The gaze pointer is a basic fallback interaction, not a full controller-ray system. The player preview is still a simple in-menu mannequin, and only the selected home-kit colour is applied to the generated match players; boots and cap are not yet 3D match cosmetics.
