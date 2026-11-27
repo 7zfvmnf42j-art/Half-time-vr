@@ -74,8 +74,10 @@ public class HalftimeMainMenu : MonoBehaviour
 
     void StartMatch()
     {
+        if (MatchRules.Instance != null)
+            MatchRules.Instance.BeginMatch();
         if (canvas != null) canvas.gameObject.SetActive(false);
-        SetStatus("Match started. Use the right trigger near the ball to kick.");
+        SetStatus("Match started. Trigger to shoot, A/X to pass, B/Y to lob near the ball.");
     }
 
     void ShowPage(string page)
