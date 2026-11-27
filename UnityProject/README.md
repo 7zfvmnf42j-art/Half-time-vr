@@ -61,3 +61,21 @@ The Store mannequin is currently a 2D in-menu preview. It is not yet wired to a 
 - The local equipment choice is stored with PlayerPrefs and survives app restarts on the same headset.
 
 These changes have been committed but have not been compiled in Unity or verified on a Quest 3S. The gaze pointer is a basic fallback interaction, not a full controller-ray system. The player preview is still a simple in-menu mannequin, and only the selected home-kit colour is applied to the generated match players; boots and cap are not yet 3D match cosmetics.
+
+
+## Latest development pass
+
+- Fixed a malformed line in the editor scene setup that would have stopped the C# file compiling.
+- Added direct XR runtime head-pose tracking for the generated Quest camera instead of relying on an unconfigured Input System pose driver.
+- Connected KICK OFF and PRACTICE to hide the menu and enter the generated match; the menu canvas now has the main camera assigned for world-space UI raycasting.
+- Added the missing Store Equip Item handler. Home/away/black shirt choices are saved and applied to the home-side prototype players. Boots and cap choices are saved as locker selections but are not yet visible on the match players.
+- Performed a source-level check of the Unity C# files for balanced braces and accidental literal escaped newlines. This is not a Unity compile, runtime test, or Quest hardware test.
+
+## Remaining release blockers
+
+- The repository does not contain a generated HalftimeMatch.unity scene asset yet; the editor setup script must run inside Unity to create it.
+- OpenXR Android loader/build-target configuration and a licensed Unity Android build environment still need to be configured.
+- No native Unity APK has been built. The existing Bubblewrap workflow packages the browser/PWA edition and must not be mistaken for the Unity Quest game.
+- Multiplayer Lobby/Relay code is present, but networked avatars, replicated ball/game state, and a complete synced match are not implemented.
+- The generated players are simple capsules with basic ball-following behaviour; full football AI, player rigging, hand/foot interaction, and proper VR locomotion are outstanding.
+- The Store preview remains a 2D UI mannequin. Selfie gallery saving and all headset interactions require Quest 3S testing.
