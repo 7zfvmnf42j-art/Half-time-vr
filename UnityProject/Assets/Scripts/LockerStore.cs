@@ -62,10 +62,7 @@ public class LockerStore : MonoBehaviour
 
         itemName = Label(root.transform, selectedItem, 20, Color.white, new Vector2(220, -225), new Vector2(430, 32), TextAnchor.MiddleCenter, FontStyle.Bold);
         itemDescription = Label(root.transform, "Preview equipped on your player", 15, Muted, new Vector2(220, -252), new Vector2(430, 28), TextAnchor.MiddleCenter, FontStyle.Normal);
-        MakeButton(root.transform, "BUY  •  500 COINS", new Vector2(90, -300), new Vector2(250, 54), () =>
-        {
-            if (status != null) status("Store preview only — coins and purchases are not connected yet.");
-        });
+        MakeButton(root.transform, "EQUIP ITEM", new Vector2(90, -300), new Vector2(250, 54), EquipSelectedItem);
         MakeButton(root.transform, "SELFIE  /  SAVE", new Vector2(355, -300), new Vector2(190, 54), TakeSelfie);
         Preview(selectedItem);
         root.SetActive(false);
@@ -200,7 +197,7 @@ public class LockerStore : MonoBehaviour
         rect.anchoredPosition = pos;
         var text = go.GetComponent<Text>();
         text.text = value;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = size;
         text.color = colour;
         text.alignment = align;
