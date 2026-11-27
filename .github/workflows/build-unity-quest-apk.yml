@@ -1,0 +1,55 @@
+name: Build HALFTIME VR Unity Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "UnityProject/**"
+      - ".github/workflows/build-unity-quest-apk.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: halftime-unity-android
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Unity Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out HALFTIME VR
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Check Unity Personal licence secret
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "::error::The UNITY_LICENSE GitHub Actions secret is not configured yet. A Unity Personal .ulf licence file is required for a cloud build."
+            exit 1
+          fi
+
+      - name: Build Android APK with Unity
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: UnityProject
+          unityVersion: 6000.0.60f1
+          targetPlatform: Android
+          buildMethod: HalftimeCloudBuild.BuildAndroid
+          buildsPath: UnityProject/BuildOutput
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: HALFTIME-VR-Unity-Android-APK
+          path: UnityProject/Build/HALFTIME-VR.apk
+          if-no-files-found: error
+          retention-days: 14
