@@ -86,3 +86,11 @@ These changes have been committed but have not been compiled in Unity or verifie
 - A kick is only attempted when the tracked controller is within the configured reach of the ball.
 - Controller position and rotation are converted from XR tracking space into world space before distance and kick-direction checks.
 - The change is committed in the Unity project, but still needs a Unity compile and Quest 3S play test. Controller pose availability and kick direction can vary by headset/runtime and must be verified on-device.
+
+
+## Match and practice flow
+
+- The match clock remains paused while the main menu is open and starts only when KICK OFF is selected.
+- PRACTICE enters a separate untimed practice state; goal detection and kickoff resets remain available.
+- The match scoreboard shows READY before kickoff and PRACTICE in practice mode.
+- These are source-level changes only; Unity compilation and Quest 3S runtime testing are still required.
