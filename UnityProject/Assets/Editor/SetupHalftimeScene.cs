@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -36,6 +37,7 @@ public static class SetupHalftimeScene
         match.AddComponent<MatchBootstrap>();
         match.AddComponent<HalftimeMainMenu>();
 
+        Directory.CreateDirectory("Assets/Scenes");
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/HalftimeMatch.unity");
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene("Assets/Scenes/HalftimeMatch.unity", true) };
         Debug.Log("HALFTIME VR starter match scene created. Open Assets/Scenes/HalftimeMatch.unity.");
