@@ -35,7 +35,7 @@ jobs:
           mkdir -p "$HOME/.android"
           keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "build-tools;33.0.2"
 
       - name: Check Godot and Android export tools
         run: |
@@ -51,6 +51,8 @@ jobs:
       - name: Export Android APK
         working-directory: GodotProject
         run: |
+          sed -i "s|^keystore/debug=.*|keystore/debug=\"$HOME/.android/debug.keystore\"|" export_presets.cfg
+          grep '^keystore/debug=' export_presets.cfg
           godot --headless --path . --export-debug "Android" build/HALFTIME-VR-Quest.apk
           test -s build/HALFTIME-VR-Quest.apk
           file build/HALFTIME-VR-Quest.apk
