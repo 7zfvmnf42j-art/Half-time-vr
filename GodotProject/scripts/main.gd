@@ -228,6 +228,7 @@ func _build_menu() -> void:
 	layout.add_child(status_label)
 
 	var start_button := Button.new()
+	start_button.name = "KickOffButton"
 	start_button.text = "KICK OFF"
 	start_button.custom_minimum_size = Vector2(0, 58)
 	start_button.add_theme_font_size_override("font_size", 24)
