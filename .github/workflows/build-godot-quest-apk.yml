@@ -42,7 +42,8 @@ jobs:
           cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
 
           mkdir -p "$HOME/.android" "$HOME/.config/godot"
-          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          keytool -genkeypair -v -storetype JKS -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          keytool -list -v -storetype JKS -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
 
           cat > "$HOME/.config/godot/editor_settings-4.4.tres" <<EOF
           [gd_resource type="EditorSettings" format=3]
@@ -79,6 +80,8 @@ jobs:
           GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
+          set -o pipefail
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/debug.keystore"
           godot --headless --verbose --path . --export-debug "Android" build/HALFTIME-VR-Quest.apk 2>&1 | tee ../android-export.log
           test -s build/HALFTIME-VR-Quest.apk
           file build/HALFTIME-VR-Quest.apk
