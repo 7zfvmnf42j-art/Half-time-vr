@@ -1,0 +1,11 @@
+name = "halftime-vr-rooms"
+main = "src/worker.js"
+compatibility_date = "2026-11-27"
+
+[[durable_objects.bindings]]
+name = "GAME_ROOMS"
+class_name = "GameRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameRoom"]
