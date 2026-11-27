@@ -20,7 +20,8 @@ public static class SetupHalftimeScene
         cameraObject.transform.SetParent(offset.transform, false);
         var camera = cameraObject.AddComponent<Camera>();
         cameraObject.AddComponent<AudioListener>();
-        cameraObject.AddComponent<TrackedPoseDriver>();\n        cameraObject.AddComponent<XRMenuPointer>();
+        cameraObject.AddComponent<TrackedPoseDriver>();
+        cameraObject.AddComponent<XRMenuPointer>();
         origin.Camera = camera;
         origin.CameraFloorOffsetObject = offset;
         origin.RequestedTrackingOriginMode = XROrigin.TrackingOriginMode.Floor;
