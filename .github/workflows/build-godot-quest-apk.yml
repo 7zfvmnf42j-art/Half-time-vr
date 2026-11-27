@@ -20,10 +20,28 @@ jobs:
       - name: Check out game
         uses: actions/checkout@v4
 
+      - name: Install Android export requirements
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk unzip curl
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          export PATH="$JAVA_HOME/bin:$PATH"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          curl -fL "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" -o /tmp/godot-templates.tpz
+          unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
       - name: Check Godot and Android export tools
         run: |
           godot --version
-          test -d "${GODOT_TEMPLATES_DIR:-/root/.local/share/godot/export_templates/4.4.1.stable}"
+          test -f "$HOME/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk"
+          java -version
           mkdir -p GodotProject/build
 
       - name: Import project and check scripts
