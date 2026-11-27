@@ -29,6 +29,7 @@ public class HalftimeMainMenu : MonoBehaviour
         var canvasObject = new GameObject("HALFTIME Main Menu Canvas");
         canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
+        canvas.worldCamera = Camera.main;
         canvasObject.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 12;
         canvasObject.AddComponent<GraphicRaycaster>();
         canvasObject.transform.position = new Vector3(0, 1.65f, -1.8f);
@@ -54,8 +55,8 @@ public class HalftimeMainMenu : MonoBehaviour
         Label(contentPanel.transform, "WELCOME TO THE PITCH", 38, Lime, new Vector2(0,245), new Vector2(760,70), TextAnchor.MiddleLeft, FontStyle.Bold);
         pageTitle = Label(contentPanel.transform, "MATCH DAY", 54, Color.white, new Vector2(0,125), new Vector2(760,100), TextAnchor.MiddleLeft, FontStyle.Bold);
         pageBody = Label(contentPanel.transform, "Choose your mode and get ready to play.", 26, Muted, new Vector2(0,35), new Vector2(760,110), TextAnchor.MiddleLeft, FontStyle.Normal);
-        MakeButton(contentPanel.transform, "KICK OFF", new Vector2(-205,-105), new Vector2(340,88), () => SetStatus("Match setup selected. Match systems are being built."));
-        MakeButton(contentPanel.transform, "PRACTICE", new Vector2(205,-105), new Vector2(340,88), () => ShowPage("TRAINING"));
+        MakeButton(contentPanel.transform, "KICK OFF", new Vector2(-205,-105), new Vector2(340,88), StartMatch);
+        MakeButton(contentPanel.transform, "PRACTICE", new Vector2(205,-105), new Vector2(340,88), StartMatch);
         status = Label(contentPanel.transform, "HALFTIME VR  •  PRE-SEASON BUILD", 18, Muted, new Vector2(0,-260), new Vector2(760,45), TextAnchor.MiddleCenter, FontStyle.Normal);
 
         BuildLockerBadges();
@@ -69,6 +70,12 @@ public class HalftimeMainMenu : MonoBehaviour
         Label(footer.transform, "HOME   /   MATCH CENTRE", 17, Muted, new Vector2(-520,0), new Vector2(500,40), TextAnchor.MiddleLeft, FontStyle.Normal);
         Label(footer.transform, "QUEST EDITION", 17, Lime, new Vector2(520,0), new Vector2(400,40), TextAnchor.MiddleRight, FontStyle.Bold);
         if (FindObjectOfType<EventSystem>() == null) new GameObject("EventSystem", typeof(EventSystem));
+    }
+
+    void StartMatch()
+    {
+        if (canvas != null) canvas.gameObject.SetActive(false);
+        SetStatus("Match started. Use the right trigger near the ball to kick.");
     }
 
     void ShowPage(string page)
