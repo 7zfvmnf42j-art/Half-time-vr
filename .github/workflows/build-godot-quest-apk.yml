@@ -1,0 +1,46 @@
+name: Build HALFTIME VR Godot Quest APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "GodotProject/**"
+      - ".github/workflows/build-godot-quest-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Check out game
+        uses: actions/checkout@v4
+
+      - name: Check Godot and Android export tools
+        run: |
+          godot --version
+          test -d "${GODOT_TEMPLATES_DIR:-/root/.local/share/godot/export_templates/4.4.1.stable}"
+          mkdir -p GodotProject/build
+
+      - name: Import project and check scripts
+        working-directory: GodotProject
+        run: godot --headless --editor --path . --quit
+
+      - name: Export Android APK
+        working-directory: GodotProject
+        run: |
+          godot --headless --path . --export-debug "Android" build/HALFTIME-VR-Quest.apk
+          test -s build/HALFTIME-VR-Quest.apk
+          file build/HALFTIME-VR-Quest.apk
+
+      - name: Upload Quest APK build
+        uses: actions/upload-artifact@v4
+        with:
+          name: HALFTIME-VR-Godot-Quest-APK
+          path: GodotProject/build/HALFTIME-VR-Quest.apk
+          if-no-files-found: error
+          retention-days: 14
