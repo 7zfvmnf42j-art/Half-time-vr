@@ -79,3 +79,10 @@ These changes have been committed but have not been compiled in Unity or verifie
 - Multiplayer Lobby/Relay code is present, but networked avatars, replicated ball/game state, and a complete synced match are not implemented.
 - The generated players are simple capsules with basic ball-following behaviour; full football AI, player rigging, hand/foot interaction, and proper VR locomotion are outstanding.
 - The Store preview remains a 2D UI mannequin. Selfie gallery saving and all headset interactions require Quest 3S testing.
+
+## Latest controller gameplay update
+
+- Ball kicking now accepts the right or left Quest controller trigger.
+- A kick is only attempted when the tracked controller is within the configured reach of the ball.
+- Controller position and rotation are converted from XR tracking space into world space before distance and kick-direction checks.
+- The change is committed in the Unity project, but still needs a Unity compile and Quest 3S play test. Controller pose availability and kick direction can vary by headset/runtime and must be verified on-device.
