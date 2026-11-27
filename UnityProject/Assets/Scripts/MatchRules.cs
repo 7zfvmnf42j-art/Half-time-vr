@@ -52,19 +52,49 @@ public class MatchRules : MonoBehaviour
 
     public void BeginMatch()
     {
+        ResetMatchState();
         practiceMode = false;
         matchStarted = true;
-        if (remaining <= 0f) remaining = matchLengthSeconds;
         running = true;
         UpdateScoreboard();
     }
 
     public void BeginPractice()
     {
+        ResetMatchState();
         practiceMode = true;
         matchStarted = true;
         running = false;
         UpdateScoreboard();
+    }
+
+    void ResetMatchState()
+    {
+        homeScore = 0;
+        awayScore = 0;
+        remaining = matchLengthSeconds;
+        goalPending = false;
+
+        if (ballBody != null)
+        {
+            ballBody.transform.position = ballKickoff;
+            ballBody.velocity = Vector3.zero;
+            ballBody.angularVelocity = Vector3.zero;
+        }
+
+        if (players != null && playerKickoffs != null)
+        {
+            int count = Mathf.Min(players.Length, playerKickoffs.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (players[i] != null)
+                {
+                    players[i].position = playerKickoffs[i];
+                    var controller = players[i].GetComponent<FootballerController>();
+                    if (controller != null) controller.ResetForKickoff();
+                }
+            }
+        }
     }
 
     void Update()
