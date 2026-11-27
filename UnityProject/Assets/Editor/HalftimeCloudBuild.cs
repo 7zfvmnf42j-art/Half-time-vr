@@ -7,13 +7,17 @@ public static class HalftimeCloudBuild
 {
     public static void BuildAndroid()
     {
-        // Generate the starter match scene before building.
-        SetupHalftimeScene.BuildScene();
-
-        EditorUserBuildSettings.SwitchActiveBuildTarget(
+        // Select Android before creating the scene or invoking the build pipeline.
+        if (!EditorUserBuildSettings.SwitchActiveBuildTarget(
             BuildTargetGroup.Android,
             BuildTarget.Android
-        );
+        ))
+        {
+            throw new BuildFailedException("Could not switch Unity to the Android build target.");
+        }
+
+        // Generate the starter match scene in the Unity project.
+        SetupHalftimeScene.BuildScene();
 
         PlayerSettings.productName = "HALFTIME VR";
         PlayerSettings.SetApplicationIdentifier(
@@ -23,7 +27,8 @@ public static class HalftimeCloudBuild
         PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
-        var outputDirectory = Path.GetFullPath("Build");
+        string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+        string outputDirectory = Path.Combine(projectRoot, "Build");
         Directory.CreateDirectory(outputDirectory);
 
         var options = new BuildPlayerOptions
