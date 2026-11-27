@@ -1,22 +1,26 @@
 using UnityEngine;
 using UnityEngine.XR;
-using System.Collections.Generic;
 
+// Native Quest controls adapted from HALFTIME's pass / shoot / lob gameplay.
 [RequireComponent(typeof(Rigidbody))]
 public class BallControl : MonoBehaviour
 {
     [Header("Kick feel")]
-    public float kickForce = 7.5f;
-    public float lift = 0.16f;
+    public float passForce = 3.5f;
+    public float shotForce = 8f;
+    public float lobForce = 6f;
     public float maxSpeed = 32f;
     public float spinImpulse = 0.12f;
-    public float kickReach = 1.55f;
+    public float kickReach = 1.25f;
+    public float passLift = 0.22f;
+    public float lobLift = 6.2f;
 
     Rigidbody body;
     InputDevice rightController;
     InputDevice leftController;
-    bool rightTriggerWasPressed;
-    bool leftTriggerWasPressed;
+    bool rightTriggerWasPressed, leftTriggerWasPressed;
+    bool rightPrimaryWasPressed, leftPrimaryWasPressed;
+    bool rightSecondaryWasPressed, leftSecondaryWasPressed;
 
     void Start()
     {
@@ -36,52 +40,78 @@ public class BallControl : MonoBehaviour
         if (!rightController.isValid || !leftController.isValid)
             RefreshControllers();
 
-        TryKick(rightController, ref rightTriggerWasPressed);
-        TryKick(leftController, ref leftTriggerWasPressed);
+        // Quest trigger = shoot, A/X = pass, B/Y = lob.
+        ReadKickButtons(rightController, ref rightTriggerWasPressed,
+            ref rightPrimaryWasPressed, ref rightSecondaryWasPressed);
+        ReadKickButtons(leftController, ref leftTriggerWasPressed,
+            ref leftPrimaryWasPressed, ref leftSecondaryWasPressed);
     }
 
-    void TryKick(InputDevice controller, ref bool wasPressed)
+    void ReadKickButtons(InputDevice controller, ref bool triggerWasPressed,
+        ref bool primaryWasPressed, ref bool secondaryWasPressed)
     {
         if (!controller.isValid)
         {
-            wasPressed = false;
+            triggerWasPressed = primaryWasPressed = secondaryWasPressed = false;
             return;
         }
 
-        if (!controller.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed))
+        ReadButton(controller, CommonUsages.triggerButton, ref triggerWasPressed, shotForce, 0.55f);
+        ReadButton(controller, CommonUsages.primaryButton, ref primaryWasPressed, passForce, passLift);
+        ReadButton(controller, CommonUsages.secondaryButton, ref secondaryWasPressed, lobForce, lobLift);
+    }
+
+    void ReadButton(InputDevice controller, InputFeatureUsage<bool> usage,
+        ref bool wasPressed, float power, float verticalLift)
+    {
+        if (!controller.TryGetFeatureValue(usage, out bool pressed))
         {
             wasPressed = false;
             return;
         }
 
         if (pressed && !wasPressed)
-        {
-            Vector3 handPosition;
-            Quaternion handRotation;
-            bool hasPosition = controller.TryGetFeatureValue(CommonUsages.devicePosition, out handPosition);
-            bool hasRotation = controller.TryGetFeatureValue(CommonUsages.deviceRotation, out handRotation);
-            Transform trackingSpace = Camera.main != null ? Camera.main.transform.parent : null;
-            if (hasPosition && trackingSpace != null)
-                handPosition = trackingSpace.TransformPoint(handPosition);
-            if (hasRotation && trackingSpace != null)
-                handRotation = trackingSpace.rotation * handRotation;
-
-            if (hasPosition && Vector3.Distance(handPosition, transform.position) <= kickReach)
-            {
-                Vector3 direction = hasRotation ? handRotation * Vector3.forward :
-                    (Camera.main != null ? Camera.main.transform.forward : Vector3.forward);
-                direction.y = Mathf.Max(lift, direction.y);
-                body.AddForce(direction.normalized * kickForce, ForceMode.Impulse);
-                body.AddTorque(Vector3.Cross(Vector3.up, direction.normalized) * spinImpulse, ForceMode.Impulse);
-            }
-        }
+            TryKick(controller, power, verticalLift);
 
         wasPressed = pressed;
     }
 
+    void TryKick(InputDevice controller, float power, float verticalLift)
+    {
+        if (MatchRules.Instance != null && MatchRules.Instance.IsGoalPending) return;
+
+        if (!controller.TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 localPosition))
+            return;
+
+        Transform trackingSpace = Camera.main != null ? Camera.main.transform.parent : null;
+        Vector3 worldPosition = trackingSpace != null
+            ? trackingSpace.TransformPoint(localPosition)
+            : localPosition;
+
+        if (Vector3.Distance(worldPosition, transform.position) > kickReach)
+            return;
+
+        Vector3 direction;
+        if (controller.TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion localRotation))
+        {
+            Quaternion worldRotation = trackingSpace != null
+                ? trackingSpace.rotation * localRotation
+                : localRotation;
+            direction = worldRotation * Vector3.forward;
+        }
+        else
+        {
+            direction = Camera.main != null ? Camera.main.transform.forward : Vector3.forward;
+        }
+
+        direction.y = Mathf.Max(direction.y, verticalLift / Mathf.Max(power, 0.01f));
+        direction.Normalize();
+        body.AddForce(direction * power, ForceMode.Impulse);
+        body.AddTorque(Vector3.Cross(Vector3.up, direction) * spinImpulse, ForceMode.Impulse);
+    }
+
     void FixedUpdate()
     {
-        // A little air resistance and a firm speed ceiling keep the ball controllable.
         Vector3 velocity = body.velocity;
         if (velocity.sqrMagnitude > maxSpeed * maxSpeed)
             body.velocity = velocity.normalized * maxSpeed;
