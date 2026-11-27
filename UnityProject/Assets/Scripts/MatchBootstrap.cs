@@ -202,6 +202,17 @@ public class MatchBootstrap : MonoBehaviour
         go.transform.position = p + Vector3.up;
         go.transform.localScale = new Vector3(0.7f, 1f, 0.7f);
         Apply(go, mat, team == "Home" ? new Color(0.45f, 0.04f, 0.12f) : new Color(0.05f, 0.18f, 0.55f));
+        if (team == "Home")
+        {
+            string equipped = PlayerPrefs.GetString("HALFTIME_EQUIPPED_KIT", "Claret home shirt");
+            Renderer playerRenderer = go.GetComponent<Renderer>();
+            if (playerRenderer != null)
+            {
+                if (equipped == "Blue away shirt") playerRenderer.material.color = new Color(0.08f, 0.35f, 0.72f);
+                else if (equipped == "Black kit") playerRenderer.material.color = new Color(0.035f, 0.045f, 0.06f);
+                else playerRenderer.material.color = new Color(0.45f, 0.04f, 0.12f);
+            }
+        }
         go.AddComponent<FootballerController>();
     }
 
