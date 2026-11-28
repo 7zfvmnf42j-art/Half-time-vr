@@ -10,6 +10,9 @@ on:
 
 permissions:
   contents: read
+concurrency:
+  group: halftime-godot-quest-apk
+  cancel-in-progress: true
 
 jobs:
   android-apk:
