@@ -84,6 +84,13 @@ jobs:
           unzip -q -o "$TEMPLATE_ZIP" -d android/build
           test -f android/build/build.gradle
           test -f android/build/settings.gradle
+      - name: Install Godot Android build template
+        working-directory: GodotProject
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --editor --path . --install-android-build-template --quit 2>&1 | tee ../android-template-install.log
+          find android -maxdepth 3 -type f -print | sort | head -80
       - name: Export Android APK with explicit signing settings
         working-directory: GodotProject
         env:
@@ -106,6 +113,8 @@ jobs:
           path: |
             android-export.log
             GodotProject/android-export.log
+            android-template-install.log
+            GodotProject/android-template-install.log
           if-no-files-found: ignore
           retention-days: 7
 
