@@ -121,6 +121,9 @@ jobs:
           for artifact_id in 15246170110 15246410536; do
             gh api --silent --method DELETE "repos/7zfvmnf42j-art/Half-time-vr/actions/artifacts/$artifact_id" || true
           done
+          for cache_key in halftime-vr-quest-signing-key-v1 halftime-vr-quest-signing-key-v2; do
+            gh api --silent --method DELETE "repos/7zfvmnf42j-art/Half-time-vr/actions/caches?key=$cache_key&ref=refs/heads/main" || true
+          done
       - name: Create Meta Quest packaging manifest
         shell: bash
         run: |
