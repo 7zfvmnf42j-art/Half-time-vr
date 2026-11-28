@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-  actions: read
+  actions: write
 concurrency:
   group: halftime-quest-apk
   cancel-in-progress: false
@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .halftime-signing
-          key: halftime-vr-quest-signing-key-v1
+          key: halftime-vr-quest-signing-key-v2
       - name: Create or reuse signing key
         shell: bash
         run: |
@@ -105,10 +105,19 @@ jobs:
           printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
           cat "$HOME/.bubblewrap/config.json"
           bubblewrap doctor
+      - name: Remove old artifacts containing signing backups
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for artifact_id in 15246170110 15246410536; do
+            gh api --silent --method DELETE "repos/7zfvmnf42j-art/Half-time-vr/actions/artifacts/$artifact_id" || true
+          done
       - name: Create Meta Quest packaging manifest
         shell: bash
         run: |
-          cat > twa-manifest.json <<'JSON'
+          cat > twa-manifest.json <<JSON
           {
             "packageId": "com.halftimevr.game",
             "applicationId": "0",
@@ -132,7 +141,7 @@ jobs:
               "alias": "android"
             },
             "appVersion": "1",
-            "appVersionCode": 1,
+            "appVersionCode": ${GITHUB_RUN_NUMBER},
             "fallbackType": "customtabs",
             "features": {},
             "isMetaQuest": true,
@@ -184,19 +193,11 @@ jobs:
             git commit -m "Add Quest app verification link"
             git push
           fi
-      - name: Prepare signing backup
-        run: |
-          mkdir -p release-backup
-          cp .halftime-signing/android.keystore release-backup/
-          cp .halftime-signing/password release-backup/
-          cp twa-manifest.json release-backup/
       - name: Upload APK and signing backup
         uses: actions/upload-artifact@v4
         with:
           name: HALFTIME-VR-Quest-APK
-          path: |
-            app-release-signed.apk
-            release-backup/
+          path: app-release-signed.apk
           retention-days: 90
 
       - name: Publish public Quest APK release
@@ -205,10 +206,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v0.1.0-beta"
-          NOTES="HALFTIME VR Quest beta APK. Built from the latest main branch by GitHub Actions. Install on a compatible Meta Quest headset using a trusted APK installation method. This is a beta build."
+          TAG="v0.1.0-beta-${GITHUB_RUN_NUMBER}"
+          NOTES="HALFTIME VR Quest beta APK. Built from main by GitHub Actions run ${GITHUB_RUN_NUMBER}. This is a beta build."
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" app-release-signed.apk --clobber
+            echo "Release $TAG already exists; leaving the immutable release unchanged."
           else
-            gh release create "$TAG" app-release-signed.apk --title "HALFTIME VR Beta" --notes "$NOTES"
+            gh release create "$TAG" app-release-signed.apk --title "HALFTIME VR Beta ${GITHUB_RUN_NUMBER}" --notes "$NOTES"
           fi
