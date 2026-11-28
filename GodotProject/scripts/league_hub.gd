@@ -176,7 +176,7 @@ func _follow_league() -> void:
 		leagues[index]["followers"] = followers
 		_save_data()
 		_refresh_lists()
-	_set_status("You're now following " + name + ".")
+		_set_status("You're now following " + name + ".")
 	else:
 		_set_status("You're already following " + name + ".")
 
