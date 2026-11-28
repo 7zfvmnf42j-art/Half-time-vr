@@ -73,6 +73,17 @@ jobs:
         working-directory: GodotProject
         run: godot --headless --editor --path . --quit
 
+      - name: Install Godot Android Gradle build template
+        working-directory: GodotProject
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMPLATE_ZIP="$HOME/.local/share/godot/export_templates/4.4.1.stable/android_source.zip"
+          test -f "$TEMPLATE_ZIP"
+          mkdir -p android/build
+          unzip -q -o "$TEMPLATE_ZIP" -d android/build
+          test -f android/build/build.gradle
+          test -f android/build/settings.gradle
       - name: Export Android APK with explicit signing settings
         working-directory: GodotProject
         env:
