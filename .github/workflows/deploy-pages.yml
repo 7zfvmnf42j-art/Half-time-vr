@@ -24,11 +24,36 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Validate browser game scripts and manifests
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { spawnSync } = require('node:child_process');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+          if (!scripts.length) throw new Error('No script tags found in index.html');
+          let failed = false;
+          scripts.forEach((match, index) => {
+            const source = match[1];
+            if (!source.trim()) return;
+            const file = `/tmp/halftime-inline-${index}.js`;
+            fs.writeFileSync(file, source);
+            const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (result.status !== 0) { console.error(`Inline script ${index} failed:\\n${result.stderr}`); failed = true; }
+          });
+          if (failed) process.exit(1);
+          for (const file of ['manifest.webmanifest', 'updates.json']) JSON.parse(fs.readFileSync(file, 'utf8'));
+          const ids = [...html.matchAll(/\\bid=[\"']([^\"']+)[\"']/g)].map(match => match[1]);
+          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+          if (duplicates.length) throw new Error(`Duplicate HTML IDs: ${[...new Set(duplicates)].join(', ')}`);
+          console.log(`Validated ${scripts.length} inline scripts, both JSON manifests and ${ids.length} HTML IDs.`);
+          NODE
       - name: Generate installable PNG icons
         run: |
-          npm install --no-save sharp
+          npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/halftime-icon-tools" sharp
           mkdir -p icons
-          node -e "const sharp=require('sharp'); Promise.all([sharp('icon.svg').resize(512,512).png().toFile('icons/icon-512.png'),sharp('icon.svg').resize(512,512).png().toFile('icons/icon-512-maskable.png')]).catch(e=>{console.error(e);process.exit(1)})"
+          NODE_PATH="$RUNNER_TEMP/halftime-icon-tools/node_modules" node -e "const sharp=require('sharp'); Promise.all([sharp('icon.svg').resize(512,512).png().toFile('icons/icon-512.png'),sharp('icon.svg').resize(512,512).png().toFile('icons/icon-512-maskable.png')]).catch(e=>{console.error(e);process.exit(1)})"
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
