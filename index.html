@@ -1158,8 +1158,21 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
   function roomCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
   function presenceList(){
     if(!ch) return;
-    const state=ch.presenceState(); let n=0;
-    for(const list of Object.values(state)) for(const p of list){ n++; if(p.playerId!==myKey) remoteEntity(p.playerId,p.nick,p.kit,p.badge); }
+    const state=ch.presenceState(); let n=0; const members=[];
+    for(const list of Object.values(state)) for(const p of list){
+      members.push(p); n++;
+      if(p.playerId!==myKey) remoteEntity(p.playerId,p.nick,p.kit,p.badge);
+    }
+    const hostMember=members.find(p=>p.host===true&&p.mode);
+    if(!host&&hostMember&&hostMember.mode!==desiredMode){
+      desiredMode=hostMember.mode;
+      window.onlineCareerActive=desiredMode==='career';
+      window.onlineCareerGuest=window.onlineCareerActive;
+      const f=document.getElementById('ball')?.components?.football;
+      if(f)f.start(desiredMode);
+      window.syncHalftimeWorldMode?.();
+      if(desiredMode==='career'){const r=document.getElementById('rig')?.object3D;if(r)r.position.set(2,0,6);}
+    }
     players.textContent=(desiredMode==='career'?'Co-op team: ':'Players online: ')+n+(host?' • You are host':'');
   }
   async function connect(code,isHost,mode='training'){
@@ -1228,7 +1241,7 @@ volume.oninput=()=>{if(playing)master.gain.setTargetAtTime(Number(volume.value)/
       if(settled)return;
       if(s==='SUBSCRIBED'){
         subscribed=true; leaveBtn.disabled=false; if(host)window.onlineCareerHostChannel=ch; status.textContent=(desiredMode==='career'?'ONLINE CAREER':'ONLINE')+' • Room '+room;
-        await ch.track({playerId:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',badge:profile?.equippedBadge||'',joined_at:new Date().toISOString()});
+        await ch.track({playerId:myKey,nick:profile?.nick||'Player',kit:profile?.kit||'#168bff',badge:profile?.equippedBadge||'',mode:desiredMode,host:!!host,joined_at:new Date().toISOString()});
         window.onlineCareerActive=desiredMode==='career';
         window.onlineCareerGuest=window.onlineCareerActive&&!host;
         const f=document.getElementById('ball')?.components?.football; if(f) f.start(desiredMode);
