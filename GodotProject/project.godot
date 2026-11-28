@@ -13,6 +13,7 @@ window/size/viewport_height=720
 renderer/rendering_method="mobile"
 renderer/rendering_method.mobile="mobile"
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
 
 [xr]
 openxr/enabled=true
