@@ -26,7 +26,7 @@ jobs:
       - name: Configure Android export tools
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk unzip curl
+          DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk unzip curl file
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
           export PATH="$JAVA_HOME/bin:$PATH"
           export ANDROID_HOME=/usr/lib/android-sdk
