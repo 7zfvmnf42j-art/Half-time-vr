@@ -1,7 +1,10 @@
 extends Node3D
 
-const FIELD_LENGTH := 36.0
-const FIELD_WIDTH := 22.0
+const FIELD_LENGTH := 105.0
+const FIELD_WIDTH := 68.0
+const GOAL_WIDTH := 7.32
+const GOAL_HEIGHT := 2.44
+const GOAL_LINE_Z := -FIELD_LENGTH / 2.0
 const BALL_RADIUS := 0.22
 const MATCH_LENGTH_SECONDS := 300.0
 
@@ -24,6 +27,14 @@ var menu_layer: CanvasLayer
 var menu_panel: PanelContainer
 var status_label: Label
 var league_hub: CanvasLayer
+var goalkeeper: CharacterBody3D
+var practice_label: Label3D
+var practice_shots := 0
+var practice_goals := 0
+var practice_saves := 0
+var shot_active := false
+var shot_elapsed := 0.0
+var practice_mode := true
 
 func _ready() -> void:
 	_build_stadium()
@@ -35,6 +46,7 @@ func _ready() -> void:
 	add_child(league_hub)
 	league_hub.close_requested.connect(_close_competitions)
 	_start_openxr()
+	_start_practice()
 
 func _process(delta: float) -> void:
 	if match_running and not practice_mode:
@@ -66,6 +78,14 @@ func _build_stadium() -> void:
 	_add_box("TouchlineWest", Vector3(-FIELD_WIDTH / 2.0, 0.005, 0), Vector3(0.08, 0.025, FIELD_LENGTH), Color.WHITE)
 	_add_box("TouchlineEast", Vector3(FIELD_WIDTH / 2.0, 0.005, 0), Vector3(0.08, 0.025, FIELD_LENGTH), Color.WHITE)
 	_add_box("HalfwayLine", Vector3(0, 0.01, 0), Vector3(FIELD_WIDTH, 0.025, 0.06), Color.WHITE)
+	_add_box("PenaltyFront", Vector3(0, 0.02, GOAL_LINE_Z + 16.5), Vector3(40.32, 0.03, 0.06), Color.WHITE)
+	_add_box("PenaltyLeft", Vector3(-20.16, 0.02, GOAL_LINE_Z + 8.25), Vector3(0.06, 0.03, 16.5), Color.WHITE)
+	_add_box("PenaltyRight", Vector3(20.16, 0.02, GOAL_LINE_Z + 8.25), Vector3(0.06, 0.03, 16.5), Color.WHITE)
+	_add_box("SixYardFront", Vector3(0, 0.02, GOAL_LINE_Z + 5.5), Vector3(18.32, 0.03, 0.06), Color.WHITE)
+	_add_box("SixYardLeft", Vector3(-9.16, 0.02, GOAL_LINE_Z + 2.75), Vector3(0.06, 0.03, 5.5), Color.WHITE)
+	_add_box("SixYardRight", Vector3(9.16, 0.02, GOAL_LINE_Z + 2.75), Vector3(0.06, 0.03, 5.5), Color.WHITE)
+	_add_box("PenaltySpot", Vector3(0, 0.025, GOAL_LINE_Z + 11.0), Vector3(0.2, 0.035, 0.2), Color.WHITE)
+	_add_box("CentreSpot", Vector3(0, 0.025, 0), Vector3(0.2, 0.035, 0.2), Color.WHITE)
 
 	var centre := MeshInstance3D.new()
 	var ring := TorusMesh.new()
@@ -76,22 +96,27 @@ func _build_stadium() -> void:
 	centre.material_override = _material(Color.WHITE)
 	add_child(centre)
 
-	_add_goal(-FIELD_LENGTH / 2.0 + 0.5)
-	_add_goal(FIELD_LENGTH / 2.0 - 0.5)
-	_add_goal_sensor(-FIELD_LENGTH / 2.0 - 0.25, true)
-	_add_goal_sensor(FIELD_LENGTH / 2.0 + 0.25, false)
+	_add_goal(GOAL_LINE_Z + 0.15)
+	_add_goal(FIELD_LENGTH / 2.0 - 0.15)
+	_add_goal_sensor(GOAL_LINE_Z - 0.45, false)
+	_add_goal_sensor(FIELD_LENGTH / 2.0 + 0.45, true)
+	_build_goalkeeper()
+	_build_practice_display()
 
 func _add_goal(z_position: float) -> void:
 	var goal := Node3D.new()
 	goal.position = Vector3(0, 0, z_position)
 	add_child(goal)
-	var depth := -1.6 if z_position < 0 else 1.6
-	_add_goal_post(goal, Vector3(-3.2, 1.15, 0))
-	_add_goal_post(goal, Vector3(3.2, 1.15, 0))
-	_add_goal_post(goal, Vector3(0, 2.3, 0), Vector3(6.4, 0.12, 0.12))
-	_add_goal_post(goal, Vector3(-3.2, 1.15, depth), Vector3(0.12, 2.3, 0.12))
-	_add_goal_post(goal, Vector3(3.2, 1.15, depth), Vector3(0.12, 2.3, 0.12))
-	_add_goal_post(goal, Vector3(0, 2.3, depth), Vector3(6.4, 0.12, 0.12))
+	var depth := -2.0 if z_position < 0 else 2.0
+	_add_goal_post(goal, Vector3(-GOAL_WIDTH / 2.0, GOAL_HEIGHT / 2.0, 0), Vector3(0.12, GOAL_HEIGHT, 0.12))
+	_add_goal_post(goal, Vector3(GOAL_WIDTH / 2.0, GOAL_HEIGHT / 2.0, 0), Vector3(0.12, GOAL_HEIGHT, 0.12))
+	_add_goal_post(goal, Vector3(0, GOAL_HEIGHT, 0), Vector3(GOAL_WIDTH + 0.12, 0.12, 0.12))
+	_add_goal_post(goal, Vector3(-GOAL_WIDTH / 2.0, GOAL_HEIGHT / 2.0, depth), Vector3(0.12, GOAL_HEIGHT, 0.12))
+	_add_goal_post(goal, Vector3(GOAL_WIDTH / 2.0, GOAL_HEIGHT / 2.0, depth), Vector3(0.12, GOAL_HEIGHT, 0.12))
+	_add_goal_post(goal, Vector3(0, GOAL_HEIGHT, depth), Vector3(GOAL_WIDTH + 0.12, 0.12, 0.12))
+	_add_goal_post(goal, Vector3(0, GOAL_HEIGHT / 2.0, depth), Vector3(GOAL_WIDTH, 0.035, 0.035))
+	_add_goal_post(goal, Vector3(-GOAL_WIDTH / 2.0, GOAL_HEIGHT / 2.0, depth / 2.0), Vector3(0.035, GOAL_HEIGHT, absf(depth)))
+	_add_goal_post(goal, Vector3(GOAL_WIDTH / 2.0, GOAL_HEIGHT / 2.0, depth / 2.0), Vector3(0.035, GOAL_HEIGHT, absf(depth)))
 
 func _add_goal_sensor(z_position: float, home_scores: bool) -> void:
 	var sensor := Area3D.new()
@@ -99,7 +124,7 @@ func _add_goal_sensor(z_position: float, home_scores: bool) -> void:
 	sensor.position = Vector3(0, 1.15, z_position)
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(6.0, 2.2, 0.8)
+	shape.size = Vector3(GOAL_WIDTH - 0.2, GOAL_HEIGHT - 0.08, 0.8)
 	collision.shape = shape
 	sensor.add_child(collision)
 	sensor.body_entered.connect(_on_goal_body_entered.bind(home_scores))
@@ -116,7 +141,7 @@ func _add_goal_post(parent: Node3D, local_position: Vector3, size := Vector3(0.1
 
 func _build_vr_rig() -> void:
 	xr_origin = XROrigin3D.new()
-	xr_origin.position = Vector3(0, 0, 8)
+	xr_origin.position = Vector3(0, 0, -22.0)
 	add_child(xr_origin)
 
 	var camera := XRCamera3D.new()
@@ -147,7 +172,7 @@ func _add_controller_visual(controller: XRController3D) -> void:
 func _build_ball() -> void:
 	ball = RigidBody3D.new()
 	ball.name = "Football"
-	ball.position = Vector3(0, BALL_RADIUS + 0.08, 0)
+	ball.position = Vector3(0, BALL_RADIUS + 0.03, -22.9)
 	ball.mass = 0.43
 	ball.linear_damp = 0.18
 	ball.angular_damp = 0.12
@@ -287,16 +312,15 @@ func _show_menu(message: String) -> void:
 func _on_goal_body_entered(body: Node3D, home_scores: bool) -> void:
 	if body != ball or not match_running:
 		return
-	if home_scores:
-		score_home += 1
-	else:
-		score_away += 1
-	_update_scoreboard()
+	if not home_scores:
+		practice_goals += 1
+	_update_practice_display()
+	shot_active = false
 	_reset_ball()
 
 func _reset_ball() -> void:
 	ball.freeze = true
-	ball.global_position = Vector3(0, BALL_RADIUS + 0.08, 0)
+	ball.global_position = Vector3(0, BALL_RADIUS + 0.03, -22.9)
 	ball.linear_velocity = Vector3.ZERO
 	ball.angular_velocity = Vector3.ZERO
 	ball.freeze = false
@@ -313,9 +337,20 @@ func _start_openxr() -> void:
 	else:
 		push_warning("OpenXR interface is unavailable. This scene can still be previewed without a headset.")
 
-func _physics_process(_delta: float) -> void:
-	if not is_instance_valid(ball) or not match_running:
+func _physics_process(delta: float) -> void:
+	if not is_instance_valid(ball):
 		return
+	_update_goalkeeper(delta)
+	if shot_active:
+		shot_elapsed += delta
+		if is_instance_valid(goalkeeper) and ball.global_position.distance_to(goalkeeper.global_position + Vector3(0, 0.25, 0)) < 1.25 and ball.global_position.y < 2.4:
+			practice_saves += 1
+			shot_active = false
+			_update_practice_display()
+			_reset_ball()
+		elif ball.global_position.z < GOAL_LINE_Z - 4.0 or shot_elapsed > 7.0:
+			shot_active = false
+			_reset_ball()
 	if left_hand and left_hand.get_is_active():
 		var current_left := left_hand.global_position
 		if previous_left_valid:
@@ -327,17 +362,101 @@ func _physics_process(_delta: float) -> void:
 		if previous_right_valid:
 			_try_hand_touch(right_hand, previous_right)
 		previous_right = current_right
+		previous_right_valid = true
 
 func _try_hand_touch(hand: XRController3D, previous_position: Vector3) -> void:
 	if not hand or not hand.get_is_active():
 		return
+	# Controller positions are mapped to low virtual boot positions for shooting practice.
 	var virtual_boot_position := hand.global_position + Vector3(0, -0.72, -0.12)
 	var virtual_previous_boot := previous_position + Vector3(0, -0.72, -0.12)
-	var distance := virtual_boot_position.distance_to(ball.global_position)
-	if distance < 0.62:
+	if virtual_boot_position.distance_to(ball.global_position) < 0.62:
 		var movement := virtual_boot_position - virtual_previous_boot
 		if movement.length() > 0.012:
-			ball.apply_central_impulse(movement * 2.8)
+			if not shot_active:
+				practice_shots += 1
+				shot_active = true
+				shot_elapsed = 0.0
+				_update_practice_display()
+			ball.apply_central_impulse(movement * 4.2)
+
+func _start_practice() -> void:
+	practice_mode = true
+	match_running = true
+	score_home = 0
+	score_away = 0
+	practice_shots = 0
+	practice_goals = 0
+	practice_saves = 0
+	shot_active = false
+	_reset_ball()
+	_update_scoreboard()
+	_update_practice_display()
+	menu_layer.visible = false
+
+func _build_goalkeeper() -> void:
+	goalkeeper = CharacterBody3D.new()
+	goalkeeper.name = "PracticeAI_Goalkeeper"
+	goalkeeper.position = Vector3(0, 0.95, GOAL_LINE_Z + 1.0)
+	var body_shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.48
+	capsule.height = 1.9
+	body_shape.shape = capsule
+	goalkeeper.add_child(body_shape)
+	var body_visual := MeshInstance3D.new()
+	var body_mesh := CapsuleMesh.new()
+	body_mesh.radius = 0.48
+	body_mesh.height = 1.9
+	body_visual.mesh = body_mesh
+	body_visual.material_override = _material(Color(0.95, 0.55, 0.08))
+	goalkeeper.add_child(body_visual)
+	var head := MeshInstance3D.new()
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.22
+	head_mesh.height = 0.44
+	head.mesh = head_mesh
+	head.position = Vector3(0, 1.05, 0)
+	head.material_override = _material(Color(0.88, 0.68, 0.52))
+	goalkeeper.add_child(head)
+	for side in [-1.0, 1.0]:
+		var arm := MeshInstance3D.new()
+		var arm_mesh := BoxMesh.new()
+		arm_mesh.size = Vector3(0.85, 0.22, 0.24)
+		arm.mesh = arm_mesh
+		arm.position = Vector3(side * 0.72, 0.28, 0)
+		arm.rotation.z = side * -0.12
+		arm.material_override = _material(Color(0.95, 0.55, 0.08))
+		goalkeeper.add_child(arm)
+	add_child(goalkeeper)
+
+func _update_goalkeeper(_delta: float) -> void:
+	if not is_instance_valid(goalkeeper) or not is_instance_valid(ball):
+		return
+	var keeper_z := GOAL_LINE_Z + 1.0
+	var target_x := 0.0
+	var ball_is_threat := ball.global_position.z < GOAL_LINE_Z + 24.0 and ball.linear_velocity.z < -0.5
+	if ball_is_threat:
+		var travel_time := clampf((keeper_z - ball.global_position.z) / minf(ball.linear_velocity.z, -0.5), 0.0, 1.2)
+		target_x = ball.global_position.x + ball.linear_velocity.x * travel_time
+	target_x = clampf(target_x, -GOAL_WIDTH / 2.0 + 0.65, GOAL_WIDTH / 2.0 - 0.65)
+	goalkeeper.velocity.x = clampf((target_x - goalkeeper.global_position.x) * 4.0, -5.0, 5.0)
+	goalkeeper.velocity.y = 0.0
+	goalkeeper.velocity.z = 0.0
+	goalkeeper.move_and_slide()
+
+func _build_practice_display() -> void:
+	practice_label = Label3D.new()
+	practice_label.name = "ShootingPracticeStats"
+	practice_label.position = Vector3(0, 4.0, GOAL_LINE_Z + 8.0)
+	practice_label.font_size = 42
+	practice_label.modulate = Color(0.85, 1.0, 0.9)
+	practice_label.text = "SHOTS  0     GOALS  0     SAVES  0"
+	add_child(practice_label)
+
+func _update_practice_display() -> void:
+	if is_instance_valid(practice_label):
+		practice_label.text = "SHOTS  %d     GOALS  %d     SAVES  %d" % [practice_shots, practice_goals, practice_saves]
 
 func _update_scoreboard() -> void:
 	if score_label:
