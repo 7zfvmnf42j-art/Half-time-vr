@@ -153,12 +153,14 @@ func _build_vr_rig() -> void:
 	left_hand.pose = &"default"
 	xr_origin.add_child(left_hand)
 	_add_controller_visual(left_hand)
+	_add_virtual_boot(left_hand)
 
 	right_hand = XRController3D.new()
 	right_hand.tracker = &"right_hand"
 	right_hand.pose = &"default"
 	xr_origin.add_child(right_hand)
 	_add_controller_visual(right_hand)
+	_add_virtual_boot(right_hand)
 
 func _add_controller_visual(controller: XRController3D) -> void:
 	var hand := MeshInstance3D.new()
@@ -168,6 +170,27 @@ func _add_controller_visual(controller: XRController3D) -> void:
 	hand.mesh = mesh
 	hand.material_override = _material(Color(0.95, 0.95, 0.95))
 	controller.add_child(hand)
+
+func _add_virtual_boot(controller: XRController3D) -> void:
+	# Tracked controller position is represented by a visible virtual boot.
+	var boot := Node3D.new()
+	boot.name = "TrackedVirtualBoot"
+	boot.position = Vector3(0.0, -0.72, -0.12)
+	controller.add_child(boot)
+	var upper := MeshInstance3D.new()
+	var upper_mesh := BoxMesh.new()
+	upper_mesh.size = Vector3(0.18, 0.105, 0.30)
+	upper.mesh = upper_mesh
+	upper.position = Vector3(0.0, 0.0, -0.035)
+	upper.material_override = _material(Color(0.035, 0.045, 0.06))
+	boot.add_child(upper)
+	var sole := MeshInstance3D.new()
+	var sole_mesh := BoxMesh.new()
+	sole_mesh.size = Vector3(0.19, 0.035, 0.31)
+	sole.mesh = sole_mesh
+	sole.position = Vector3(0.0, -0.065, -0.035)
+	sole.material_override = _material(Color(0.82, 0.84, 0.86))
+	boot.add_child(sole)
 
 func _build_ball() -> void:
 	ball = RigidBody3D.new()
@@ -367,7 +390,9 @@ func _physics_process(delta: float) -> void:
 func _try_hand_touch(hand: XRController3D, previous_position: Vector3) -> void:
 	if not hand or not hand.get_is_active():
 		return
-	# Controller positions are mapped to low virtual boot positions for shooting practice.
+	# A deliberate trigger press is required before the virtual boot can kick.
+	if not hand.is_button_pressed(&"trigger_click"):
+		return
 	var virtual_boot_position := hand.global_position + Vector3(0, -0.72, -0.12)
 	var virtual_previous_boot := previous_position + Vector3(0, -0.72, -0.12)
 	if virtual_boot_position.distance_to(ball.global_position) < 0.62:
