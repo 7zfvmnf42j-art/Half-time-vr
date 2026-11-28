@@ -73,6 +73,11 @@ jobs:
         working-directory: GodotProject
         run: godot --headless --editor --path . --quit
 
+      - name: Start Android debug bridge
+        run: |
+          adb start-server
+          adb devices
+
       - name: Install Godot Android Gradle build template
         working-directory: GodotProject
         shell: bash
