@@ -23,6 +23,7 @@ var previous_right_valid := false
 var menu_layer: CanvasLayer
 var menu_panel: PanelContainer
 var status_label: Label
+var league_hub: CanvasLayer
 
 func _ready() -> void:
 	_build_stadium()
@@ -30,6 +31,9 @@ func _ready() -> void:
 	_build_ball()
 	_build_scoreboard()
 	_build_menu()
+	league_hub = preload("res://scripts/league_hub.gd").new()
+	add_child(league_hub)
+	league_hub.close_requested.connect(_close_competitions)
 	_start_openxr()
 
 func _process(delta: float) -> void:
@@ -243,12 +247,26 @@ func _build_menu() -> void:
 	locker_button.disabled = true
 	layout.add_child(locker_button)
 
+	var competitions_button := Button.new()
+	competitions_button.text = "COMPETITIONS  /  LEAGUES"
+	competitions_button.custom_minimum_size = Vector2(0, 52)
+	competitions_button.pressed.connect(_open_competitions)
+	layout.add_child(competitions_button)
+
 	var note := Label.new()
 	note.text = "Early prototype  •  Local practice match"
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_font_size_override("font_size", 14)
 	note.modulate = Color(0.72, 0.78, 0.82)
 	layout.add_child(note)
+
+
+func _open_competitions() -> void:
+	menu_layer.visible = false
+	league_hub.visible = true
+
+func _close_competitions() -> void:
+	menu_layer.visible = true
 
 func _start_match() -> void:
 	score_home = 0
