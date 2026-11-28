@@ -428,6 +428,12 @@ func _build_goalkeeper() -> void:
 		arm.rotation.z = side * -0.12
 		arm.material_override = _material(Color(0.95, 0.55, 0.08))
 		goalkeeper.add_child(arm)
+		var arm_collision := CollisionShape3D.new()
+		var arm_shape := BoxShape3D.new()
+		arm_shape.size = Vector3(0.9, 0.28, 0.34)
+		arm_collision.shape = arm_shape
+		arm_collision.position = arm.position
+		goalkeeper.add_child(arm_collision)
 	add_child(goalkeeper)
 
 func _update_goalkeeper(_delta: float) -> void:
@@ -443,6 +449,7 @@ func _update_goalkeeper(_delta: float) -> void:
 	goalkeeper.velocity.x = clampf((target_x - goalkeeper.global_position.x) * 4.0, -5.0, 5.0)
 	goalkeeper.velocity.y = 0.0
 	goalkeeper.velocity.z = 0.0
+	goalkeeper.rotation.z = clampf((target_x - goalkeeper.global_position.x) * -0.16, -0.5, 0.5)
 	goalkeeper.move_and_slide()
 
 func _build_practice_display() -> void:
