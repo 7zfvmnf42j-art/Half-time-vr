@@ -37,7 +37,7 @@ func _ready() -> void:
 	_start_openxr()
 
 func _process(delta: float) -> void:
-	if match_running:
+	if match_running and not practice_mode:
 		seconds_left = maxf(0.0, seconds_left - delta)
 		_update_scoreboard()
 		if seconds_left <= 0.0:
@@ -69,8 +69,8 @@ func _build_stadium() -> void:
 
 	var centre := MeshInstance3D.new()
 	var ring := TorusMesh.new()
-	ring.inner_radius = 2.95
-	ring.outer_radius = 3.02
+	ring.inner_radius = 9.10
+	ring.outer_radius = 9.16
 	centre.mesh = ring
 	centre.position.y = 0.025
 	centre.material_override = _material(Color.WHITE)
@@ -331,9 +331,11 @@ func _physics_process(_delta: float) -> void:
 func _try_hand_touch(hand: XRController3D, previous_position: Vector3) -> void:
 	if not hand or not hand.get_is_active():
 		return
-	var distance := hand.global_position.distance_to(ball.global_position)
-	if distance < 0.42:
-		var movement := hand.global_position - previous_position
+	var virtual_boot_position := hand.global_position + Vector3(0, -0.72, -0.12)
+	var virtual_previous_boot := previous_position + Vector3(0, -0.72, -0.12)
+	var distance := virtual_boot_position.distance_to(ball.global_position)
+	if distance < 0.62:
+		var movement := virtual_boot_position - virtual_previous_boot
 		if movement.length() > 0.012:
 			ball.apply_central_impulse(movement * 2.8)
 
