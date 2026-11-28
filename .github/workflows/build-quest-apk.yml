@@ -40,10 +40,11 @@ jobs:
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
       - name: Restore persistent signing key
+        id: signing_cache
         uses: actions/cache@v4
         with:
           path: .halftime-signing
-          key: halftime-vr-quest-signing-key-v2
+          key: halftime-vr-quest-signing-key-v3
       - name: Create or reuse signing key
         shell: bash
         run: |
@@ -58,6 +59,12 @@ jobs:
               -storepass "$PW" -keypass "$PW" \
               -dname "CN=HALFTIME VR, O=HALFTIME VR, C=GB"
           fi
+      - name: Save signing key for future builds
+        if: steps.signing_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .halftime-signing
+          key: halftime-vr-quest-signing-key-v3
       - name: Check hosted PWA and icons
         run: |
           set -e
@@ -173,8 +180,13 @@ jobs:
           PW="$(cat .halftime-signing/password)"
           SHA="$("$JAVA_HOME/bin/keytool" -list -v -keystore .halftime-signing/android.keystore -alias android -storepass "$PW" | awk -F'SHA256: ' '/SHA256:/{print $2; exit}')"
           test -n "$SHA"
-          mkdir -p .well-known
-          cat > .well-known/assetlinks.json <<JSON
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p .well-known
+            cat > .well-known/assetlinks.json <<JSON
           [
             {
               "relation": ["delegate_permission/common.handle_all_urls"],
@@ -186,14 +198,21 @@ jobs:
             }
           ]
           JSON
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .well-known/assetlinks.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Add Quest app verification link"
-            git push
-          fi
-      - name: Upload APK and signing backup
+            git add .well-known/assetlinks.json
+            if git diff --cached --quiet; then
+              echo "Digital Asset Links already match this signing key."
+              exit 0
+            fi
+            git commit -m "Update Quest app verification link"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Main changed during push; retrying from the latest commit (attempt $attempt)."
+            sleep 2
+          done
+          echo "Could not publish Digital Asset Links after five attempts."
+          exit 1
+      - name: Upload signed Quest APK
         uses: actions/upload-artifact@v4
         with:
           name: HALFTIME-VR-Quest-APK
