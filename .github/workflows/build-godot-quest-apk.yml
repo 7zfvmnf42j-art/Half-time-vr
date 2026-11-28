@@ -76,16 +76,12 @@ jobs:
         working-directory: GodotProject
         run: godot --headless --editor --path . --quit
 
-      - name: Verify prebuilt Android APK templates
+      - name: Install Godot Android Gradle build template
         working-directory: GodotProject
-        shell: bash
         run: |
-          set -euo pipefail
-          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.4.1.stable"
-          test -s "$TEMPLATE_DIR/android_debug.apk"
-          test -s "$TEMPLATE_DIR/android_release.apk"
-          file "$TEMPLATE_DIR/android_debug.apk" "$TEMPLATE_DIR/android_release.apk"
-          echo "Using Godot's prebuilt Android APK templates; no Gradle project generation required."
+          godot --headless --editor --path . --install-android-build-template
+          test -f android/build/build.gradle
+          echo "Godot Android Gradle build template installed for OpenXR."
       - name: Export Android APK with explicit signing settings
         working-directory: GodotProject
         env:
