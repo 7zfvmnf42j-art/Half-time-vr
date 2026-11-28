@@ -1,0 +1,11 @@
+name = "halftime-vr-logo-requests"
+main = "src/worker.js"
+compatibility_date = "2026-11-28"
+
+[[durable_objects.bindings]]
+name = "LOGO_REQUESTS"
+class_name = "LogoRequestStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LogoRequestStore"]
