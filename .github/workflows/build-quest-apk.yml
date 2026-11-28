@@ -159,7 +159,7 @@ jobs:
           set -euo pipefail
           export BUBBLEWRAP_KEYSTORE_PASSWORD="$(cat .halftime-signing/password)"
           export BUBBLEWRAP_KEY_PASSWORD="$BUBBLEWRAP_KEYSTORE_PASSWORD"
-          bubblewrap update
+          bubblewrap update --skipVersionUpgrade --manifest="$GITHUB_WORKSPACE/twa-manifest.json"
           bubblewrap build --manifest="$GITHUB_WORKSPACE/twa-manifest.json" \
             --signingKeyPath="$GITHUB_WORKSPACE/.halftime-signing/android.keystore" \
             --signingKeyAlias=android
