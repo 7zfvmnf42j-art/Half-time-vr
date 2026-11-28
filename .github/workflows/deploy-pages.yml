@@ -31,7 +31,7 @@ jobs:
           const fs = require('node:fs');
           const { spawnSync } = require('node:child_process');
           const html = fs.readFileSync('index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
           if (!scripts.length) throw new Error('No script tags found in index.html');
           let failed = false;
           scripts.forEach((match, index) => {
@@ -40,11 +40,11 @@ jobs:
             const file = `/tmp/halftime-inline-${index}.js`;
             fs.writeFileSync(file, source);
             const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
-            if (result.status !== 0) { console.error(`Inline script ${index} failed:\\n${result.stderr}`); failed = true; }
+            if (result.status !== 0) { console.error(`Inline script ${index} failed:\n${result.stderr}`); failed = true; }
           });
           if (failed) process.exit(1);
           for (const file of ['manifest.webmanifest', 'updates.json']) JSON.parse(fs.readFileSync(file, 'utf8'));
-          const ids = [...html.matchAll(/\\bid=[\"']([^\"']+)[\"']/g)].map(match => match[1]);
+          const ids = [...html.matchAll(/\bid=[\"']([^\"']+)[\"']/g)].map(match => match[1]);
           const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
           if (duplicates.length) throw new Error(`Duplicate HTML IDs: ${[...new Set(duplicates)].join(', ')}`);
           console.log(`Validated ${scripts.length} inline scripts, both JSON manifests and ${ids.length} HTML IDs.`);
