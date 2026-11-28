@@ -1,0 +1,27 @@
+name: Deploy HALFTIME VR logo request service
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "server/logo-requests/**"
+      - ".github/workflows/deploy-logo-requests.yml"
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy logo request Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          workingDirectory: server/logo-requests
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          secrets: |
+            DISCORD_WEBHOOK_URL
+            ADMIN_TOKEN
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ADMIN_TOKEN: ${{ secrets.LOGO_REQUESTS_ADMIN_TOKEN }}
