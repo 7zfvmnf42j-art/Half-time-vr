@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          godot --headless --editor --path . --install-android-build-template
+          godot --headless --editor --path . --install-android-build-template --quit
           test -f android/build.gradle
           test -f android/settings.gradle
           echo "Godot Android Gradle template installed."
